@@ -1,0 +1,4 @@
+/d/Code/c/game-gl/b/CMakeFiles/glad.dir
+/d/Code/c/game-gl/b/CMakeFiles/game.dir
+/d/Code/c/game-gl/b/CMakeFiles/edit_cache.dir
+/d/Code/c/game-gl/b/CMakeFiles/rebuild_cache.dir
