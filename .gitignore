@@ -3,3 +3,5 @@ bin
 src/file
 lib
 include
+.vscode
+.history
