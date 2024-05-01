@@ -79,15 +79,12 @@ int main()
 
     std::vector<float> vertices = {
         // Positions       // Colors
-        -0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // Top vertex (red)
-        0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f, // Upper-left vertex (green)
-        0.0f, 0.5f, 0.0f,  0.2f, 0.3f, 0.5f // Lower-left vertex (blue)
+        0.0f, 0.8f, 0.0f,  1.0f, 0.0f, 0.0f,  // Top vertex (red)
+        -0.5f, 0.2f, 0.0f,  0.0f, 1.0f, 0.0f, // Upper-left vertex (green)
+        -0.3f, -0.4f, 0.0f,  0.0f, 0.0f, 1.0f, // Lower-left vertex (blue)
+        0.3f, -0.4f, 0.0f,  1.0f, 1.0f, 0.0f,  // Lower-right vertex (yellow)
+        0.5f, 0.2f, 0.0f,  1.0f, 0.0f, 1.0f   // Upper-right vertex (magenta)
     };
-    float texCoords[] = {
-    0.0f, 0.0f,  // lower-left corner  
-    1.0f, 0.0f,  // lower-right corner
-    0.5f, 1.0f   // top-center corner
-};
 
     VBO vbo;
     vbo.genBuffer();
@@ -113,9 +110,21 @@ int main()
     vao.unbind();
     vbo.unbind();
 
+    float pos = 0.2f;
     // Main loop
+    bool left = false;
     while (!glfwWindowShouldClose(window))
     {
+        if(pos > 0.8f) {
+            left = true;
+        } else if(pos < -0.8f){
+            left = false;
+        }
+        if(!left){
+            pos += 0.05f;
+        } else {
+            pos -= 0.05f;
+        }
         // Input
         processInput(window);
 
@@ -128,16 +137,15 @@ int main()
 
         // Use the shader program
         shader.use();
-        //float timeValue = glfwGetTime();
-        //float colorValue = (std::sin(timeValue) / 2.0f) + 0.5f;
-        //int vertexColorLocation = shader.get("uniformColor");
+        float timeValue = glfwGetTime();
+        float colorValue = (std::sin(timeValue) / 2.0f) + 0.5f;
+        int vertexColorLocation = shader.get("uniformColor");
         //std::cout << vertexColorLocation << "\n";
-        //std::vector<float> color = {colorValue, colorValue, colorValue, 1.0f};
-        //float mixFactor = 0.1f + (std::cos(timeValue) / 2.9f + 0.5f) * 0.85f;
-        //shader.setFloat("mixFactor", mixFactor);
-        //shader.setFloat("uniformColor", color);
-        //shader.setFloat("offset", pos);
-        //shader.setFloat("scale", pos);
+        std::vector<float> color = {colorValue, colorValue, colorValue, 1.0f};
+        float mixFactor = 0.1f + (std::cos(timeValue) / 2.9f + 0.5f) * 0.85f;
+        shader.setFloat("mixFactor", mixFactor);
+        shader.setFloat("uniformColor", color);
+        shader.setFloat("offset", pos);
         //glUniform4f(vertexColorLocation, color[0], color[1], color[2], color[3]);
         // Bind the VAO
         
