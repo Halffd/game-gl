@@ -232,12 +232,11 @@ public:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glCheckError(__FILE__, __LINE__);
     }   
-    template <typename T>
-    void setup(const std::vector<T> indices)
+    void setup(const std::vector<uint32_t> indices)
     {
         bind();
         // Accessing the underlying raw array
-        const uint32_t* arr = reinterpret_cast<const uint32_t*>(indices.data());
+        const uint32_t* arr = indices.data();
         // Get the size of the vector
         size_t size = indices.size() * sizeof(uint32_t);
         #if DEBUG == 1
