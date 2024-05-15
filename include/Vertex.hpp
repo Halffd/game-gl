@@ -37,7 +37,8 @@ public:
     /**
      * @brief Generates the buffer for the VBO.
      */
-    void genBuffer(){
+    void genBuffer()
+    {
         glGenBuffers(1, &m_id);
         glCheckError(__FILE__, __LINE__);
     };
@@ -156,6 +157,15 @@ public:
         glEnableVertexAttribArray(index);
         unbind();
     }
+    void set(GLuint index, GLint size, GLsizei stride, const void *pointer)
+    {
+        GLenum type = GL_FLOAT;
+        GLboolean normalized = GL_FALSE;
+        bind();
+        glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+        glEnableVertexAttribArray(index);
+        unbind();
+    }
 
     /**
      * @brief Specifies how OpenGL should interpret the vertex buffer data whenever a draw call is made.
@@ -194,6 +204,44 @@ private:
     GLuint m_id{};
 };
 
+class EBO
+{
+public:
+    EBO() = default;
+    ~EBO()
+    {
+        if (m_id) {
+            glDeleteBuffers(1, &m_id);
+        }
+    }
+
+    void genBuffer()
+    {
+        glGenBuffers(1, &m_id);
+        glCheckError(__FILE__, __LINE__);
+    }
+
+    void bind()
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_id);
+        glCheckError(__FILE__, __LINE__);
+    }
+
+    void unbind()
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glCheckError(__FILE__, __LINE__);
+    }
+
+    void setup(const void* indices, GLsizei size)
+    {
+        bind();
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, GL_STATIC_DRAW);
+    }
+
+private:
+    GLuint m_id{};
+};
 /*struct EBO
 {
     EBO() = default;

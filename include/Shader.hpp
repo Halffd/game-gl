@@ -28,10 +28,21 @@ public:
         fShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
         try 
         {
-            // open files
-            vShaderFile.open(vertexPath);
-            fShaderFile.open(fragmentPath);
+            // Get the current directory
+            std::filesystem::path currentDir = std::filesystem::current_path();
+            
+            // Construct the full file paths
+            std::string vertexFilePath = (currentDir / vertexPath).generic_string();
+            std::string fragmentFilePath = (currentDir / fragmentPath).generic_string();
             std::stringstream vShaderStream, fShaderStream;
+            
+            #if DEBUG == 1
+            std::cout << vertexFilePath << " / " << fragmentFilePath << " / " << currentDir << "\n";
+            #endif
+            
+            // Open files
+            vShaderFile.open(vertexFilePath);
+            fShaderFile.open(fragmentFilePath);    
             // read file's buffer contents into streams
             vShaderStream << vShaderFile.rdbuf();
             fShaderStream << fShaderFile.rdbuf();
