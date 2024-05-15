@@ -232,7 +232,11 @@ public:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glCheckError(__FILE__, __LINE__);
     }
-
+    void setup(const void* indices)
+    {
+        bind();
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    }
     void setup(const void* indices, GLsizei size)
     {
         bind();

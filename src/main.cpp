@@ -80,11 +80,10 @@ int main()
     VAO vao;
     vao.bind();
 
-    std::vector<float> vertices3 = {
-        // Positions       // Colors
-        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, // Top vertex (red)
-        0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  // Upper-left vertex (green)
-        0.0f, 0.5f, 0.0f, 0.2f, 0.3f, 0.5f    // Lower-left vertex (blue)
+    std::vector<float> triangle = {
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.0f, 0.5f, 0.0f
     };
     std::vector<float> vertices = {
         // positions          // colors           // texture coords
@@ -104,23 +103,13 @@ int main()
         1, 2, 3  // second triangle
     };
 
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-    // float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
-    //  glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
     VBO vbo;    
     vbo.genBuffer();
     vbo.bind();
     vbo.setup(vertices);
     EBO ebo;
     ebo.genBuffer();
-    ebo.setup(indices, sizeof(indices));
+    ebo.setup(indices);
 
     vao.set(0, 3, 8 * sizeof(float), (void*)0);
     // color attribute
