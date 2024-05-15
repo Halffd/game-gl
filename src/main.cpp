@@ -98,7 +98,7 @@ int main()
         0.5f, 1.0f  // top-center corner
     };
 
-    unsigned int indices[] = {  
+    std::vector<uint32_t> indices = {  
         0, 1, 3, // first triangle
         1, 2, 3  // second triangle
     };

@@ -231,11 +231,20 @@ public:
     {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glCheckError(__FILE__, __LINE__);
-    }
-    void setup(const void* indices)
+    }   
+    template <typename T>
+    void setup(const std::vector<T> indices)
     {
         bind();
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+        // Accessing the underlying raw array
+        const uint32_t* arr = reinterpret_cast<const uint32_t*>(indices.data());
+        // Get the size of the vector
+        size_t size = indices.size() * sizeof(uint32_t);
+        #if DEBUG == 1
+        std::cout << size << "\n";
+        #endif
+        
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, arr, GL_STATIC_DRAW);
     }
     void setup(const void* indices, GLsizei size)
     {
