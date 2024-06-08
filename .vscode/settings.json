@@ -56,7 +56,7 @@
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
-  "cmake.sourceDirectory": "D:/Code/c/c",
+  "cmake.sourceDirectory": "D:/Code/c/game-gl",
   "cmake.configureOnOpen": true,
   "files.associations": {
     "iostream": "cpp",
@@ -142,7 +142,10 @@
     "thread": "cpp",
     "cfenv": "cpp",
     "valarray": "cpp",
-    "variant": "cpp"
+    "variant": "cpp",
+    "*.in": "c",
+    "future": "cpp",
+    "text_encoding": "cpp"
   },
   "C_Cpp.default.compilerPath": "S:\\msys64\\mingw64\\bin\\gcc.exe",
   "CodeGPT.apiKey": "OpenAI"

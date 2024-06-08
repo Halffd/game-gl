@@ -1,3 +1,6 @@
+#ifndef VERTEX_H
+#define VERTEX_H
+
 #include <glad/glad.h>
 #include <vector>
 #include <utility>
@@ -299,3 +302,4 @@ private:
 
     GLuint m_id{};
 };*/
+#endif

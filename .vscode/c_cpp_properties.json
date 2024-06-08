@@ -3,7 +3,8 @@
         {
             "name": "windows-gcc-x64",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "S:/msys64/mingw64/**"
             ],
             "defines": [
                 "_DEBUG",
@@ -11,10 +12,10 @@
                 "_UNICODE"
             ],
             "mergeConfigurations": false,
-            "compilerPath": "S:\\msys64\\mingw64\\bin\\gcc.exe",
+            "compilerPath": "S:\\msys64\\mingw64\\bin\\g++.exe",
             "browse": {
                 "path": [
-                    "c:/Users/halff/OneDrive/Documents/Code/c"
+                    "D:/Code/c/game-gl"
                 ],
                 "limitSymbolsToIncludedHeaders": true
             },

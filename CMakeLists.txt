@@ -1,33 +1,56 @@
 cmake_minimum_required(VERSION 3.28.1)
 
-# Set the C++ compiler
-set(CMAKE_CXX_COMPILER g++)
-project(game C++)
+project(game LANGUAGES C CXX)
 
-# Add the GLAD library
+# find the required packages
+# find_package(GLM REQUIRED)
+# message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
+# find_package(GLFW3 REQUIRED)
+# message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
+# find_package(ASSIMP REQUIRED)
+# message(STATUS "Found ASSIMP in ${ASSIMP_INCLUDE_DIR}")
+# Set the C and C++ compilers explicitly
+set(CMAKE_C_COMPILER "gcc")
+set(CMAKE_CXX_COMPILER "g++")
+
+# Set the C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# Set the output directory for binaries
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+# Add the GLAD library (specifying LANGUAGE C explicitly)
 add_library(glad STATIC src/glad.c)
+set_target_properties(glad PROPERTIES LINKER_LANGUAGE C)
+
+# Collect all source files
 file(GLOB_RECURSE source_files "src/*.cpp")
 
+# Add executable
 add_executable(game ${source_files})
 
-set(LIB lib)
-set(INCLUDE include)
-include_directories(${INCLUDE})
+# Include directories
+include_directories(include)
+include_directories(include_libs)
+include_directories(S:/msys64/mingw64/include)
+# Configure file for the root directory
+set(logl_root "${CMAKE_SOURCE_DIR}")
+configure_file(configuration/root_directory.h.in configuration/root_directory.h)
+include_directories(${CMAKE_BINARY_DIR}/configuration)
 
-set_target_properties(game PROPERTIES OUTPUT_NAME "${PROJECT_SOURCE_DIR}/bin/Game")
-#link_directories(${LIB})
-
-# Add the GLFW DLL as a library
+# Add the GLFW DLL as an imported library
 add_library(glfw3dll SHARED IMPORTED)
-set_target_properties(glfw3dll PROPERTIES IMPORTED_IMPLIB "lib/glfw3.lib")
+set_target_properties(glfw3dll PROPERTIES
+    IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/libglfw3.a"
+    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
+)
 
-set_target_properties(glfw3dll PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/libs/glfw3.dll)
+# Define an array of libraries to link
+set(LIBS glad glfw3dll)
 
-# Link against GLFW
-target_link_libraries(game PRIVATE glfw3dll)
+# Link libraries
+target_link_libraries(game PRIVATE ${LIBS})
 
+# Include directories for the game target
 target_include_directories(game PRIVATE ${INCLUDE})
-
-
-#target_link_libraries(game ${LIB})
-#target_link_libraries(game SDL2)  # Add the SDL2 library name here
