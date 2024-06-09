@@ -1,5 +1,8 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -10,7 +13,17 @@
 #include <math.h>
 #include <vector>
 #include "setup.h"    
-#include "root.h"
+//#include "root.h"
+
+std::string root; // Declare the root variable as extern
+#define TEXTURE_DIR "textures"
+#define SHADER_DIR "shaders"
+
+#define APPEND_DIR(dir, filename) (std::string(root) + "/" + std::string(dir) + "/" + std::string(filename)).c_str()
+
+#define SHADER(filename) APPEND_DIR(SHADER_DIR, filename)
+#define TEXTURE(filename) APPEND_DIR(TEXTURE_DIR, filename)
+
 #include "Vertex.hpp"
 #include "Shader.hpp"
 #include "Texture.hpp"
@@ -74,6 +87,12 @@ int main()
     }
 
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+
+    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+    glm::mat4 trans = glm::mat4(1.0f);
+    trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
+    vec = trans * vec;
+    std::cout << vec.x << vec.y << vec.z << std::endl;
 
     Shader shader(SHADER("shader.vs"), SHADER("shader.fs"));
     VAO vao;
