@@ -12,17 +12,12 @@
 #include <string.h>
 #include <math.h>
 #include <vector>
+#include <iomanip>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "setup.h"    
-//#include "root.h"
-
-std::string root; // Declare the root variable as extern
-#define TEXTURE_DIR "textures"
-#define SHADER_DIR "shaders"
-
-#define APPEND_DIR(dir, filename) (std::string(root) + "/" + std::string(dir) + "/" + std::string(filename)).c_str()
-
-#define SHADER(filename) APPEND_DIR(SHADER_DIR, filename)
-#define TEXTURE(filename) APPEND_DIR(TEXTURE_DIR, filename)
+#include "root.h"
 
 #include "Vertex.hpp"
 #include "Shader.hpp"
@@ -30,6 +25,20 @@ std::string root; // Declare the root variable as extern
 #include "Util.hpp"
 #include "root_directory.h"
 
+// Custom printing function for glm::vec4
+std::ostream& operator<<(std::ostream& os, const glm::vec4& v) {
+    os << "(" << std::fixed << std::setprecision(2) << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
+    return os;
+}
+
+// Custom printing function for glm::mat4
+std::ostream& operator<<(std::ostream& os, const glm::mat4& m) {
+    os << std::fixed << std::setprecision(2) << std::endl;
+    for (int i = 0; i < 4; ++i) {
+        os << "[" << m[0][i] << ", " << m[1][i] << ", " << m[2][i] << ", " << m[3][i] << "]" << std::endl;
+    }
+    return os;
+}
 void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -55,11 +64,58 @@ void processInput(GLFWwindow *window)
     }
     spacePressed = spaceCurrentlyPressed;
 }
+int vectortest(){
+ {
+        // Initial matrix and vector
+        glm::vec4 initialVec(1.0f, 0.0f, 0.0f, 1.0f);
+        glm::mat4 initialTrans(0.5f);
+
+        std::cout << "Initial matrix and vector:" << std::endl;
+        std::cout << "vec: " << initialVec << std::endl;
+        std::cout << "trans:\n" << initialTrans << std::endl;
+
+        // Translate the matrix
+        glm::vec3 transVec(1.0f, 1.0f, 0.0f);
+        glm::mat4 translatedTrans = glm::translate(initialTrans, transVec);
+
+        std::cout << "After translation:" << std::endl;
+        std::cout << "trans:\n" << translatedTrans << std::endl;
+
+        glm::vec4 translatedVec = translatedTrans * initialVec;
+        std::cout << "vec: " << translatedVec << std::endl;
+        std::cout << "vec.x: " << translatedVec.x << ", vec.y: " << translatedVec.y << ", vec.z: " << translatedVec.z << std::endl;
+    }
+
+    {
+        // Initial matrix
+        glm::mat4 initialTrans(1.0f);
+
+        std::cout << "Initial matrix:" << std::endl;
+        std::cout << "trans:\n" << initialTrans << std::endl;
+
+        // Rotate the matrix
+        float rotateAngle = glm::radians(90.0f);
+        glm::vec3 rotateAxis(0.0, 0.0, 1.0);
+        glm::mat4 rotatedTrans = glm::rotate(initialTrans, rotateAngle, rotateAxis);
+
+        std::cout << "After rotation:" << std::endl;
+        std::cout << "trans:\n" << rotatedTrans << std::endl;
+
+        // Scale the matrix
+        glm::vec3 scaleFactors(0.5, 0.5, 0.5);
+        glm::mat4 scaledTrans = glm::scale(rotatedTrans, scaleFactors);
+
+        std::cout << "After scaling:" << std::endl;
+        std::cout << "trans:\n" << scaledTrans << std::endl;
+    }
+    return 0;
+}
 int main()
 {
-    root = std::string(logl_root); //GetParentDirectory();
-    std::cout << root << "\n";
+    fs.root = std::string(logl_root); //GetParentDirectory();
+    std::cout << fs.root << "\n" << fs.file("src/main.cpp") << "\n";
     // Initialize GLFW
+    // return vectortest();
     if (!glfwInit())
     {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -88,13 +144,7 @@ int main()
 
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
-    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
-    glm::mat4 trans = glm::mat4(1.0f);
-    trans = glm::translate(trans, glm::vec3(1.0f, 1.0f, 0.0f));
-    vec = trans * vec;
-    std::cout << vec.x << vec.y << vec.z << std::endl;
-
-    Shader shader(SHADER("shader.vs"), SHADER("shader.fs"));
+    Shader shader(fs.shader("shader.vs"), fs.shader("shader.fs"));
     VAO vao;
     vao.bind();
 
@@ -139,21 +189,28 @@ int main()
     vbo.unbind();
 
     Texture texture1, texture2;
-    bool res = texture1.Load(TEXTURE("container.jpg"));
+    bool res = texture1.Load(fs.texture("container.jpg"));
     if(!res){
         std::cout << "Error in Texture1\n";
     }
-    res = texture2.Load(TEXTURE("troll.png"));
+    res = texture2.Load(fs.texture("troll.png"));
     if(!res){
         std::cout << "Error in Texture2\n";
     }
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
     // -------------------------------------------------------------------------------------------
+    glm::mat4 trans = glm::mat4(1.0f);
+    trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+    trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));  
+    std::cout << "Trans:\n" << trans << std::endl;
     shader.use(); // don't forget to activate/use the shader before setting uniforms!
     // either set it manually like so:
     glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);
     // or set it via the texture class
     shader.setInt("texture2", 1);
+    unsigned int transformLoc = glGetUniformLocation(shader.ID, "transform");
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
 
     // Main loop
     while (!glfwWindowShouldClose(window))
