@@ -155,10 +155,10 @@ int main()
     };
     std::vector<float> vertices = {
         // positions          // colors           // texture coords
-        0.8f,  0.8f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-        0.8f, -0.8f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+        0.8f,  0.8f, 0.0f,   1.0f, 0.0f, 0.0f,   2.0f, 2.0f,   // top right
+        0.8f, -0.8f, 0.0f,   0.0f, 1.0f, 0.0f,   2.0f, 0.0f,   // bottom right
         -0.8f, -0.8f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-        -0.8f,  0.8f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+        -0.8f,  0.8f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 2.0f    // top left 
     };
     float texCoords[] = {
         0.0f, 0.0f, // lower-left corner
@@ -189,7 +189,7 @@ int main()
     vbo.unbind();
 
     Texture texture1, texture2;
-    bool res = texture1.Load(fs.texture("container.jpg"));
+    bool res = texture1.Load(fs.texture("container.jpg"), GL_TEXTURE_2D, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
     if(!res){
         std::cout << "Error in Texture1\n";
     }
@@ -200,8 +200,8 @@ int main()
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
     // -------------------------------------------------------------------------------------------
     glm::mat4 trans = glm::mat4(1.0f);
-    trans = glm::rotate(trans, glm::radians(45.0f), glm::vec3(1.0, 1.0, 0.0));
-    trans = glm::scale(trans, glm::vec3(0.5, 0.9, 1.0));  
+    //trans = glm::rotate(trans, glm::radians(45.0f), glm::vec3(1.0, 1.0, 0.0));
+    //trans = glm::scale(trans, glm::vec3(2, 2, 2));  
     std::cout << "Trans:\n" << trans << std::endl;
     shader.use(); // don't forget to activate/use the shader before setting uniforms!
     // either set it manually like so:

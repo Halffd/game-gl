@@ -6,63 +6,167 @@
 #include <stb/stb_image.h>
 #include <glad/glad.h>
 
-class Texture {
+class Texture
+{
 public:
     Texture() : ID(0), height(0), width(0), exists(false), activeTextureUnit(GL_TEXTURE0) {}
 
-    bool Load(const char* filePath) {
+    bool Load(const char *filePath,
+              GLenum textureTarget = GL_TEXTURE_2D,
+              GLint sWrap = GL_REPEAT,
+              GLint tWrap = GL_REPEAT,
+              GLint rWrap = GL_REPEAT,
+              GLint minFilter = GL_LINEAR,
+              GLint magFilter = GL_LINEAR)
+    {
         Free();
-        int width, height, nrChannels;
+        int width, height, depth, nrChannels;
         stbi_set_flip_vertically_on_load(true);
-        unsigned char* data = stbi_load(filePath, &width, &height, &nrChannels, 0);
-        if (data) {
+
+        unsigned char *data = nullptr;
+        if (textureTarget == GL_TEXTURE_1D)
+        {
+            data = stbi_load(filePath, &width, &height, &nrChannels, 0);
+            height = 1;
+            depth = 1;
+        }
+        else if (textureTarget == GL_TEXTURE_2D)
+        {
+            data = stbi_load(filePath, &width, &height, &nrChannels, 0);
+            depth = 1;
+        }
+        else if (textureTarget == GL_TEXTURE_3D)
+        {
+            int dataSize;
+            data = stbi_load_from_memory((unsigned char *)filePath, strlen(filePath), &width, &height, &depth, 4);
+        }
+        else
+        {
+            std::cout << "Unsupported texture target: " << textureTarget << std::endl;
+            return false;
+        }
+
+        if (data)
+        {
             glGenTextures(1, &ID);
-            glBindTexture(GL_TEXTURE_2D, ID);
-            //Activate(GL_TEXTURE0);
+            glBindTexture(textureTarget, ID);
 
             // Set the texture wrapping parameters
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            switch (textureTarget)
+            {
+            case GL_TEXTURE_1D:
+                glTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, sWrap);
+                break;
+            case GL_TEXTURE_2D:
+                glTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, sWrap);
+                glTexParameteri(textureTarget, GL_TEXTURE_WRAP_T, tWrap);
+                break;
+            case GL_TEXTURE_3D:
+                glTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, sWrap);
+                glTexParameteri(textureTarget, GL_TEXTURE_WRAP_T, tWrap);
+                glTexParameteri(textureTarget, GL_TEXTURE_WRAP_R, rWrap);
+                break;
+            default:
+                break;
+            }
 
             // Set the texture filtering parameters
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            std::cout << "Channels: " << nrChannels  << "\n" << width << "x" << height << "\n";
-            if (nrChannels == 3) {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            } else if (nrChannels == 4) {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-            } else {
+            switch (minFilter)
+            {
+            case GL_NEAREST:
+            case GL_LINEAR:
+            case GL_NEAREST_MIPMAP_NEAREST:
+            case GL_LINEAR_MIPMAP_NEAREST:
+            case GL_NEAREST_MIPMAP_LINEAR:
+            case GL_LINEAR_MIPMAP_LINEAR:
+                glTexParameteri(textureTarget, GL_TEXTURE_MIN_FILTER, minFilter);
+                break;
+            default:
+                std::cout << "Unsupported min filter: " << minFilter << std::endl;
+                break;
+            }
+
+            switch (magFilter)
+            {
+            case GL_NEAREST:
+            case GL_LINEAR:
+                glTexParameteri(textureTarget, GL_TEXTURE_MAG_FILTER, magFilter);
+                break;
+            default:
+                std::cout << "Unsupported mag filter: " << magFilter << std::endl;
+                break;
+            }
+
+            // Load the texture data
+            GLenum format = GL_RGBA;
+            switch (nrChannels)
+            {
+            case 1:
+                format = GL_RED;
+                break;
+            case 3:
+                format = GL_RGB;
+                break;
+            case 4:
+                format = GL_RGBA;
+                break;
+            default:
                 std::cout << "Unsupported number of channels: " << nrChannels << std::endl;
                 stbi_image_free(data);
                 return false;
             }
 
-            glGenerateMipmap(GL_TEXTURE_2D);
+            if (textureTarget == GL_TEXTURE_1D)
+            {
+                glTexImage1D(textureTarget, 0, format, width, 0, format, GL_UNSIGNED_BYTE, data);
+            }
+            else if (textureTarget == GL_TEXTURE_2D)
+            {
+                glTexImage2D(textureTarget, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+            }
+            else if (textureTarget == GL_TEXTURE_3D)
+            {
+                glTexImage3D(textureTarget, 0, format, width, height, depth, 0, format, GL_UNSIGNED_BYTE, data);
+            }
+            else
+            {
+                std::cout << "Unsupported texture target: " << textureTarget << std::endl;
+                stbi_image_free(data);
+                return false;
+            }
+
+            glGenerateMipmap(textureTarget);
             stbi_image_free(data);
 
             this->width = width;
             this->height = height;
+            this->depth = depth;
+            this->nrChannels = nrChannels;
             this->exists = true;
             return true;
-        } else {
+        }
+        else
+        {
             std::cout << "Failed to load texture: " << filePath << std::endl;
             return false;
         }
     }
-
-    void Activate(GLenum textureUnit) {
-        if (!exists) return;
+    void Activate(GLenum textureUnit)
+    {
+        if (!exists)
+            return;
         activeTextureUnit = textureUnit;
         glActiveTexture(activeTextureUnit);
         glBindTexture(GL_TEXTURE_2D, ID);
     }
-    void Free() {
+    void Free()
+    {
         if (exists)
             glDeleteTextures(1, &ID);
         exists = false;
     }
-    ~Texture(){
+    ~Texture()
+    {
         Free();
     }
 
@@ -70,6 +174,8 @@ private:
     unsigned ID;
     unsigned height;
     unsigned width;
+    unsigned depth;
+    unsigned nrChannels;
     bool exists;
     GLenum activeTextureUnit;
 };
