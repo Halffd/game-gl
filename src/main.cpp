@@ -16,7 +16,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "setup.h"    
+#include "setup.h"
 #include "root.h"
 
 #include "Vertex.hpp"
@@ -26,15 +26,18 @@
 #include "root_directory.h"
 
 // Custom printing function for glm::vec4
-std::ostream& operator<<(std::ostream& os, const glm::vec4& v) {
+std::ostream &operator<<(std::ostream &os, const glm::vec4 &v)
+{
     os << "(" << std::fixed << std::setprecision(2) << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
     return os;
 }
 
 // Custom printing function for glm::mat4
-std::ostream& operator<<(std::ostream& os, const glm::mat4& m) {
+std::ostream &operator<<(std::ostream &os, const glm::mat4 &m)
+{
     os << std::fixed << std::setprecision(2) << std::endl;
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 4; ++i)
+    {
         os << "[" << m[0][i] << ", " << m[1][i] << ", " << m[2][i] << ", " << m[3][i] << "]" << std::endl;
     }
     return os;
@@ -64,22 +67,25 @@ void processInput(GLFWwindow *window)
     }
     spacePressed = spaceCurrentlyPressed;
 }
-int vectortest(){
- {
+int vectortest()
+{
+    {
         // Initial matrix and vector
         glm::vec4 initialVec(1.0f, 0.0f, 0.0f, 1.0f);
         glm::mat4 initialTrans(0.5f);
 
         std::cout << "Initial matrix and vector:" << std::endl;
         std::cout << "vec: " << initialVec << std::endl;
-        std::cout << "trans:\n" << initialTrans << std::endl;
+        std::cout << "trans:\n"
+                  << initialTrans << std::endl;
 
         // Translate the matrix
         glm::vec3 transVec(1.0f, 1.0f, 0.0f);
         glm::mat4 translatedTrans = glm::translate(initialTrans, transVec);
 
         std::cout << "After translation:" << std::endl;
-        std::cout << "trans:\n" << translatedTrans << std::endl;
+        std::cout << "trans:\n"
+                  << translatedTrans << std::endl;
 
         glm::vec4 translatedVec = translatedTrans * initialVec;
         std::cout << "vec: " << translatedVec << std::endl;
@@ -91,7 +97,8 @@ int vectortest(){
         glm::mat4 initialTrans(1.0f);
 
         std::cout << "Initial matrix:" << std::endl;
-        std::cout << "trans:\n" << initialTrans << std::endl;
+        std::cout << "trans:\n"
+                  << initialTrans << std::endl;
 
         // Rotate the matrix
         float rotateAngle = glm::radians(90.0f);
@@ -99,21 +106,24 @@ int vectortest(){
         glm::mat4 rotatedTrans = glm::rotate(initialTrans, rotateAngle, rotateAxis);
 
         std::cout << "After rotation:" << std::endl;
-        std::cout << "trans:\n" << rotatedTrans << std::endl;
+        std::cout << "trans:\n"
+                  << rotatedTrans << std::endl;
 
         // Scale the matrix
         glm::vec3 scaleFactors(0.5, 0.5, 0.5);
         glm::mat4 scaledTrans = glm::scale(rotatedTrans, scaleFactors);
 
         std::cout << "After scaling:" << std::endl;
-        std::cout << "trans:\n" << scaledTrans << std::endl;
+        std::cout << "trans:\n"
+                  << scaledTrans << std::endl;
     }
     return 0;
 }
 int main()
 {
-    fs.root = std::string(logl_root); //GetParentDirectory();
-    std::cout << fs.root << "\n" << fs.file("src/main.cpp") << "\n";
+    fs.root = std::string(logl_root); // GetParentDirectory();
+    std::cout << fs.root << "\n"
+              << fs.file("src/main.cpp") << "\n";
     // Initialize GLFW
     // return vectortest();
     if (!glfwInit())
@@ -148,26 +158,25 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     Shader shader(fs.shader("shader.vs"), fs.shader("shader.fs"));
-    
+
     // Load textures
     Texture backgroundTexture;
-    backgroundTexture.Load(fs.texture("bg/Train_Night.png"));
+    backgroundTexture.Load(fs.texture("bg/Bathroom.png"));
 
     Texture characterTexture;
-    characterTexture.Load(fs.texture("fg/Sumi/Summer Uniform/Sumi_SummerUni_Frown.png"));
+    characterTexture.Load(fs.texture("fg/sprite2.png"));
 
     // Define vertices for two quads (background and character)
     float vertices[] = {
         // positions          // texture coords
-        -0.5f,  0.5f, 0.0f,   0.0f, 1.0f,  // top left
-        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f,  // bottom left
-         0.5f, -0.5f, 0.0f,   1.0f, 0.0f,  // bottom right
-         0.5f,  0.5f, 0.0f,   1.0f, 1.0f   // top right
+        -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,  // top left
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // bottom right
+        0.5f, 0.5f, 0.0f, 1.0f, 1.0f    // top right
     };
     unsigned int indices[] = {
         0, 1, 2,
-        2, 3, 0
-    };
+        2, 3, 0};
 
     // Set up VAO, VBO, and EBO
     VAO vao;
@@ -186,8 +195,8 @@ int main()
     ebo.setup(indices, sizeof(indices));
 
     // Set vertex attribute pointers
-    vao.linkAttrib(vbo, 0, 3, GL_FLOAT, 5 * sizeof(float), (void*)0);
-    vao.linkAttrib(vbo, 1, 2, GL_FLOAT, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    vao.linkAttrib(vbo, 0, 3, GL_FLOAT, 5 * sizeof(float), (void *)0);
+    vao.linkAttrib(vbo, 1, 2, GL_FLOAT, 5 * sizeof(float), (void *)(3 * sizeof(float)));
 
     vao.unbind();
     vbo.unbind();
@@ -196,7 +205,7 @@ int main()
     shader.use();
     shader.setInt("ourTexture", 0);
 
-     // Set up transformations
+    // Set up transformations
     glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(WIDTH), 0.0f, static_cast<float>(HEIGHT), -1.0f, 1.0f);
     glm::mat4 view = glm::mat4(1.0f); // No camera movement
 
@@ -214,7 +223,7 @@ int main()
         // Background transformation
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(static_cast<float>(WIDTH) / 2, static_cast<float>(HEIGHT) / 2, 0.0f)); // Center of the screen
-        model = glm::scale(model, glm::vec3(static_cast<float>(WIDTH), static_cast<float>(HEIGHT), 1.0f)); // Scale to cover the entire screen
+        model = glm::scale(model, glm::vec3(static_cast<float>(WIDTH), static_cast<float>(HEIGHT), 1.0f));             // Scale to cover the entire screen
         shader.setMat4("model", model);
         shader.setMat4("view", view);
         shader.setMat4("projection", projection);
@@ -225,9 +234,21 @@ int main()
 
         // Character transformation
         model = glm::mat4(1.0f);
-        float characterScale = 0.64f; // Scale factor for the character
-        float characterHeight = characterTexture.height * characterScale;
-        model = glm::translate(model, glm::vec3(static_cast<float>(WIDTH) / 2, characterHeight / 2, 0.0f)); // Bottom of the screen
+        // Desired coverage of the screen height (adjust as needed)
+        float desiredCoverage = 0.75f; // Cover 75% of the screen height
+
+        // Calculate the desired character height based on screen height
+        float screenHeight = static_cast<float>(HEIGHT);
+        float desiredCharacterHeight = screenHeight * desiredCoverage;
+
+        // Assuming characterTexture.height is known (actual height of character's texture)
+        float characterHeight = characterTexture.height;
+
+        // Calculate the initial scale factor for the character
+        float characterScale = desiredCharacterHeight / characterHeight;
+
+        characterHeight *= characterScale;
+        model = glm::translate(model, glm::vec3(static_cast<float>(WIDTH) / 2, characterHeight / 2, 0.0f));   // Bottom of the screen
         model = glm::scale(model, glm::vec3(characterTexture.width * characterScale, characterHeight, 1.0f)); // Scale to desired size
         shader.setMat4("model", model);
         shader.setMat4("view", view);
