@@ -141,114 +141,100 @@ int main()
         glfwTerminate();
         return -1;
     }
+    // Initialization code
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     Shader shader(fs.shader("shader.vs"), fs.shader("shader.fs"));
+    
+    // Load textures
+    Texture backgroundTexture;
+    backgroundTexture.Load(fs.texture("bg/Train_Night.png"));
+
+    Texture characterTexture;
+    characterTexture.Load(fs.texture("fg/Sumi/Summer Uniform/Sumi_SummerUni_Frown.png"));
+
+    // Define vertices for two quads (background and character)
+    float vertices[] = {
+        // positions          // texture coords
+        -0.5f,  0.5f, 0.0f,   0.0f, 1.0f,  // top left
+        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f,  // bottom left
+         0.5f, -0.5f, 0.0f,   1.0f, 0.0f,  // bottom right
+         0.5f,  0.5f, 0.0f,   1.0f, 1.0f   // top right
+    };
+    unsigned int indices[] = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    // Set up VAO, VBO, and EBO
     VAO vao;
-    vao.bind();
-
-    std::vector<float> triangle = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f, 0.5f, 0.0f
-    };
-    std::vector<float> vertices = {
-        // positions          // colors           // texture coords
-        0.8f,  0.8f, 0.0f,   1.0f, 0.0f, 0.0f,   2.0f, 2.0f,   // top right
-        0.8f, -0.8f, 0.0f,   0.0f, 1.0f, 0.0f,   2.0f, 0.0f,   // bottom right
-        -0.8f, -0.8f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-        -0.8f,  0.8f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 2.0f    // top left 
-    };
-    float texCoords[] = {
-        0.0f, 0.0f, // lower-left corner
-        1.0f, 0.0f, // lower-right corner
-        0.5f, 1.0f  // top-center corner
-    };
-
-    std::vector<uint32_t> indices = {  
-        0, 1, 3, // first triangle
-        1, 2, 3  // second triangle
-    };
-
-    VBO vbo;    
-    vbo.genBuffer();
-    vbo.bind();
-    vbo.setup(vertices);
+    VBO vbo;
     EBO ebo;
-    ebo.genBuffer();
-    ebo.setup(indices);
 
-    vao.set(0, 3, 8 * sizeof(float), (void*)0);
-    // color attribute
-    vao.set(1, 3, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    // texture coord attribute
-    vao.set(2, 2, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-   
+    vao.genVertexArray();
+    vbo.genBuffer();
+    ebo.genBuffer();
+
+    vao.bind();
+    vbo.bind();
+    vbo.setup(vertices, sizeof(vertices));
+
+    ebo.bind();
+    ebo.setup(indices, sizeof(indices));
+
+    // Set vertex attribute pointers
+    vao.linkAttrib(vbo, 0, 3, GL_FLOAT, 5 * sizeof(float), (void*)0);
+    vao.linkAttrib(vbo, 1, 2, GL_FLOAT, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
     vao.unbind();
     vbo.unbind();
+    ebo.unbind();
 
-    Texture texture1, texture2;
-    bool res = texture1.Load(fs.texture("container.jpg"), GL_TEXTURE_2D, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-    if(!res){
-        std::cout << "Error in Texture1\n";
-    }
-    res = texture2.Load(fs.texture("troll.png"));
-    if(!res){
-        std::cout << "Error in Texture2\n";
-    }
-    // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
-    // -------------------------------------------------------------------------------------------
-    glm::mat4 trans = glm::mat4(1.0f);
-    //trans = glm::rotate(trans, glm::radians(45.0f), glm::vec3(1.0, 1.0, 0.0));
-    //trans = glm::scale(trans, glm::vec3(2, 2, 2));  
-    std::cout << "Trans:\n" << trans << std::endl;
-    shader.use(); // don't forget to activate/use the shader before setting uniforms!
-    // either set it manually like so:
-    glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);
-    // or set it via the texture class
-    shader.setInt("texture2", 1);
-    unsigned int transformLoc = glGetUniformLocation(shader.ID, "transform");
-    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+    shader.use();
+    shader.setInt("ourTexture", 0);
 
+     // Set up transformations
+    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(WIDTH), 0.0f, static_cast<float>(HEIGHT), -1.0f, 1.0f);
+    glm::mat4 view = glm::mat4(1.0f); // No camera movement
 
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
         // Input
         processInput(window);
-
-        // Process events
+        glClear(GL_COLOR_BUFFER_BIT);
         glfwPollEvents();
 
-        // Clear the screen
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // bind textures on corresponding texture units
-        texture1.Activate(GL_TEXTURE0);
-        texture2.Activate(GL_TEXTURE1);
-
         shader.use();
+        shader.setInt("ourTexture", 0);
 
-        // float timeValue = glfwGetTime();
-        // float colorValue = (std::sin(timeValue) / 2.0f) + 0.5f;
-        // int vertexColorLocation = shader.get("uniformColor");
-        // std::cout << vertexColorLocation << "\n";
-        // std::vector<float> color = {colorValue, colorValue, colorValue, 1.0f};
-        // float mixFactor = 0.1f + (std::cos(timeValue) / 2.9f + 0.5f) * 0.85f;
-        // shader.setFloat("mixFactor", mixFactor);
-        // shader.setFloat("uniformColor", color);
-        // shader.setFloat("offset", pos);
-        // shader.setFloat("scale", pos);
-        // glUniform4f(vertexColorLocation, color[0], color[1], color[2], color[3]);
-        //  Bind the VAO
+        // Background transformation
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(static_cast<float>(WIDTH) / 2, static_cast<float>(HEIGHT) / 2, 0.0f)); // Center of the screen
+        model = glm::scale(model, glm::vec3(static_cast<float>(WIDTH), static_cast<float>(HEIGHT), 1.0f)); // Scale to cover the entire screen
+        shader.setMat4("model", model);
+        shader.setMat4("view", view);
+        shader.setMat4("projection", projection);
 
+        backgroundTexture.Activate(GL_TEXTURE0);
         vao.bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-//        glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 8);
-        vao.unbind();
+        // Character transformation
+        model = glm::mat4(1.0f);
+        float characterScale = 0.64f; // Scale factor for the character
+        float characterHeight = characterTexture.height * characterScale;
+        model = glm::translate(model, glm::vec3(static_cast<float>(WIDTH) / 2, characterHeight / 2, 0.0f)); // Bottom of the screen
+        model = glm::scale(model, glm::vec3(characterTexture.width * characterScale, characterHeight, 1.0f)); // Scale to desired size
+        shader.setMat4("model", model);
+        shader.setMat4("view", view);
+        shader.setMat4("projection", projection);
+
+        characterTexture.Activate(GL_TEXTURE0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // Unbind the VAO
         glBindVertexArray(0);
@@ -256,6 +242,7 @@ int main()
         // Swap buffers
         glfwSwapBuffers(window);
     }
+
     glfwTerminate();
 
     return 0;

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 class Shader
 {
@@ -116,6 +117,35 @@ public:
     {
         glUniform1fv(glGetUniformLocation(ID, name.c_str()), static_cast<GLsizei>(values.size()), values.data());
     }
+     void setVec2(const std::string &name, const glm::vec2 &value) const
+    {
+        glUniform2fv(getUniformLocation(name), 1, glm::value_ptr(value));
+    }
+
+    void setVec3(const std::string &name, const glm::vec3 &value) const
+    {
+        glUniform3fv(getUniformLocation(name), 1, glm::value_ptr(value));
+    }
+
+    void setVec4(const std::string &name, const glm::vec4 &value) const
+    {
+        glUniform4fv(getUniformLocation(name), 1, glm::value_ptr(value));
+    }
+
+    void setMat2(const std::string &name, const glm::mat2 &mat) const
+    {
+        glUniformMatrix2fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat));
+    }
+
+    void setMat3(const std::string &name, const glm::mat3 &mat) const
+    {
+        glUniformMatrix3fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat));
+    }
+
+    void setMat4(const std::string &name, const glm::mat4 &mat) const
+    {
+        glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat));
+    }
 
 private:
     // utility function for checking shader compilation/linking errors.
@@ -143,6 +173,17 @@ private:
             }
         }
     }
+     GLint getUniformLocation(const std::string &name) const
+    {
+        if (uniformLocationCache.find(name) != uniformLocationCache.end())
+            return uniformLocationCache[name];
+
+        GLint location = glGetUniformLocation(ID, name.c_str());
+        uniformLocationCache[name] = location;
+        return location;
+    }
+
+    mutable std::unordered_map<std::string, GLint> uniformLocationCache;
 };
 char *readFile(const std::string &filePath)
 {

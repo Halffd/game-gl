@@ -9,6 +9,8 @@
 class Texture
 {
 public:
+    unsigned height;
+    unsigned width;
     Texture() : ID(0), height(0), width(0), exists(false), activeTextureUnit(GL_TEXTURE0) {}
 
     bool Load(const char *filePath,
@@ -115,7 +117,7 @@ public:
                 stbi_image_free(data);
                 return false;
             }
-
+            std::cout << width << "x"<< height << "x" << depth << "  " << nrChannels << ' ' << format << std::endl;
             if (textureTarget == GL_TEXTURE_1D)
             {
                 glTexImage1D(textureTarget, 0, format, width, 0, format, GL_UNSIGNED_BYTE, data);
@@ -172,8 +174,6 @@ public:
 
 private:
     unsigned ID;
-    unsigned height;
-    unsigned width;
     unsigned depth;
     unsigned nrChannels;
     bool exists;
