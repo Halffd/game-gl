@@ -209,50 +209,52 @@ int main()
     shader.use();
     shader.setInt("ourTexture", 0);
 
-    // Set up transformations
-    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(WIDTH), 0.0f, static_cast<float>(HEIGHT), -1.0f, 1.0f);
-    glm::mat4 view = glm::mat4(1.0f); // No camera movement
 
-    // Main loop
+    // render loop
+    // -----------
     while (!glfwWindowShouldClose(window))
     {
-        // Input
+        // input
+        // -----
         processInput(window);
+
+        // render
+        // ------
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        glfwPollEvents();
 
-        shader.use();
-        shader.setInt("ourTexture", 0);
-        shader.setMat4("view", view);
-        shader.setMat4("projection", projection);
+        // bind textures on corresponding texture units
+        containerTexture.Activate(GL_TEXTURE0);
 
-        // Background transformation
-        glm::mat4 backgroundTransform = transform(glm::vec3(static_cast<float>(WIDTH) / 2, static_cast<float>(HEIGHT) / 2, 0.0f), glm::vec3(static_cast<float>(WIDTH), static_cast<float>(HEIGHT), 1.0f), glm::vec3(0.0f));
-        draw(shader, backgroundTexture, vao, backgroundTransform);
 
-        // Character transformation
-        float desiredCoverage = 0.75f; // Cover 75% of the screen height
-        float screenHeight = static_cast<float>(HEIGHT);
-        float desiredCharacterHeight = screenHeight * desiredCoverage;
-        float characterHeight = characterTexture.height;
-        float characterScale = desiredCharacterHeight / characterHeight;
-        glm::mat4 characterTransform = transform(glm::vec3(static_cast<float>(WIDTH) / 2, characterHeight * characterScale / 2, 0.0f), glm::vec3(characterTexture.width * characterScale, characterHeight * characterScale, 1.0f), glm::vec3(0.0f));
-        draw(shader, characterTexture, vao, characterTransform);
+        glm::mat4 transform = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        // first container
+        // ---------------
+        transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
+        transform = glm::rotate(transform, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+        // get their uniform location and set matrix (using glm::value_ptr)
+        unsigned int transformLoc = glGetUniformLocation(shader.ID, "model");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
 
-        // Second container transformation
-        glm::mat4 containerTransform1 = transform(glm::vec3(500.0f, 250.0f, 0.0f), glm::vec3(static_cast<float>(WIDTH) / 3, static_cast<float>(HEIGHT) / 3, 1.0f), glm::vec3(0.0f, 0.0f, glm::degrees((float)glfwGetTime())));
-        draw(shader, containerTexture, vao, containerTransform1);
+        // with the uniform matrix set, draw the first container
+        vao.bind();
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        // Third container transformation with scaling effect
-        float scaleAmount = static_cast<float>(sin(glfwGetTime())) * 2.0f + 1.0f;
-        glm::mat4 containerTransform2 = transform(glm::vec3(static_cast<float>(WIDTH) / 25.0f, static_cast<float>(HEIGHT) / 1.2f, 0.0f), glm::vec3(scaleAmount * 100.0f, scaleAmount * 100.0f, 1.0f), glm::vec3(0.0f));
-        draw(shader, containerTexture, vao, containerTransform2);
+        // second transformation
+        // ---------------------
+        transform = glm::mat4(1.0f); // reset it to identity matrix
+        transform = glm::translate(transform, glm::vec3(-0.5f, 0.5f, 0.0f));
+        float scaleAmount = static_cast<float>(sin(glfwGetTime()));
+        transform = glm::scale(transform, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, &transform[0][0]); // this time take the matrix value array's first element as its memory pointer value
 
-        // Unbind the VAO
-        glBindVertexArray(0);
+        // now with the uniform matrix being replaced with new transformations, draw it again.
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        // Swap buffers
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
     // Terminate GLFW
