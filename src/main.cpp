@@ -243,12 +243,10 @@ int main()
         glm::mat4 containerTransform1 = transform(glm::vec3(500.0f, 250.0f, 0.0f), glm::vec3(static_cast<float>(WIDTH) / 3, static_cast<float>(HEIGHT) / 3, 1.0f), glm::vec3(0.0f, 0.0f, glm::degrees((float)glfwGetTime())));
         draw(shader, containerTexture, vao, containerTransform1);
 
-        unsigned int loc = shader.get("model");
-        glm::mat4 cont = glm::mat4(1.0f); // reset it to identity matrix
-        cont = glm::translate(cont, glm::vec3(-0.5f, 0.5f, 0.0f));
-        float scaleAmount = static_cast<float>(sin(glfwGetTime())) * 600.0f;
-        cont = glm::scale(cont, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
-        glUniformMatrix4fv(loc, 1, GL_FALSE, &cont[0][0]); // this time take the matrix value array's first element as its memory pointer value
+        // Third container transformation with scaling effect
+        float scaleAmount = static_cast<float>(sin(glfwGetTime())) * 2.0f + 1.0f;
+        glm::mat4 containerTransform2 = transform(glm::vec3(static_cast<float>(WIDTH) / 25.0f, static_cast<float>(HEIGHT) / 1.2f, 0.0f), glm::vec3(scaleAmount * 100.0f, scaleAmount * 100.0f, 1.0f), glm::vec3(0.0f));
+        draw(shader, containerTexture, vao, containerTransform2);
 
         // Unbind the VAO
         glBindVertexArray(0);
