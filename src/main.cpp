@@ -166,6 +166,9 @@ int main()
     Texture characterTexture;
     characterTexture.Load(fs.texture("fg/sprite2.png"));
 
+    Texture containerTexture;
+    containerTexture.Load(fs.texture("container.jpg"));
+
     // Define vertices for two quads (background and character)
     float vertices[] = {
         // positions          // texture coords
@@ -255,6 +258,18 @@ int main()
         shader.setMat4("projection", projection);
 
         characterTexture.Activate(GL_TEXTURE0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(500.0f, 250.9, 0.0f));
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 2.0f));
+        model = glm::scale(model, glm::vec3(static_cast<float>(WIDTH) / 3, static_cast<float>(HEIGHT) / 3, 1.0f));             // Scale to cover the entire screen
+        shader.setMat4("model", model);
+        shader.setMat4("view", view);
+        shader.setMat4("projection", projection);
+
+        containerTexture.Activate(GL_TEXTURE0);
+        vao.bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // Unbind the VAO
