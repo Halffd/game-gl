@@ -7,6 +7,9 @@
 #include "Texture.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp> // Ensure this is included
 // Function to draw an object with a given transformation
 void draw(const Shader& shader, Texture& texture, const VAO& vao, const glm::mat4& transform)
 {
@@ -17,7 +20,7 @@ void draw(const Shader& shader, Texture& texture, const VAO& vao, const glm::mat
 }
 
 // Function to set up the transformation for an object
-glm::mat4 setupTransformation(float translateX, float translateY, float scaleX, float scaleY, float rotationAngle = 0.0f, glm::vec3 rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f))
+glm::mat4 transform(float translateX, float translateY, float scaleX, float scaleY, float rotationAngle = 0.0f, glm::vec3 rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f))
 {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(translateX, translateY, 0.0f));
@@ -41,4 +44,13 @@ glm::mat4 transform(const glm::vec3& position, const glm::vec3& scale, const glm
     model = glm::scale(model, scale);
     return model;
 }
+glm::mat4 transform(const glm::vec3& position, const glm::vec3& scale, const glm::quat& rotation)
+{
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, position);
+    model *= glm::mat4_cast(rotation); // Apply quaternion rotation
+    model = glm::scale(model, scale);
+    return model;
+}
+
 #endif

@@ -236,7 +236,12 @@ int main()
         float desiredCharacterHeight = screenHeight * desiredCoverage;
         float characterHeight = characterTexture.height;
         float characterScale = desiredCharacterHeight / characterHeight;
-        glm::mat4 characterTransform = transform(glm::vec3(static_cast<float>(WIDTH) / 2, characterHeight * characterScale / 2, 0.0f), glm::vec3(characterTexture.width * characterScale, characterHeight * characterScale, 1.0f), glm::vec3(0.0f));
+  glm::quat rotation = glm::quat(glm::vec3(0.0f, 0.0f, glm::radians(static_cast<float>(sin(glfwGetTime())) * 90.0f)));
+        glm::mat4 characterTransform = transform(
+            glm::vec3(static_cast<float>(WIDTH) / 2, characterHeight * characterScale / 2, 0.0f),
+            glm::vec3(characterTexture.width * characterScale, characterHeight * characterScale, 1.0f),
+            rotation
+        );
         draw(shader, characterTexture, vao, characterTransform);
 
         // Second container transformation
