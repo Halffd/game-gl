@@ -22,6 +22,7 @@
 #include "Vertex.hpp"
 #include "Shader.hpp"
 #include "Texture.hpp"
+#include "Transform.hpp"
 #include "Util.hpp"
 #include "root_directory.h"
 
@@ -222,55 +223,32 @@ int main()
 
         shader.use();
         shader.setInt("ourTexture", 0);
+        shader.setMat4("view", view);
+        shader.setMat4("projection", projection);
 
         // Background transformation
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(static_cast<float>(WIDTH) / 2, static_cast<float>(HEIGHT) / 2, 0.0f)); // Center of the screen
-        model = glm::scale(model, glm::vec3(static_cast<float>(WIDTH), static_cast<float>(HEIGHT), 1.0f));             // Scale to cover the entire screen
-        shader.setMat4("model", model);
-        shader.setMat4("view", view);
-        shader.setMat4("projection", projection);
-
-        backgroundTexture.Activate(GL_TEXTURE0);
-        vao.bind();
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glm::mat4 backgroundTransform = transform(glm::vec3(static_cast<float>(WIDTH) / 2, static_cast<float>(HEIGHT) / 2, 0.0f), glm::vec3(static_cast<float>(WIDTH), static_cast<float>(HEIGHT), 1.0f), glm::vec3(0.0f));
+        draw(shader, backgroundTexture, vao, backgroundTransform);
 
         // Character transformation
-        model = glm::mat4(1.0f);
-        // Desired coverage of the screen height (adjust as needed)
         float desiredCoverage = 0.75f; // Cover 75% of the screen height
-
-        // Calculate the desired character height based on screen height
         float screenHeight = static_cast<float>(HEIGHT);
         float desiredCharacterHeight = screenHeight * desiredCoverage;
-
-        // Assuming characterTexture.height is known (actual height of character's texture)
         float characterHeight = characterTexture.height;
-
-        // Calculate the initial scale factor for the character
         float characterScale = desiredCharacterHeight / characterHeight;
+        glm::mat4 characterTransform = transform(glm::vec3(static_cast<float>(WIDTH) / 2, characterHeight * characterScale / 2, 0.0f), glm::vec3(characterTexture.width * characterScale, characterHeight * characterScale, 1.0f), glm::vec3(0.0f));
+        draw(shader, characterTexture, vao, characterTransform);
 
-        characterHeight *= characterScale;
-        model = glm::translate(model, glm::vec3(static_cast<float>(WIDTH) / 2, characterHeight / 2, 0.0f));   // Bottom of the screen
-        model = glm::scale(model, glm::vec3(characterTexture.width * characterScale, characterHeight, 1.0f)); // Scale to desired size
-        shader.setMat4("model", model);
-        shader.setMat4("view", view);
-        shader.setMat4("projection", projection);
+        // Second container transformation
+        glm::mat4 containerTransform1 = transform(glm::vec3(500.0f, 250.0f, 0.0f), glm::vec3(static_cast<float>(WIDTH) / 3, static_cast<float>(HEIGHT) / 3, 1.0f), glm::vec3(0.0f, 0.0f, glm::degrees((float)glfwGetTime())));
+        draw(shader, containerTexture, vao, containerTransform1);
 
-        characterTexture.Activate(GL_TEXTURE0);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(500.0f, 250.9, 0.0f));
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 2.0f));
-        model = glm::scale(model, glm::vec3(static_cast<float>(WIDTH) / 3, static_cast<float>(HEIGHT) / 3, 1.0f));             // Scale to cover the entire screen
-        shader.setMat4("model", model);
-        shader.setMat4("view", view);
-        shader.setMat4("projection", projection);
-
-        containerTexture.Activate(GL_TEXTURE0);
-        vao.bind();
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        unsigned int loc = shader.get("model");
+        glm::mat4 cont = glm::mat4(1.0f); // reset it to identity matrix
+        cont = glm::translate(cont, glm::vec3(-0.5f, 0.5f, 0.0f));
+        float scaleAmount = static_cast<float>(sin(glfwGetTime())) * 600.0f;
+        cont = glm::scale(cont, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
+        glUniformMatrix4fv(loc, 1, GL_FALSE, &cont[0][0]); // this time take the matrix value array's first element as its memory pointer value
 
         // Unbind the VAO
         glBindVertexArray(0);
@@ -279,6 +257,7 @@ int main()
         glfwSwapBuffers(window);
     }
 
+    // Terminate GLFW
     glfwTerminate();
 
     return 0;
