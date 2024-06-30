@@ -27,7 +27,7 @@
 #include "root_directory.h"
 
 // Global variables
-Texture backgroundTexture, characterTexture, containerTexture;
+Texture backgroundTexture, characterTexture, containerTexture, inTexture;
 VAO vao;
 glm::mat4 projection, view;
 float aspect;
@@ -42,7 +42,7 @@ void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 void processInput(GLFWwindow *window)
 {
     glfwPollEvents();
-    
+
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, 1);
     static bool graveAccentPressed = false; // Flag to track if the key is pressed
@@ -103,7 +103,10 @@ void renderScene(GLFWwindow *window, Shader shader)
 
     // Use the shader program
     shader.use();
-    shader.setInt("ourTexture", 0);
+
+    unbindTextures();
+    shader.setInt("texture1", 0);
+    shader.setInt("texture2", 0);
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
 
@@ -125,24 +128,18 @@ void renderScene(GLFWwindow *window, Shader shader)
     // Calculate position, scale, and rotation
     glm::vec3 position = glm::vec3(0.0f, -1.0f + characterScale / 2, 0.0f);
     glm::vec3 scale = glm::vec3(characterScale * (characterWidth / characterHeight), characterScale, 1.0f); // Scale proportionally to aspect ratio
-    glm::quat rotation = glm::quat(glm::vec3(0.0f, 0.0f, glm::radians(static_cast<float>(sin(glfwGetTime())) * 90.0f)));
+    glm::vec3 rotation = glm::vec3(-55.0f, 0.0f, 0.0f);
 
     glm::mat4 characterTransform = transform(position, scale, rotation);
     draw(shader, characterTexture, vao, characterTransform);
 
     // First container transformation
     glm::mat4 containerTransform1 = transform(
-        glm::vec3(-aspect + (2.0f * aspect / 2.5f), 0.5f, 0.0f), // Adjusted position
-        glm::vec3(2.0f * aspect / 3.0f, 2.0f / 3.0f, 1.0f),      // Adjusted scale
-        glm::vec3(0.0f, 0.0f, glm::degrees((float)glfwGetTime())));
-    draw(shader, containerTexture, vao, containerTransform1);
-
-    // Second container transformation
-    float scaleAmount = static_cast<float>(sin(glfwGetTime())) * 700.0f / std::max(WIDTH, HEIGHT); // Adjust scaling
-    glm::mat4 containerTransform2 = glm::mat4(1.0f);
-    containerTransform2 = glm::translate(containerTransform2, glm::vec3(-aspect + 2.0f, 0.6f, 0.0f)); // Adjusted position
-    containerTransform2 = glm::scale(containerTransform2, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
-    draw(shader, containerTexture, vao, containerTransform2);
+        glm::vec3(-aspect + (2.0f * aspect / 2.5f), 0.5f, -1.0f), // Adjusted position
+        glm::vec3(2.0f * aspect / 3.0f, 2.0f / 3.0f, 1.0f),       // Adjusted scale
+        glm::vec3(30.5f, 3.3f, 0.0f));
+    Texture *textures = new Texture[2]{containerTexture, inTexture};
+    draw(shader, textures, 2, vao, containerTransform1);
 
     // Print transforms if needed
     if (canPrint)
@@ -151,7 +148,6 @@ void renderScene(GLFWwindow *window, Shader shader)
         std::cout << "Character: " << characterTransform << std::endl;
         printTransform(characterTransform);
         printTransform(containerTransform1);
-        printTransform(containerTransform2);
     }
     canPrint = false;
 
@@ -209,6 +205,8 @@ int main()
 
     containerTexture.Load(fs.texture("container.jpg"));
 
+    inTexture.Load(fs.texture("troll.png"));
+
     // Define vertices for two quads (background and character)
     float vertices[] = {
         // positions          // texture coords
@@ -245,14 +243,15 @@ int main()
     ebo.unbind();
 
     shader.use();
-    shader.setInt("ourTexture", 0);
 
     // Set up transformations
     aspect = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
     std::cout << aspect << " --> " << WIDTH << "/" << HEIGHT << std::endl;
-    projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f);
+    //    projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f);
+    projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
     view = glm::mat4(1.0f); // No camera movement
+    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
     double nextRenderTime = 0.0; // Store the time when the next render should occur
     // Main loop

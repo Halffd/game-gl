@@ -179,4 +179,10 @@ private:
     bool exists;
     GLenum activeTextureUnit;
 };
+void unbindTextures() {
+    for (int i = 0; i < GL_MAX_TEXTURE_IMAGE_UNITS; ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+}
 #endif
