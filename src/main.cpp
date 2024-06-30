@@ -26,100 +26,142 @@
 #include "Util.hpp"
 #include "root_directory.h"
 
-// Custom printing function for glm::vec4
-std::ostream &operator<<(std::ostream &os, const glm::vec4 &v)
-{
-    os << "(" << std::fixed << std::setprecision(2) << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
-    return os;
-}
+// Global variables
+Texture backgroundTexture, characterTexture, containerTexture;
+VAO vao;
+glm::mat4 projection, view;
+float aspect;
+bool canPrint = true;
+bool isPaused = false;
+double lastTime = 0.0;
 
-// Custom printing function for glm::mat4
-std::ostream &operator<<(std::ostream &os, const glm::mat4 &m)
-{
-    os << std::fixed << std::setprecision(2) << std::endl;
-    for (int i = 0; i < 4; ++i)
-    {
-        os << "[" << m[0][i] << ", " << m[1][i] << ", " << m[2][i] << ", " << m[3][i] << "]" << std::endl;
-    }
-    return os;
-}
 void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
 void processInput(GLFWwindow *window)
 {
+    glfwPollEvents();
+    
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, 1);
+    static bool graveAccentPressed = false; // Flag to track if the key is pressed
+
+    if (!graveAccentPressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS)
+    {
+        // Key was just pressed
+        isPaused = !isPaused;
+        if (isPaused)
+        {
+            lastTime = glfwGetTime();
+            std::cout << "Program paused. " << lastTime << std::endl;
+        }
+        else
+        {
+            std::cout << "Program resumed." << std::endl;
+        }
+        graveAccentPressed = true; // Set the flag
+    }
+    else if (graveAccentPressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) != GLFW_PRESS)
+    {
+        // Key was just released
+        graveAccentPressed = false; // Reset the flag
+    }
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+    {
+        canPrint = true;
+    }
+    static bool isLineMode = false;         // Track the current polygon mode
+    static bool spaceKeyWasPressed = false; // Flag to track if space key was pressed
 
     static bool spacePressed;
-
-    // in handling
-    static bool spaceCurrentlyPressed = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+    bool spaceCurrentlyPressed = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
 
     if (!spacePressed && spaceCurrentlyPressed)
-    { // wasn't before, is now
-        GLint i = 0;
-        glGetIntegerv(GL_POLYGON_MODE, &i);
-        // std::cout << i << "\n";
-        glPolygonMode(GL_FRONT_AND_BACK, i == 6913 ? GL_FILL : GL_LINE);
-        // Add a delay of 100 milliseconds
-        glfwWaitEventsTimeout(0.1);
+    {
+        // Space key was just pressed
+        spaceKeyWasPressed = true; // Set the flag
+        spacePressed = true;
     }
-    spacePressed = spaceCurrentlyPressed;
+    else if (spacePressed && !spaceCurrentlyPressed)
+    {
+        // Space key was just released
+        spacePressed = false;
+    }
+    if (spaceKeyWasPressed)
+    {
+        // Toggle polygon mode only once after the space key is pressed
+        isLineMode = !isLineMode;
+        glPolygonMode(GL_FRONT_AND_BACK, isLineMode ? GL_LINE : GL_FILL);
+        spaceKeyWasPressed = false; // Reset the flag
+    }
 }
-int vectortest()
+void renderScene(GLFWwindow *window, Shader shader)
 {
+    // Clear the color buffer
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Use the shader program
+    shader.use();
+    shader.setInt("ourTexture", 0);
+    shader.setMat4("view", view);
+    shader.setMat4("projection", projection);
+
+    // Background transformation
+    glm::mat4 backgroundTransform = transform(
+        glm::vec3(0.0f, 0.0f, 0.0f),          // Center at (0,0) due to orthographic projection
+        glm::vec3(2.0f * aspect, 2.0f, 1.0f), // Scale to cover the entire screen
+        glm::vec3(0.0f));
+    draw(shader, backgroundTexture, vao, backgroundTransform);
+
+    // Character transformation
+    float desiredCoverage = 0.75f; // Cover 75% of the screen height
+    float screenHeight = 2.0f;     // Normalized screen height in orthographic projection
+    float desiredCharacterHeight = screenHeight * desiredCoverage;
+    float characterHeight = characterTexture.height; // Actual height of the character image
+    float characterWidth = characterTexture.width;   // Actual width of the character image
+    float characterScale = desiredCharacterHeight;
+
+    // Calculate position, scale, and rotation
+    glm::vec3 position = glm::vec3(0.0f, -1.0f + characterScale / 2, 0.0f);
+    glm::vec3 scale = glm::vec3(characterScale * (characterWidth / characterHeight), characterScale, 1.0f); // Scale proportionally to aspect ratio
+    glm::quat rotation = glm::quat(glm::vec3(0.0f, 0.0f, glm::radians(static_cast<float>(sin(glfwGetTime())) * 90.0f)));
+
+    glm::mat4 characterTransform = transform(position, scale, rotation);
+    draw(shader, characterTexture, vao, characterTransform);
+
+    // First container transformation
+    glm::mat4 containerTransform1 = transform(
+        glm::vec3(-aspect + (2.0f * aspect / 2.5f), 0.5f, 0.0f), // Adjusted position
+        glm::vec3(2.0f * aspect / 3.0f, 2.0f / 3.0f, 1.0f),      // Adjusted scale
+        glm::vec3(0.0f, 0.0f, glm::degrees((float)glfwGetTime())));
+    draw(shader, containerTexture, vao, containerTransform1);
+
+    // Second container transformation
+    float scaleAmount = static_cast<float>(sin(glfwGetTime())) * 700.0f / std::max(WIDTH, HEIGHT); // Adjust scaling
+    glm::mat4 containerTransform2 = glm::mat4(1.0f);
+    containerTransform2 = glm::translate(containerTransform2, glm::vec3(-aspect + 2.0f, 0.6f, 0.0f)); // Adjusted position
+    containerTransform2 = glm::scale(containerTransform2, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
+    draw(shader, containerTexture, vao, containerTransform2);
+
+    // Print transforms if needed
+    if (canPrint)
     {
-        // Initial matrix and vector
-        glm::vec4 initialVec(1.0f, 0.0f, 0.0f, 1.0f);
-        glm::mat4 initialTrans(0.5f);
-
-        std::cout << "Initial matrix and vector:" << std::endl;
-        std::cout << "vec: " << initialVec << std::endl;
-        std::cout << "trans:\n"
-                  << initialTrans << std::endl;
-
-        // Translate the matrix
-        glm::vec3 transVec(1.0f, 1.0f, 0.0f);
-        glm::mat4 translatedTrans = glm::translate(initialTrans, transVec);
-
-        std::cout << "After translation:" << std::endl;
-        std::cout << "trans:\n"
-                  << translatedTrans << std::endl;
-
-        glm::vec4 translatedVec = translatedTrans * initialVec;
-        std::cout << "vec: " << translatedVec << std::endl;
-        std::cout << "vec.x: " << translatedVec.x << ", vec.y: " << translatedVec.y << ", vec.z: " << translatedVec.z << std::endl;
+        std::cout << "Background: " << backgroundTransform << std::endl;
+        std::cout << "Character: " << characterTransform << std::endl;
+        printTransform(characterTransform);
+        printTransform(containerTransform1);
+        printTransform(containerTransform2);
     }
+    canPrint = false;
 
-    {
-        // Initial matrix
-        glm::mat4 initialTrans(1.0f);
+    // Unbind the VAO
+    glBindVertexArray(0);
 
-        std::cout << "Initial matrix:" << std::endl;
-        std::cout << "trans:\n"
-                  << initialTrans << std::endl;
-
-        // Rotate the matrix
-        float rotateAngle = glm::radians(90.0f);
-        glm::vec3 rotateAxis(0.0, 0.0, 1.0);
-        glm::mat4 rotatedTrans = glm::rotate(initialTrans, rotateAngle, rotateAxis);
-
-        std::cout << "After rotation:" << std::endl;
-        std::cout << "trans:\n"
-                  << rotatedTrans << std::endl;
-
-        // Scale the matrix
-        glm::vec3 scaleFactors(0.5, 0.5, 0.5);
-        glm::mat4 scaledTrans = glm::scale(rotatedTrans, scaleFactors);
-
-        std::cout << "After scaling:" << std::endl;
-        std::cout << "trans:\n"
-                  << scaledTrans << std::endl;
-    }
-    return 0;
+    // Swap buffers
+    glfwSwapBuffers(window);
 }
+
 int main()
 {
     fs.root = std::string(logl_root); // GetParentDirectory();
@@ -161,13 +203,10 @@ int main()
     Shader shader(fs.shader("shader.vs"), fs.shader("shader.fs"));
 
     // Load textures
-    Texture backgroundTexture;
     backgroundTexture.Load(fs.texture("bg/Bathroom.png"));
 
-    Texture characterTexture;
     characterTexture.Load(fs.texture("fg/sprite2.png"));
 
-    Texture containerTexture;
     containerTexture.Load(fs.texture("container.jpg"));
 
     // Define vertices for two quads (background and character)
@@ -183,7 +222,6 @@ int main()
         2, 3, 0};
 
     // Set up VAO, VBO, and EBO
-    VAO vao;
     VBO vbo;
     EBO ebo;
 
@@ -208,57 +246,25 @@ int main()
 
     shader.use();
     shader.setInt("ourTexture", 0);
- 
-    // Set up transformations
-    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(WIDTH), 0.0f, static_cast<float>(HEIGHT), -1.0f, 1.0f);
-    glm::mat4 view = glm::mat4(1.0f); // No camera movement
 
+    // Set up transformations
+    aspect = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
+    std::cout << aspect << " --> " << WIDTH << "/" << HEIGHT << std::endl;
+    projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f);
+
+    view = glm::mat4(1.0f); // No camera movement
+
+    double nextRenderTime = 0.0; // Store the time when the next render should occur
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
         // Input
         processInput(window);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glfwPollEvents();
-
-        shader.use();
-        shader.setInt("ourTexture", 0);
-        shader.setMat4("view", view);
-        shader.setMat4("projection", projection);
-
-        // Background transformation
-        glm::mat4 backgroundTransform = transform(glm::vec3(static_cast<float>(WIDTH) / 2, static_cast<float>(HEIGHT) / 2, 0.0f), glm::vec3(static_cast<float>(WIDTH), static_cast<float>(HEIGHT), 1.0f), glm::vec3(0.0f));
-        draw(shader, backgroundTexture, vao, backgroundTransform);
-
-        // Character transformation
-        float desiredCoverage = 0.75f; // Cover 75% of the screen height
-        float screenHeight = static_cast<float>(HEIGHT);
-        float desiredCharacterHeight = screenHeight * desiredCoverage;
-        float characterHeight = characterTexture.height;
-        float characterScale = desiredCharacterHeight / characterHeight;
-  glm::quat rotation = glm::quat(glm::vec3(0.0f, 0.0f, glm::radians(static_cast<float>(sin(glfwGetTime())) * 90.0f)));
-        glm::mat4 characterTransform = transform(
-            glm::vec3(static_cast<float>(WIDTH) / 2, characterHeight * characterScale / 2, 0.0f),
-            glm::vec3(characterTexture.width * characterScale, characterHeight * characterScale, 1.0f),
-            rotation
-        );
-        draw(shader, characterTexture, vao, characterTransform);
-
-        // Second container transformation
-        glm::mat4 containerTransform1 = transform(glm::vec3(500.0f, 250.0f, 0.0f), glm::vec3(static_cast<float>(WIDTH) / 3, static_cast<float>(HEIGHT) / 3, 1.0f), glm::vec3(0.0f, 0.0f, glm::degrees((float)glfwGetTime())));
-        draw(shader, containerTexture, vao, containerTransform1);
-
-        float scaleAmount = static_cast<float>(sin(glfwGetTime())) * 400.0f;
-        glm::mat4 containerTransform2 = glm::mat4(1.0f);
-        containerTransform2 = glm::translate(containerTransform2, glm::vec3(static_cast<float>(WIDTH) / 25.0f, static_cast<float>(HEIGHT) / 1.2f, 0.0f));
-        containerTransform2 = glm::scale(containerTransform2, glm::vec3(scaleAmount, scaleAmount, scaleAmount));
-        draw(shader, containerTexture, vao, containerTransform2);
-
-        // Unbind the VAO
-        glBindVertexArray(0);
-
-        // Swap buffers
-        glfwSwapBuffers(window);
+        if (!isPaused)
+        {
+            // Update your program state here
+            renderScene(window, shader);
+        }
     }
 
     // Terminate GLFW

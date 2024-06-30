@@ -7,6 +7,8 @@
 #include "Texture.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp> // Ensure this is included
@@ -51,6 +53,69 @@ glm::mat4 transform(const glm::vec3& position, const glm::vec3& scale, const glm
     model *= glm::mat4_cast(rotation); // Apply quaternion rotation
     model = glm::scale(model, scale);
     return model;
+}
+// Custom printing function for glm::vec4
+// Custom printing function for glm::vec
+template <typename T, glm::precision P, glm::length_t L>
+std::ostream& operator<<(std::ostream& os, const glm::vec<L, T, P>& v)
+{
+    os << "(";
+    for (glm::length_t i = 0; i < L; ++i)
+    {
+        os << std::fixed << std::setprecision(2) << v[i];
+        if (i < L - 1)
+            os << ", ";
+    }
+    os << ")";
+    return os;
+}
+
+// Custom printing function for glm::mat
+template <typename T, glm::precision P, glm::length_t C, glm::length_t R>
+std::ostream& operator<<(std::ostream& os, const glm::mat<C, R, T, P>& m)
+{
+    os << std::fixed << std::setprecision(2) << std::endl;
+    for (glm::length_t i = 0; i < R; ++i)
+    {
+        os << "[";
+        for (glm::length_t j = 0; j < C; ++j)
+        {
+            os << m[j][i];
+            if (j < C - 1)
+                os << ", ";
+        }
+        os << "]" << std::endl;
+    }
+    return os;
+}
+// Custom printing function for glm::quat
+template <typename T, glm::precision P>
+std::ostream& operator<<(std::ostream& os, const glm::qua<T, P>& q)
+{
+    os << "(" << std::fixed << std::setprecision(2) << q.w << ", " << q.x << ", " << q.y << ", " << q.z << ")";
+    return os;
+}
+
+// Function to decompose a transformation matrix into position, scale, and rotation (in Euler angles)
+void printTransform(const glm::mat4& transform)
+{
+    glm::vec3 scale, translation, skew;
+    glm::vec4 perspective;
+    glm::quat rotation;
+    
+    glm::decompose(transform, scale, rotation, translation, skew, perspective);
+    
+    // Convert quaternion to Euler angles (in degrees)
+    glm::vec3 eulerAngles = glm::eulerAngles(rotation);
+    eulerAngles = glm::degrees(eulerAngles);
+
+    // Print position, scale, and rotation
+    std::cout << "Position: " << translation << std::endl;
+    std::cout << "Scale: " << scale << std::endl;
+    std::cout << "Rotation (Euler angles): " << eulerAngles << std::endl;
+    std::cout << "Rotation (quaternion): " << rotation << std::endl;
+    std::cout << "Perspective: " << perspective << std::endl;
+    std::cout << "Skew: " << skew << std::endl;
 }
 
 #endif

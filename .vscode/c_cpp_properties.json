@@ -19,6 +19,7 @@
                 ],
                 "limitSymbolsToIncludedHeaders": true
             },
+            "externalConsole": true,
             "cStandard": "${default}",
             "cppStandard": "${default}",
             "intelliSenseMode": "windows-gcc-x64"
