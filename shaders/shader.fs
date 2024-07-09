@@ -19,6 +19,6 @@ vec4 grayscale(vec4 color) {
 void main()
 {
     vec4 color = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);
-    FragColor = l(TexCoord, 10.0, color, grayscale(color));
+    FragColor = l(TexCoord, 10.0, color, color / 3.0);
 
 }
