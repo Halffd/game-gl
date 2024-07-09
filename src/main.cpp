@@ -112,7 +112,7 @@ void renderScene(GLFWwindow *window, Shader shader)
     shader.setMat4("projection", projection);
     // First container 
     float time = glfwGetTime() * 90.0f;
-    glm::mat4 containerTransform1 = transform(0.0f, 1.0f, glm::vec3(time, time, time));
+    glm::mat4 containerTransform1 = transform(0.0f, 1.0f, glm::vec3(0.0f, time, 0.0f));
 
     Texture *textures = new Texture[2]{containerTexture, inTexture};
     draw(shader, textures, 2, vao, containerTransform1);
