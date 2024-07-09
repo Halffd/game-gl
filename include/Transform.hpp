@@ -7,6 +7,7 @@
 #include "Texture.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <type_traits>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -18,7 +19,7 @@ void draw(const Shader &shader, Texture &texture, const VAO &vao, const glm::mat
     shader.setMat4("model", transform);
     texture.Activate(GL_TEXTURE0);
     vao.bind();
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
 
 void draw(Shader &shader, Texture* textures, int texturesN, const VAO &vao, const glm::mat4 &transform)
@@ -35,7 +36,7 @@ void draw(Shader &shader, Texture* textures, int texturesN, const VAO &vao, cons
     }
 
     vao.bind();
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
 // Function to set up the transformation for an object
 glm::mat4 transform(float translateX, float translateY, float scaleX, float scaleY, float rotationAngle = 0.0f, glm::vec3 rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f))
@@ -49,28 +50,60 @@ glm::mat4 transform(float translateX, float translateY, float scaleX, float scal
     model = glm::scale(model, glm::vec3(scaleX, scaleY, 1.0f));
     return model;
 }
-glm::mat4 transform(const glm::vec3 &position, const glm::vec3 &scale, const glm::vec3 &rotation)
-{
+
+// Helper function to check if a type is glm::vec3
+template<typename T>
+struct is_glm_vec3 : std::false_type {};
+
+template<>
+struct is_glm_vec3<glm::vec3> : std::true_type {};
+
+// Helper function to check if a type is glm::quat
+template<typename T>
+struct is_glm_quat : std::false_type {};
+
+template<>
+struct is_glm_quat<glm::quat> : std::true_type {};
+
+// Main transform function template
+template<typename T1, typename T2, typename T3>
+glm::mat4 transform(const T1& position, const T2& scale, const T3& rotation) {
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, position);
-    if (glm::length(rotation) != 0.0f)
-    {
-        model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    if constexpr (std::is_same_v<T1, float>) {
+        if (position == 0.0f) {
+            model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        } else if (position == 1.0f) {
+            model = glm::translate(model, glm::vec3(1.0f, 1.0f, 1.0f));
+        }
+    } else if constexpr (is_glm_vec3<T1>::value) {
+        model = glm::translate(model, position);
     }
-    model = glm::scale(model, scale);
+
+    if constexpr (std::is_same_v<T2, float>) {
+        model = glm::scale(model, glm::vec3(scale, scale, scale));
+    } else if constexpr (is_glm_vec3<T2>::value) {
+        model = glm::scale(model, scale);
+    }
+
+    if constexpr (std::is_same_v<T3, float>) {
+        if (rotation != 0.0f) {
+            model = glm::rotate(model, glm::radians(15.0f * rotation), glm::vec3(1.0f, 0.0f, 0.0f));
+            model = glm::rotate(model, glm::radians(15.0f * rotation), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::rotate(model, glm::radians(15.0f * rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+        }
+    } else if constexpr (is_glm_vec3<T3>::value) {
+        if (glm::length(rotation) != 0.0f) {
+             model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+             model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        }
+    } else if constexpr (is_glm_quat<T3>::value) {
+        model *= glm::mat4_cast(rotation);
+    }
+
     return model;
 }
-glm::mat4 transform(const glm::vec3 &position, const glm::vec3 &scale, const glm::quat &rotation)
-{
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, position);
-    model *= glm::mat4_cast(rotation); // Apply quaternion rotation
-    model = glm::scale(model, scale);
-    return model;
-}
-// Custom printing function for glm::vec4
 // Custom printing function for glm::vec
 template <typename T, glm::precision P, glm::length_t L>
 std::ostream &operator<<(std::ostream &os, const glm::vec<L, T, P> &v)

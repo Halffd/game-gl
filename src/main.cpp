@@ -27,7 +27,7 @@
 #include "root_directory.h"
 
 // Global variables
-Texture backgroundTexture, characterTexture, containerTexture, inTexture;
+Texture containerTexture, inTexture;
 VAO vao;
 glm::mat4 projection, view;
 float aspect;
@@ -107,46 +107,19 @@ void renderScene(GLFWwindow *window, Shader shader)
     unbindTextures();
     shader.setInt("texture1", 0);
     shader.setInt("texture2", 0);
+
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
+    // First container 
+    float time = std::cos(glfwGetTime()) * 90.0f;
+    glm::mat4 containerTransform1 = transform(0.0f, 1.0f, glm::vec3(0.0f, time, 0.0f));
 
-    // Background transformation
-    glm::mat4 backgroundTransform = transform(
-        glm::vec3(0.0f, 0.0f, 0.0f),          // Center at (0,0) due to orthographic projection
-        glm::vec3(2.0f * aspect, 2.0f, 1.0f), // Scale to cover the entire screen
-        glm::vec3(0.0f));
-    draw(shader, backgroundTexture, vao, backgroundTransform);
-
-    // Character transformation
-    float desiredCoverage = 0.75f; // Cover 75% of the screen height
-    float screenHeight = 2.0f;     // Normalized screen height in orthographic projection
-    float desiredCharacterHeight = screenHeight * desiredCoverage;
-    float characterHeight = characterTexture.height; // Actual height of the character image
-    float characterWidth = characterTexture.width;   // Actual width of the character image
-    float characterScale = desiredCharacterHeight;
-
-    // Calculate position, scale, and rotation
-    glm::vec3 position = glm::vec3(0.0f, -1.0f + characterScale / 2, 0.0f);
-    glm::vec3 scale = glm::vec3(characterScale * (characterWidth / characterHeight), characterScale, 1.0f); // Scale proportionally to aspect ratio
-    glm::vec3 rotation = glm::vec3(-55.0f, 0.0f, 0.0f);
-
-    glm::mat4 characterTransform = transform(position, scale, rotation);
-    draw(shader, characterTexture, vao, characterTransform);
-
-    // First container transformation
-    glm::mat4 containerTransform1 = transform(
-        glm::vec3(-aspect + (2.0f * aspect / 2.5f), 0.5f, -1.0f), // Adjusted position
-        glm::vec3(2.0f * aspect / 3.0f, 2.0f / 3.0f, 1.0f),       // Adjusted scale
-        glm::vec3(30.5f, 3.3f, 0.0f));
     Texture *textures = new Texture[2]{containerTexture, inTexture};
     draw(shader, textures, 2, vao, containerTransform1);
 
     // Print transforms if needed
     if (canPrint)
     {
-        std::cout << "Background: " << backgroundTransform << std::endl;
-        std::cout << "Character: " << characterTransform << std::endl;
-        printTransform(characterTransform);
         printTransform(containerTransform1);
     }
     canPrint = false;
@@ -198,27 +171,50 @@ int main()
 
     Shader shader(fs.shader("shader.vs"), fs.shader("shader.fs"));
 
-    // Load textures
-    backgroundTexture.Load(fs.texture("bg/Bathroom.png"));
-
-    characterTexture.Load(fs.texture("fg/sprite2.png"));
-
     containerTexture.Load(fs.texture("container.jpg"));
 
     inTexture.Load(fs.texture("troll.png"));
 
     // Define vertices for two quads (background and character)
     float vertices[] = {
-        // positions          // texture coords
-        -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,  // top left
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // bottom right
-        0.5f, 0.5f, 0.0f, 1.0f, 1.0f    // top right
-    };
+        // Front face
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
+        // Back face
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
+        // Left face
+        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+        // Right face
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+        // Bottom face
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+        // Top face
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f};
     unsigned int indices[] = {
-        0, 1, 2,
-        2, 3, 0};
-
+        0, 1, 2, 2, 3, 0,       // Front face
+        4, 5, 6, 6, 7, 4,       // Back face
+        8, 9, 10, 10, 11, 8,    // Left face
+        12, 13, 14, 14, 15, 12, // Right face
+        16, 17, 18, 18, 19, 16, // Bottom face
+        20, 21, 22, 22, 23, 20  // Top face
+    };
     // Set up VAO, VBO, and EBO
     VBO vbo;
     EBO ebo;
