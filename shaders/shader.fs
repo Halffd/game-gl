@@ -10,7 +10,7 @@ uniform vec4 mixColor;
 
 vec4 checkerboard(vec2 uv, float size) {
     vec2 grid = floor(uv * size);
-    float checker = mod(grid.x + grid.y, 2.0);
+    float checker = grid.x /+ grid.y; //mod(grid.x + grid.y, 2.0);
     return vec4(checker, checker, checker, 1.0);
 }
 
