@@ -99,7 +99,7 @@ void processInput(GLFWwindow *window)
 void renderScene(GLFWwindow *window, Shader shader)
 {
     // Clear the color buffer
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Use the shader program
     shader.use();
@@ -112,7 +112,7 @@ void renderScene(GLFWwindow *window, Shader shader)
     shader.setMat4("projection", projection);
     // First container 
     float time = glfwGetTime() * 90.0f;
-    glm::mat4 containerTransform1 = transform(0.0f, 1.0f, glm::vec3(0.0f, time, 0.0f));
+    glm::mat4 containerTransform1 = transform(0.0f, 1.0f, glm::vec3(time / 2.0f, time, 0.0f));
 
     Texture *textures = new Texture[2]{containerTexture, inTexture};
     draw(shader, textures, 2, vao, containerTransform1);
@@ -165,6 +165,8 @@ int main()
     }
     // Initialization code
     glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);  
+
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
