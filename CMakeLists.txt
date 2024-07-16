@@ -32,6 +32,7 @@ add_executable(game ${source_files})
 
 # Include directories
 include_directories(include)
+include_directories(include/mesh)
 include_directories(include_libs)
 include_directories(S:/msys64/mingw64/include)
 # Configure file for the root directory

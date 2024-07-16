@@ -26,6 +26,8 @@
 #include "Util.hpp"
 #include "root_directory.h"
 
+#include "sphere.h"
+
 // Global variables
 Texture containerTexture, inTexture;
 VAO vao;
@@ -34,6 +36,17 @@ float aspect;
 bool canPrint = true;
 bool isPaused = false;
 double lastTime = 0.0;
+glm::vec3 cubePositions[] = {
+    glm::vec3(0.0f, 0.0f, 0.0f),
+    glm::vec3(2.0f, 5.0f, -15.0f),
+    glm::vec3(-1.5f, -2.2f, -2.5f),
+    glm::vec3(-3.8f, -2.0f, -12.3f),
+    glm::vec3(2.4f, -0.4f, -3.5f),
+    glm::vec3(-1.7f, 3.0f, -7.5f),
+    glm::vec3(1.3f, -2.0f, -2.5f),
+    glm::vec3(1.5f, 2.0f, -2.5f),
+    glm::vec3(1.5f, 0.2f, -1.5f),
+    glm::vec3(-1.3f, 1.0f, -1.5f)};
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
@@ -110,18 +123,21 @@ void renderScene(GLFWwindow *window, Shader shader)
 
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
-    // First container 
-    float time = glfwGetTime() * 90.0f;
-    glm::mat4 containerTransform1 = transform(0.0f, 1.0f, glm::vec3(time / 2.0f, time, 0.0f));
-
-    Texture *textures = new Texture[2]{containerTexture, inTexture};
-    draw(shader, textures, 2, vao, containerTransform1);
-
-    // Print transforms if needed
-    if (canPrint)
+    // First container
+    //glBindVertexArray(VAO);
+    for (unsigned int i = 0; i < 10; i++)
     {
-        printTransform(containerTransform1);
+        float time = glfwGetTime() * 90.0f;
+        glm::mat4 model = transform(cubePositions[i], std::max(0.1f*((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1+i)/4.4f, 0.3f * time / 3.0f * (float)(1+i), 0.1f * i));
+        Texture *textures = new Texture[2]{containerTexture, inTexture};
+        draw(shader, textures, 2, vao, model);
+        // Print transforms if needed
+        if (canPrint)
+        {
+            printTransform(model);
+        }
     }
+
     canPrint = false;
 
     // Unbind the VAO
@@ -165,7 +181,7 @@ int main()
     }
     // Initialization code
     glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);  
+    glEnable(GL_DEPTH_TEST);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -218,6 +234,9 @@ int main()
         20, 21, 22, 22, 23, 20  // Top face
     };
     // Set up VAO, VBO, and EBO
+    Cell::Sphere sphere(50, 50);
+
+    // Set up VAO, VBO, and EBO for the sphere
     VBO vbo;
     EBO ebo;
 
@@ -227,15 +246,11 @@ int main()
 
     vao.bind();
     vbo.bind();
-    vbo.setup(vertices, sizeof(vertices));
-
+    vbo.setup(sphere.Positions.data(), sphere.Positions.size() * sizeof(glm::vec3));
     ebo.bind();
-    ebo.setup(indices, sizeof(indices));
+    ebo.setup(sphere.Indices.data(), sphere.Indices.size() * sizeof(unsigned int));
 
-    // Set vertex attribute pointers
-    vao.linkAttrib(vbo, 0, 3, GL_FLOAT, 5 * sizeof(float), (void *)0);
-    vao.linkAttrib(vbo, 1, 2, GL_FLOAT, 5 * sizeof(float), (void *)(3 * sizeof(float)));
-
+    vao.linkAttrib(vbo, 0, 3, GL_FLOAT, 0, (void*)0);
     vao.unbind();
     vbo.unbind();
     ebo.unbind();
