@@ -109,7 +109,8 @@ void processInput(GLFWwindow *window)
         spaceKeyWasPressed = false; // Reset the flag
     }
 }
-void renderScene(GLFWwindow *window, Shader shader)
+template<typename T>
+void renderScene(GLFWwindow *window, Shader shader, T mesh)
 {
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -130,7 +131,7 @@ void renderScene(GLFWwindow *window, Shader shader)
         float time = glfwGetTime() * 90.0f;
         glm::mat4 model = transform(cubePositions[i], std::max(0.1f*((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1+i)/4.4f, 0.3f * time / 3.0f * (float)(1+i), 0.1f * i));
         Texture *textures = new Texture[2]{containerTexture, inTexture};
-        draw(shader, textures, 2, vao, model);
+        draw(shader, textures, 2, mesh, model, mesh.vertexCount);
         // Print transforms if needed
         if (canPrint)
         {
@@ -236,25 +237,6 @@ int main()
     // Set up VAO, VBO, and EBO
     Cell::Sphere sphere(50, 50);
 
-    // Set up VAO, VBO, and EBO for the sphere
-    VBO vbo;
-    EBO ebo;
-
-    vao.genVertexArray();
-    vbo.genBuffer();
-    ebo.genBuffer();
-
-    vao.bind();
-    vbo.bind();
-    vbo.setup(sphere.Positions.data(), sphere.Positions.size() * sizeof(glm::vec3));
-    ebo.bind();
-    ebo.setup(sphere.Indices.data(), sphere.Indices.size() * sizeof(unsigned int));
-
-    vao.linkAttrib(vbo, 0, 3, GL_FLOAT, 0, (void*)0);
-    vao.unbind();
-    vbo.unbind();
-    ebo.unbind();
-
     shader.use();
 
     // Set up transformations
@@ -275,7 +257,7 @@ int main()
         if (!isPaused)
         {
             // Update your program state here
-            renderScene(window, shader);
+            renderScene(window, shader, sphere);
         }
     }
 

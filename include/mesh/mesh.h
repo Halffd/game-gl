@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <functional>
+#include <cstdint>
 
 #include <math/linear_algebra/vector.h>
 
@@ -50,6 +51,7 @@ namespace Cell
 
         TOPOLOGY Topology = TRIANGLES;
         std::vector<unsigned int> Indices;
+        size_t vertexCount;
 
         // support multiple ways of initializing a mesh
         Mesh();
@@ -58,6 +60,7 @@ namespace Cell
         Mesh(std::vector<math::vec3> positions, std::vector<math::vec2> uv, std::vector<math::vec3> normals, std::vector<unsigned int> indices);
         Mesh(std::vector<math::vec3> positions, std::vector<math::vec2> uv, std::vector<math::vec3> normals, std::vector<math::vec3> tangents, std::vector<math::vec3> bitangents, std::vector<unsigned int> indices);
 
+        void bind();
         // set vertex data manually
         // TODO(Joey): not sure if these are required if we can directly set vertex data from public fields; construct several use-cases to test.
         void SetPositions(std::vector<math::vec3> positions);

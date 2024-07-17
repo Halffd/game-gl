@@ -44,6 +44,6 @@ namespace Cell
         }
 
         Topology = TRIANGLE_STRIP;
-        Finalize();
+        Cell::Mesh::Finalize();
     }
 }

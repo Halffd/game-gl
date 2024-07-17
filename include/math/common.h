@@ -6,9 +6,9 @@
 #include <algorithm>
 #include <cmath>
 
-#ifdef _WIN32
-	#define NOMINMAX // <windows.h> has a #define max, min so we need to get rid of that so std::max() and std::min() will work
-#endif
+//#ifdef _WIN32
+//	#define NOMINMAX // <windows.h> has a #define max, min so we need to get rid of that so std::max() and std::min() will work
+//#endif
 
 namespace math
 {

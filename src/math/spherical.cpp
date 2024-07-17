@@ -1,8 +1,8 @@
-#include "spherical.h"
+#include "math/trigonometry/spherical.h"
 
 #include <math.h>
 
-#include "../linear_algebra/operation.h"
+#include "math/linear_algebra/operation.h"
 
 namespace math
 {

@@ -1,7 +1,7 @@
 #ifndef MATH_TRIGONOMETRY_POLAR_H
 #define MATH_TRIGONOMETRY_POLAR_H
 
-#include "../linear_algebra/vector.h"
+#include "math/linear_algebra/vector.h"
 
 namespace math
 {

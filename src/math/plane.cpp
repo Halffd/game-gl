@@ -1,6 +1,6 @@
-#include "plane.h"
+#include "math/geometry/plane.h"
 
-#include "../linear_algebra/operation.h"
+#include "math/linear_algebra/operation.h"
 
 namespace math
 {

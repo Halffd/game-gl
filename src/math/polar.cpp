@@ -1,8 +1,8 @@
-#include "polar.h"
+#include "math/trigonometry/polar.h"
 
 #include <math.h>
 
-#include "../linear_algebra/operation.h"
+#include "math/linear_algebra/operation.h"
 
 namespace math
 {

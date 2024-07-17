@@ -166,7 +166,7 @@ namespace math
             {
                 T s;
                 T t;
-                T r;
+                T r2;
             };
             struct
             {
@@ -274,7 +274,7 @@ namespace math
             {
                 T s;
                 T t;
-                T r;
+                T r2;
             };
             struct
             {
@@ -284,24 +284,24 @@ namespace math
             };
             struct
             {
-                T _ignored1;
-                T _ignored2;
+                T _ignored3;
+                T _ignored4;
                 vector<2, T> yz;
             };
             struct
             {
                 vector<3, T> xyz;
-                T _ignored1;
+                T _ignored5;
             };
             struct
             {
                 vector<3, T> rgb;
-                T _ignored1;
+                T _ignored6;
             };
             struct
             {
                 vector<3, T> srt;
-                T _ignored1;
+                T _ignored7;
             };
         };
 
@@ -404,11 +404,11 @@ namespace math
         return result;
     }
     template <std::size_t n, typename T>
-    inline vector<n, T> operator+(T scalar, vector<n, T> rhs)
+    inline vector<n, T> operator+(const T& scalar, const vector<n, T>& rhs)
     {
         vector<n, T> result;
         for (std::size_t i = 0; i < n; ++i)
-            result[i] = lhs[i] + scalar;
+            result[i] = scalar + rhs[i];
         return result;
     }
     template <std::size_t n, typename T>

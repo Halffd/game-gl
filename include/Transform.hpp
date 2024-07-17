@@ -14,15 +14,17 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp> // Ensure this is included
 // Function to draw an object with a given transformation
-void draw(const Shader &shader, Texture &texture, const VAO &vao, const glm::mat4 &transform)
+template<typename T>
+void draw(const Shader &shader, Texture &texture, T &vao, const glm::mat4 &transform, int vertices)
 {
     shader.setMat4("model", transform);
     texture.Activate(GL_TEXTURE0);
     vao.bind();
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, vertices, GL_UNSIGNED_INT, 0);
 }
 
-void draw(Shader &shader, Texture* textures, int texturesN, const VAO &vao, const glm::mat4 &transform)
+template<typename T>
+void draw(Shader &shader, Texture* textures, int texturesN, T &vao, const glm::mat4 &transform, int vertices)
 {
     
     shader.use();
@@ -36,7 +38,7 @@ void draw(Shader &shader, Texture* textures, int texturesN, const VAO &vao, cons
     }
 
     vao.bind();
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, vertices, GL_UNSIGNED_INT, 0);
 }
 // Function to set up the transformation for an object
 glm::mat4 transform(float translateX, float translateY, float scaleX, float scaleY, float rotationAngle = 0.0f, glm::vec3 rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f))

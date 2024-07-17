@@ -1,9 +1,12 @@
-#include "mesh.h"
+#include "mesh/mesh.h"
 
 #include "glad/glad.h"
 
 #include <math/linear_algebra/operation.h>
 #include <utility/logging/log.h>
+
+namespace Cell
+{
     // --------------------------------------------------------------------------------------------
     Mesh::Mesh()
     {
@@ -60,6 +63,10 @@
     {
         Tangents = tangents;
         Bitangents = bitangents;
+    }
+    void Mesh::bind() 
+    {
+        glBindVertexArray(m_VAO);
     }
     // --------------------------------------------------------------------------------------------
     void Mesh::Finalize(bool interleaved)
@@ -220,9 +227,10 @@
             }
         }
         glBindVertexArray(0);
+        vertexCount = Positions.size();
     }
     // --------------------------------------------------------------------------------------------
-    void Mesh::FromSDF(std::function<float(math::vec3)>& sdf, float maxDistance, uint16_t gridResolution) 
+    /*void Mesh::FromSDF(std::function<float(math::vec3)>& sdf, float maxDistance, uint16_t gridResolution) 
     {
         Log::Message("Generating 3D mesh from SDF", LOG_DEBUG);
 
@@ -676,7 +684,7 @@
         Finalize();
 
         Log::Message("SDF mesh generation complete!", LOG_DEBUG);
-    }
+    }*/
     // --------------------------------------------------------------------------------------------
     void Mesh::calculateNormals(bool smooth)
     {
@@ -742,3 +750,4 @@
         //    bitangents[i] = glm::normalize(bitangents[i]);
         //}
     }
+}
