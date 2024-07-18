@@ -64,9 +64,10 @@ namespace Cell
         Tangents = tangents;
         Bitangents = bitangents;
     }
-    void Mesh::bind() 
+    int Mesh::bind() 
     {
         glBindVertexArray(m_VAO);
+        return Indices.size();
     }
     // --------------------------------------------------------------------------------------------
     void Mesh::Finalize(bool interleaved)

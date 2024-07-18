@@ -27,6 +27,7 @@
 #include "root_directory.h"
 
 #include "sphere.h"
+#include "cube.h"
 
 // Global variables
 Texture containerTexture, inTexture;
@@ -235,7 +236,7 @@ int main()
         20, 21, 22, 22, 23, 20  // Top face
     };
     // Set up VAO, VBO, and EBO
-    Cell::Sphere sphere(50, 50);
+    Cell::Cube cube;
 
     shader.use();
 
@@ -257,7 +258,7 @@ int main()
         if (!isPaused)
         {
             // Update your program state here
-            renderScene(window, shader, sphere);
+            renderScene(window, shader, cube);
         }
     }
 

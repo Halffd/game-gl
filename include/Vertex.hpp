@@ -95,6 +95,8 @@ class VAO
 {
 
 public:
+    unsigned int ebo = 0;
+
     VAO() = default;
     VAO(const VAO &other) = delete;
     VAO(VAO &&other) { *this = std::move(other); }
@@ -118,7 +120,7 @@ public:
     /**
      * @brief Binds the VAO.
      */
-    void bind() const { glBindVertexArray(m_id); }
+    int bind() const { glBindVertexArray(m_id); return ebo; }
 
     void setVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer)
     {

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Colorful Triangle in WebGL</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #000000;
+    }
+    canvas {
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="glCanvas" width="400" height="400"></canvas>
+
+  <script>
+    // Get the WebGL context
+    var gl = document.getElementById('glCanvas').getContext('webgl');
+
+    // Define the vertex positions and colors
+    var vertices = [
+      0.0, 0.5, 0.0,   1.0, 0.0, 0.0,
+      -0.5, -0.5, 0.0, 0.0, 1.0, 0.0,
+      0.5, -0.5, 0.0,  0.0, 0.0, 1.0
+    ];
+
+    // Create a buffer to hold the vertex data
+    var buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+    // Create a vertex shader
+    var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vertexShader, `
+      attribute vec3 position;
+      attribute vec3 color;
+      varying vec3 vColor;
+
+      void main() {
+        gl_Position = vec4(position, 1.0);
+        vColor = color;
+      }
+    `);
+    gl.compileShader(vertexShader);
+
+    // Create a fragment shader
+    var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fragmentShader, `
+      precision highp float;
+      varying vec3 vColor;
+
+      void main() {
+        gl_FragColor = vec4(vColor, 1.0);
+      }
+    `);
+    gl.compileShader(fragmentShader);
+
+    // Create a program and link the shaders
+    var program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+
+    // Get the attribute locations
+    var positionLocation = gl.getAttribLocation(program, 'position');
+    var colorLocation = gl.getAttribLocation(program, 'color');
+
+    // Enable the attribute arrays
+    gl.enableVertexAttribArray(positionLocation);
+    gl.enableVertexAttribArray(colorLocation);
+
+    // Specify the format of the vertex data
+    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 6 * 4, 0);
+    gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 6 * 4, 3 * 4);
+
+    // Draw the triangle
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  </script>
+</body>
+</html>

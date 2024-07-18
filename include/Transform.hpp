@@ -37,8 +37,12 @@ void draw(Shader &shader, Texture* textures, int texturesN, T &vao, const glm::m
         shader.setInt("texture" + std::to_string(i + 1), i); // Set the uniform for the texture
     }
 
-    vao.bind();
-    glDrawElements(GL_TRIANGLES, vertices, GL_UNSIGNED_INT, 0);
+    int ind = vao.bind();
+    if(ind > 0){
+        glDrawElements(GL_TRIANGLES, vertices, GL_UNSIGNED_INT, 0);
+    } else {
+        glDrawArrays(GL_TRIANGLES, 0, vertices);
+    }
 }
 // Function to set up the transformation for an object
 glm::mat4 transform(float translateX, float translateY, float scaleX, float scaleY, float rotationAngle = 0.0f, glm::vec3 rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f))
