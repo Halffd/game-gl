@@ -123,6 +123,10 @@ void renderScene(GLFWwindow *window, Shader shader, T mesh)
     shader.setInt("texture1", 0);
     shader.setInt("texture2", 0);
 
+    const float radius = 10.0f;
+    float camX = sin(glfwGetTime()) * radius;
+    float camZ = cos(glfwGetTime()) * radius;
+    view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, camZ / radius * 2.5f), glm::vec3(0.0, 1.0, camZ)); 
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
     // First container
@@ -246,9 +250,16 @@ int main()
     //    projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f);
     projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
-    view = glm::mat4(1.0f); // No camera movement
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-
+    /*view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), 
+  		   glm::vec3(0.0f, 0.0f, 0.0f), 
+  		   glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);  
+    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);   
+    glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f); 
+    glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
+    glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
+    */
     double nextRenderTime = 0.0; // Store the time when the next render should occur
     // Main loop
     while (!glfwWindowShouldClose(window))
