@@ -1,7 +1,7 @@
 #ifndef MATH_TRIGONOMETRY_SPHERICAL_H
 #define MATH_TRIGONOMETRY_SPHERICAL_H
 
-#include "math/linear_algebra/vector.h"
+#include "math/vector.h"
 
 namespace math
 {

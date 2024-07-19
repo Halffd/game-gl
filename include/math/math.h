@@ -4,7 +4,7 @@
 // todo: rename math.h, might not be the best name, google.
 
 // NOTE(Joey): linear algebra
-#include "linear_algebra/vector.h"
+#include "vector.h"
 #include "linear_algebra/matrix.h"
 #include "linear_algebra/operation.h"
 #include "linear_algebra/transformation.h" 

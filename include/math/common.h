@@ -1,7 +1,7 @@
 #ifndef MATH_COMMON_H
 #define MATH_COMMON_H
 
-#include "linear_algebra/vector.h"
+#include "vector.h"
 
 #include <algorithm>
 #include <cmath>

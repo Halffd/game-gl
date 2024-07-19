@@ -2,7 +2,6 @@
 #define TRANSFORM_H
 
 #include <glad/glad.h>
-#include "Vertex.hpp"
 #include "Shader.hpp"
 #include "Texture.hpp"
 #include <glm/glm.hpp>
@@ -13,35 +12,30 @@
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp> // Ensure this is included
-// Function to draw an object with a given transformation
-template<typename T>
-void draw(const Shader &shader, Texture &texture, T &vao, const glm::mat4 &transform, int vertices)
-{
-    shader.setMat4("model", transform);
-    texture.Activate(GL_TEXTURE0);
-    vao.bind();
-    glDrawElements(GL_TRIANGLES, vertices, GL_UNSIGNED_INT, 0);
-}
 
 template<typename T>
-void draw(Shader &shader, Texture* textures, int texturesN, T &vao, const glm::mat4 &transform, int vertices)
+void draw(Shader &shader, Texture* textures, int texturesN, T &vao, const glm::mat4 &transform, int vertices = -1, unsigned int topology = 0)
 {
-    
     shader.use();
     shader.setMat4("model", transform);
 
     // Bind textures
-    for (size_t i = 0; i < texturesN; ++i)
+    for (int i = 0; i < texturesN; ++i)
     {
-        textures[i].Activate(GL_TEXTURE0 + i);           // Activate texture unit
+        textures[i].Activate(GL_TEXTURE0 + i);             // Activate texture unit
         shader.setInt("texture" + std::to_string(i + 1), i); // Set the uniform for the texture
     }
 
     int ind = vao.bind();
-    if(ind > 0){
-        glDrawElements(GL_TRIANGLES, vertices, GL_UNSIGNED_INT, 0);
-    } else {
-        glDrawArrays(GL_TRIANGLES, 0, vertices);
+    unsigned int drawTopology = (topology != 0) ? topology : getPrimitive(vao.Topology);
+    
+    if (ind > 0)
+    {
+        glDrawElements(drawTopology, (vertices > 0 ? vertices : vao.vertexCount), GL_UNSIGNED_INT, 0);
+    }
+    else
+    {
+        glDrawArrays(drawTopology, 0, (vertices > 0 ? vertices : vao.vertexCount));
     }
 }
 // Function to set up the transformation for an object

@@ -19,15 +19,20 @@
 #include "setup.h"
 #include "root.h"
 
-#include "Vertex.hpp"
+#include "vertex.h"
 #include "Shader.hpp"
 #include "Texture.hpp"
 #include "Transform.hpp"
 #include "Util.hpp"
 #include "root_directory.h"
 
+#include "plane.h"
+#include "line_strip.h"
 #include "sphere.h"
 #include "cube.h"
+#include "circle.h"
+#include "quad.h"
+#include "torus.h"
 
 // Global variables
 Texture containerTexture, inTexture;
@@ -136,7 +141,7 @@ void renderScene(GLFWwindow *window, Shader shader, T mesh)
         float time = glfwGetTime() * 90.0f;
         glm::mat4 model = transform(cubePositions[i], std::max(0.1f*((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1+i)/4.4f, 0.3f * time / 3.0f * (float)(1+i), 0.1f * i));
         Texture *textures = new Texture[2]{containerTexture, inTexture};
-        draw(shader, textures, 2, mesh, model, mesh.vertexCount);
+        draw(shader, textures, 2, mesh, model);
         // Print transforms if needed
         if (canPrint)
         {
@@ -240,7 +245,7 @@ int main()
         20, 21, 22, 22, 23, 20  // Top face
     };
     // Set up VAO, VBO, and EBO
-    Cell::Cube cube;
+    Cell::Sphere mesh(5,5);
 
     shader.use();
 
@@ -269,7 +274,7 @@ int main()
         if (!isPaused)
         {
             // Update your program state here
-            renderScene(window, shader, cube);
+            renderScene(window, shader, mesh);
         }
     }
 

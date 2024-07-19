@@ -1,7 +1,7 @@
 #ifndef MATH_GEOMETRY_PLANE_H
 #define MATH_GEOMETRY_PLANE_H
 
-#include "math/linear_algebra/vector.h"
+#include "math/vector.h"
 
 namespace math
 {

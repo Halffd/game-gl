@@ -2,47 +2,56 @@
 
 #include <math.h>
 #include <math/math.h>
-
+#include "sphere.h" 
 namespace Cell
 {
-    // TODO(Joey): check geodesic (and icosahedron tesselation); much better texture space mapping.
-    // ------------------------------------------------------------------------
-    // arametric equation for a sphere F(u,v, r) = [cos(u)*sin(v)*r, cos(v), sin(u)*sin(v)*r] where 
-    // u is longitude [0, 2PI] and v is lattitude [0, PI] (note the difference in their range)
-    Sphere::Sphere(unsigned int xSegments, unsigned int ySegments)
+    Sphere::Sphere(unsigned int latitudeBands, unsigned int longitudeBands)
     {
-        for (unsigned int y = 0; y <= ySegments; ++y)
-        {
-            for (unsigned int x = 0; x <= xSegments; ++x)
-            {
-                float xSegment = (float)x / (float)xSegments;
-                float ySegment = (float)y / (float)ySegments;
-                float xPos = std::cos(xSegment * math::TAU) * std::sin(ySegment * math::PI); // TAU is 2PI
-                float yPos = std::cos(ySegment * math::PI);
-                float zPos = std::sin(xSegment * math::TAU) * std::sin(ySegment * math::PI);
+        const float radius = 0.5f;
 
-                Positions.push_back(math::vec3(xPos, yPos, zPos));
-                UV.push_back(math::vec2(xSegment, ySegment));
-                Normals.push_back(math::vec3(xPos, yPos, zPos));
+        // Generate vertex positions, UVs, and normals
+        for (unsigned int latNumber = 0; latNumber <= latitudeBands; ++latNumber)
+        {
+            float theta = latNumber * math::PI / latitudeBands;
+            float sinTheta = sin(theta);
+            float cosTheta = cos(theta);
+
+            for (unsigned int longNumber = 0; longNumber <= longitudeBands; ++longNumber)
+            {
+                float phi = longNumber * 2 * math::PI / longitudeBands;
+                float sinPhi = sin(phi);
+                float cosPhi = cos(phi);
+
+                float x = radius * cosPhi * sinTheta;
+                float y = radius * cosTheta;
+                float z = radius * sinPhi * sinTheta;
+
+                Positions.push_back(math::vec3(x, y, z));
+                UV.push_back(math::vec2((float)longNumber / longitudeBands, (float)latNumber / latitudeBands));
+                Normals.push_back(math::normalize(math::vec3(x, y, z))); // Normalize normals
             }
         }
 
-        bool oddRow = false;
-        for (int y = 0; y < ySegments; ++y)
+        // Generate indices
+        for (unsigned int latNumber = 0; latNumber < latitudeBands; ++latNumber)
         {
-            for (int x = 0; x < xSegments; ++x)
+            for (unsigned int longNumber = 0; longNumber < longitudeBands; ++longNumber)
             {
-                Indices.push_back((y + 1) * (xSegments + 1) + x);
-                Indices.push_back(y       * (xSegments + 1) + x);
-                Indices.push_back(y       * (xSegments + 1) + x + 1);
+                unsigned int first = (latNumber * (longitudeBands + 1)) + longNumber;
+                unsigned int second = first + longitudeBands + 1;
 
-                Indices.push_back((y + 1) * (xSegments + 1) + x);
-                Indices.push_back(y       * (xSegments + 1) + x + 1);
-                Indices.push_back((y + 1) * (xSegments + 1) + x + 1);
+                Indices.push_back(first);
+                Indices.push_back(second);
+                Indices.push_back(first + 1);
+
+                Indices.push_back(second);
+                Indices.push_back(second + 1);
+                Indices.push_back(first + 1);
             }
         }
-
-        Topology = TRIANGLES;
-        Finalize();
+        
+        Topology = TRIANGLES; // Ensure correct topology for rendering
+        Finalize(); // Call finalize to set up the buffers
     }
 }
+

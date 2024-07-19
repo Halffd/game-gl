@@ -1,7 +1,7 @@
 #ifndef MATH_LINEAR_ALGEBRA_QUATERNION_H
 #define MATH_LINEAR_ALGEBRA_QUATERNION_H
 
-#include "vector.h"
+#include "math/vector.h"
 #include "operation.h"
 
 #include <math.h>

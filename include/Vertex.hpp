@@ -1,11 +1,12 @@
-#ifndef VERTEX_H
-#define VERTEX_H
+#ifndef VERTEX_HPP
+#define VERTEX_HPP
 
 #include <glad/glad.h>
 #include <vector>
 #include <utility>
 #include <iostream>
 
+#include "vertex.h"
 #include "Util.hpp"
 
 class VBO
@@ -96,6 +97,9 @@ class VAO
 
 public:
     unsigned int ebo = 0;
+    TOPOLOGY Topology = TRIANGLES;
+    std::vector<unsigned int> Indices;
+    size_t vertexCount;
 
     VAO() = default;
     VAO(const VAO &other) = delete;

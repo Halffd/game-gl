@@ -1,7 +1,7 @@
 #ifndef MATH_LINEAR_ALGEBRA_OPERATION_H
 #define MATH_LINEAR_ALGEBRA_OPERATION_H
 
-#include "vector.h"
+#include "math/vector.h"
 #include "matrix.h"
 
 // NOTE(Nabil/htmlboss): Going to try to use the built in OpenMP to speed up Matrix operations
