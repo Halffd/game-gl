@@ -72,6 +72,10 @@ namespace Cell
         Tangents = tangents;
         Bitangents = bitangents;
     }
+    void Mesh::SetColors(std::vector<math::vec3> color)
+    {
+        Colors = color;
+    }
     // --------------------------------------------------------------------------------------------
     void Mesh::Finalize(bool interleaved)
     {

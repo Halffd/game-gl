@@ -142,31 +142,29 @@ void renderScene(GLFWwindow *window, Shader shader, T *mesh)
     float camX = sin(glfwGetTime()) * radius;
     float camZ = cos(glfwGetTime()) * radius;
     view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0)); 
-    static float zoom = 0.2f;
-    static bool inc = true;
-    if(inc) zoom += 0.05f;
-    else zoom -= 0.05f;
-    if(zoom >= 10.0f || zoom <= 0.01f) inc = !inc;
-    view = glm::scale(view, glm::vec3(1.0f/zoom,1.0f/zoom,1.0f/zoom)); // Zoom 2x
+    //static float zoom = 0.2f;
+    //static bool inc = true;
+    //if(inc) zoom += 0.05f;
+    //else zoom -= 0.05f;
+    //if(zoom >= 10.0f || zoom <= 0.01f) inc = !inc;
+    //view = glm::scale(view, glm::vec3(1.0f/zoom,1.0f/zoom,1.0f/zoom)); // Zoom 2x
 
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
     // First container
     //glBindVertexArray(VAO);
-    for (unsigned int i = 0; i < 10-9; i++)
+    for (unsigned int i = 0; i < 10; i++)
     {
         float time = glfwGetTime() * 90.0f;
         glm::mat4 model = transform(cubePositions[i], std::max(0.1f*((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1+i)/4.4f, 0.3f * time / 3.0f * (float)(1+i), 0.1f * i));
         Texture *textures = new Texture[2]{containerTexture, inTexture};
-        //draw(shader, textures, 2, mesh, model);
+        draw(shader, textures, 2, mesh, model);
         // Print transforms if needed
         if (canPrint)
         {
             printTransform(model);
         }
     }
-// Render points
-draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), 0, TRIANGLES);
 
  canPrint = false;
 
@@ -268,8 +266,10 @@ int main()
 float startAngleRad = 0.0f * DEG_TO_RAD;
 float endAngleRad = 360.0f * DEG_TO_RAD;
 
-Cell::Arc mesh(20.0f, 50.0f, 22, startAngleRad, endAngleRad);
+Cell::Cube mesh;
 //std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
+std::vector<math::vec3> colors = {math::vec3(0.5f, 0.5f, 0.5f), math::vec3(0.8f, 0.0f, 0.5f)};
+mesh.SetColors(colors);
 
     shader.use();
 

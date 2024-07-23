@@ -54,6 +54,7 @@ namespace Cell
         void SetUVs(std::vector<math::vec2> uv);
         void SetNormals(std::vector<math::vec3> normals);
         void SetTangents(std::vector<math::vec3> tangents, std::vector<math::vec3> bitangents); // NOTE: you can only set both tangents and bitangents at the same time to prevent mismatches
+        void SetColors(std::vector<math::vec3> color);
 
         // commits all buffers and attributes to the GPU driver
         void Finalize(bool interleaved = true);
