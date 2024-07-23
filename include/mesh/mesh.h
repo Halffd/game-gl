@@ -26,6 +26,7 @@ namespace Cell
         std::vector<math::vec3> Normals;
         std::vector<math::vec3> Tangents;
         std::vector<math::vec3> Bitangents;
+        std::vector<math::vec3> Colors; // New color attribute
 
         // support multiple ways of initializing a mesh
 
@@ -39,11 +40,15 @@ namespace Cell
         Mesh(Mesh&& other) noexcept;
         Mesh& operator=(Mesh&& other) noexcept;
 
-        Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices);
-        Mesh(std::vector<math::vec3> positions, std::vector<math::vec2> uv, std::vector<unsigned int> indices);
-        Mesh(std::vector<math::vec3> positions, std::vector<math::vec2> uv, std::vector<math::vec3> normals, std::vector<unsigned int> indices);
-        Mesh(std::vector<math::vec3> positions, std::vector<math::vec2> uv, std::vector<math::vec3> normals, std::vector<math::vec3> tangents, std::vector<math::vec3> bitangents, std::vector<unsigned int> indices);
-
+   Mesh(
+        std::vector<math::vec3> positions,
+        std::vector<math::vec2> uv = {},
+        std::vector<math::vec3> normals = {},
+        std::vector<math::vec3> tangents = {},
+        std::vector<math::vec3> bitangents = {},
+        std::vector<math::vec3> colors = {},
+        std::vector<unsigned int> indices = {}
+    );
         // set vertex data manually
         void SetPositions(std::vector<math::vec3> positions);
         void SetUVs(std::vector<math::vec2> uv);

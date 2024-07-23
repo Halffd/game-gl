@@ -8,37 +8,20 @@
 
 namespace Cell
 {
-    // --------------------------------------------------------------------------------------------
-    Mesh::Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices)
-    {
-        Positions = positions;
-        Indices = indices;
-    }
-    // --------------------------------------------------------------------------------------------
-    Mesh::Mesh(std::vector<math::vec3> positions, std::vector<math::vec2> uv, std::vector<unsigned int> indices)
-    {
-        Positions = positions;
-        UV = uv;
-        Indices = indices;
-    }
-    // --------------------------------------------------------------------------------------------
-    Mesh::Mesh(std::vector<math::vec3> positions, std::vector<math::vec2> uv, std::vector<math::vec3> normals, std::vector<unsigned int> indices)
-    {
-        Positions = positions;
-        UV = uv;
-        Normals = normals;
-        Indices = indices;
-    }
-    // --------------------------------------------------------------------------------------------
-    Mesh::Mesh(std::vector<math::vec3> positions, std::vector<math::vec2> uv, std::vector<math::vec3> normals, std::vector<math::vec3> tangents, std::vector<math::vec3> bitangents, std::vector<unsigned int> indices)
-    {
-        Positions = positions;
-        UV = uv;
-        Normals = normals;
-        Tangents = tangents;
-        Bitangents = bitangents;
-        Indices = indices;
-    }
+     Mesh::Mesh(std::vector<math::vec3> positions, std::vector<math::vec2> uv, std::vector<math::vec3> normals, std::vector<math::vec3> tangents, std::vector<math::vec3> bitangents, std::vector<math::vec3> colors, std::vector<unsigned int> indices)
+{
+    // Initialize members in the constructor block
+    this->Positions = std::move(positions);
+    this->UV = std::move(uv);
+    this->Normals = std::move(normals);
+    this->Tangents = std::move(tangents);
+    this->Bitangents = std::move(bitangents);
+    this->Colors = std::move(colors);
+    this->Indices = std::move(indices);
+    
+    // Additional constructor logic here, if any
+}
+
       // Move constructor
     Mesh::Mesh(Mesh&& other) noexcept
         : VAO(std::move(other)),  // Move base class resources
@@ -130,6 +113,12 @@ namespace Cell
                     data.push_back(Bitangents[i].y);
                     data.push_back(Bitangents[i].z);
                 }
+                if (Colors.size() > 0)
+                {
+                    data.push_back(Colors[i].x);
+                    data.push_back(Colors[i].y);
+                    data.push_back(Colors[i].z);
+                }
             }
         }
         else
@@ -163,6 +152,12 @@ namespace Cell
                 data.push_back(Bitangents[i].y);
                 data.push_back(Bitangents[i].z);
             }
+            for (size_t i = 0; i < Colors.size(); ++i)
+            {
+                data.push_back(Colors[i].x);
+                data.push_back(Colors[i].y);
+                data.push_back(Colors[i].z);
+            }
         }
 
         // Configure vertex attributes (only if vertex data size() > 0)
@@ -190,7 +185,8 @@ namespace Cell
                 stride += 3 * sizeof(float);
             if (Bitangents.size() > 0)
                 stride += 3 * sizeof(float);
-
+            if (Colors.size() > 0)
+                stride += 3 * sizeof(float);
             size_t offset = 0;
             setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
             offset += 3 * sizeof(float);
@@ -212,6 +208,12 @@ namespace Cell
             if (Bitangents.size() > 0)
             {
                 setVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
+                offset += 3 * sizeof(float);
+            }
+
+            if (Colors.size() > 0)
+            {
+                setVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
                 offset += 3 * sizeof(float);
             }
         }
@@ -239,6 +241,12 @@ namespace Cell
             {
                 setVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
                 offset += Bitangents.size() * sizeof(float);
+            }
+
+            if (Colors.size() > 0)
+            {
+                setVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
+                offset += Colors.size() * sizeof(float);
             }
         }
         unbind();

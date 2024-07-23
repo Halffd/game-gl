@@ -34,6 +34,7 @@
 #include "quad.h"
 #include "torus.h"
 #include "ring.h"
+#include "arc.h"
 
 // Global variables
 Texture containerTexture, inTexture;
@@ -141,7 +142,11 @@ void renderScene(GLFWwindow *window, Shader shader, T *mesh)
     float camX = sin(glfwGetTime()) * radius;
     float camZ = cos(glfwGetTime()) * radius;
     view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0)); 
-    float zoom = 0.3f;
+    static float zoom = 0.2f;
+    static bool inc = true;
+    if(inc) zoom += 0.05f;
+    else zoom -= 0.05f;
+    if(zoom >= 10.0f || zoom <= 0.01f) inc = !inc;
     view = glm::scale(view, glm::vec3(1.0f/zoom,1.0f/zoom,1.0f/zoom)); // Zoom 2x
 
     shader.setMat4("view", view);
@@ -259,7 +264,12 @@ int main()
         20, 21, 22, 22, 23, 20  // Top face
     };
     // Set up VAO, VBO, and EBO
-    Cell::Ring mesh(25.0f, 25.0f, 7);
+    const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
+float startAngleRad = 0.0f * DEG_TO_RAD;
+float endAngleRad = 360.0f * DEG_TO_RAD;
+
+Cell::Arc mesh(20.0f, 50.0f, 22, startAngleRad, endAngleRad);
+//std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
 
     shader.use();
 
