@@ -13,8 +13,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp> // Ensure this is included
 
-template<typename T>
-void draw(Shader &shader, Texture* textures, int texturesN, T &vao, const glm::mat4 &transform, int vertices = -1, unsigned int topology = 0)
+template<typename V>
+void draw(Shader &shader, Texture* textures, int texturesN, V &vao, const glm::mat4 &transform, int vertices = -1, TOPOLOGY topology = NONE)
 {
     shader.use();
     shader.setMat4("model", transform);
@@ -27,7 +27,7 @@ void draw(Shader &shader, Texture* textures, int texturesN, T &vao, const glm::m
     }
 
     int ind = vao.bind();
-    unsigned int drawTopology = (topology != 0) ? topology : getPrimitive(vao.Topology);
+    unsigned int drawTopology = (topology != NONE) ? topology : getPrimitive(vao.Topology);
     
     if (ind > 0)
     {

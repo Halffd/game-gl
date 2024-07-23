@@ -42,6 +42,14 @@ float aspect;
 bool canPrint = true;
 bool isPaused = false;
 double lastTime = 0.0;
+        // Index data for different primitive types
+unsigned int pointIndices[] = {0, 1, 2, 3, 4, 5};
+unsigned int lineIndices[] = {0, 1, 1, 2, 2, 0, 3, 4, 4, 5, 5, 3};
+unsigned int lineStripIndices[] = {0, 1, 2};
+unsigned int lineLoopIndices[] = {0, 1, 2, 0};
+unsigned int triangleIndices[] = {0, 1, 2, 3, 4, 5};
+unsigned int triangleStripIndices[] = {0, 1, 2, 3, 4, 5};
+unsigned int triangleFanIndices[] = {3, 4, 0, 5, 1, 2};
 glm::vec3 cubePositions[] = {
     glm::vec3(0.0f, 0.0f, 0.0f),
     glm::vec3(2.0f, 5.0f, -15.0f),
@@ -131,25 +139,35 @@ void renderScene(GLFWwindow *window, Shader shader, T mesh)
     const float radius = 10.0f;
     float camX = sin(glfwGetTime()) * radius;
     float camZ = cos(glfwGetTime()) * radius;
-    view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, camZ / radius * 2.5f), glm::vec3(0.0, 1.0, camZ)); 
+    view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0)); 
+    float zoom = 0.3f;
+    view = glm::scale(view, glm::vec3(1.0f/zoom,1.0f/zoom,1.0f/zoom)); // Zoom 2x
+
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
     // First container
     //glBindVertexArray(VAO);
-    for (unsigned int i = 0; i < 10; i++)
+    for (unsigned int i = 0; i < 10-9; i++)
     {
         float time = glfwGetTime() * 90.0f;
         glm::mat4 model = transform(cubePositions[i], std::max(0.1f*((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1+i)/4.4f, 0.3f * time / 3.0f * (float)(1+i), 0.1f * i));
         Texture *textures = new Texture[2]{containerTexture, inTexture};
-        draw(shader, textures, 2, mesh, model);
+        //draw(shader, textures, 2, mesh, model);
         // Print transforms if needed
         if (canPrint)
         {
             printTransform(model);
         }
     }
+// Render points
+draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(pointIndices) / sizeof(unsigned int), POINTS);
+draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(lineIndices) / sizeof(unsigned int), LINES);
+draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(lineStripIndices) / sizeof(unsigned int), LINE_STRIP);
+draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(lineLoopIndices) / sizeof(unsigned int), LINE_LOOP);
+draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(triangleStripIndices) / sizeof(unsigned int), TRIANGLE_STRIP);
+draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(triangleFanIndices) / sizeof(unsigned int), TRIANGLE_FAN);
 
-    canPrint = false;
+ canPrint = false;
 
     // Unbind the VAO
     glBindVertexArray(0);
@@ -245,13 +263,13 @@ int main()
         20, 21, 22, 22, 23, 20  // Top face
     };
     // Set up VAO, VBO, and EBO
-    Cell::Sphere mesh(5,5);
+    Cell::Plane mesh(2,5);
 
     shader.use();
 
     // Set up transformations
     aspect = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
-    std::cout << aspect << " --> " << WIDTH << "/" << HEIGHT << std::endl;
+    std::cout << aspect << " --> "  << WIDTH << "/" << HEIGHT << std::endl;
     //    projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f);
     projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 

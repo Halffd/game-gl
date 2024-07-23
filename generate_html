@@ -1,0 +1,2 @@
+@echo off
+emcc %* -o index.html
