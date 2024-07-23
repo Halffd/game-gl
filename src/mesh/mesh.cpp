@@ -9,11 +9,6 @@
 namespace Cell
 {
     // --------------------------------------------------------------------------------------------
-    Mesh::Mesh()
-    {
-
-    }
-    // --------------------------------------------------------------------------------------------
     Mesh::Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices)
     {
         Positions = positions;
@@ -44,11 +39,40 @@ namespace Cell
         Bitangents = bitangents;
         Indices = indices;
     }
-    // --------------------------------------------------------------------------------------------
-    void Mesh::SetPositions(std::vector<math::vec3> positions)
+      // Move constructor
+    Mesh::Mesh(Mesh&& other) noexcept
+        : VAO(std::move(other)),  // Move base class resources
+          m_VBO(std::move(other.m_VBO)),
+          m_EBO(std::move(other.m_EBO)),
+          UV(std::move(other.UV)),
+          Normals(std::move(other.Normals)),
+          Tangents(std::move(other.Tangents)),
+          Bitangents(std::move(other.Bitangents))
     {
-        Positions = positions;
+        // After moving, the source object's resources should be left in a valid but unspecified state
     }
+
+    // Move assignment operator
+    Mesh& Mesh::operator=(Mesh&& other) noexcept
+    {
+        if (this != &other)
+        {
+            // Move base class resources
+            VAO::operator=(std::move(other));
+
+            // Move member resources
+            m_VBO = std::move(other.m_VBO);
+            m_EBO = std::move(other.m_EBO);
+            UV = std::move(other.UV);
+            Normals = std::move(other.Normals);
+            Tangents = std::move(other.Tangents);
+            Bitangents = std::move(other.Bitangents);
+
+            // Optionally reset other specific members
+        }
+        return *this;
+    }
+
     // --------------------------------------------------------------------------------------------
     void Mesh::SetUVs(std::vector<math::vec2> uv)
     {
@@ -65,27 +89,20 @@ namespace Cell
         Tangents = tangents;
         Bitangents = bitangents;
     }
-    int Mesh::bind() 
-    {
-        glBindVertexArray(m_VAO);
-        return Indices.size();
-    }
     // --------------------------------------------------------------------------------------------
     void Mesh::Finalize(bool interleaved)
     {
-        // initialize object IDs if not configured before
-        if (!m_VAO)
+        if (!exists())
         {
-            glGenVertexArrays(1, &m_VAO);
-            glGenBuffers(1, &m_VBO);
-            glGenBuffers(1, &m_EBO);
+            // Generate and bind the VAO
+            genVertexArray();
         }
-
-        // preprocess buffer data as interleaved or seperate when specified
-        std::vector<float> data; 
+        bind();
+        // Preprocess buffer data as interleaved or separate when specified
+        std::vector<float> data;
         if (interleaved)
         {
-            for (int i = 0; i < Positions.size(); ++i)
+            for (size_t i = 0; i < Positions.size(); ++i)
             {
                 data.push_back(Positions[i].x);
                 data.push_back(Positions[i].y);
@@ -117,31 +134,30 @@ namespace Cell
         }
         else
         {
-            // if any of the float arrays are empty, data won't be filled by them.
-            for (int i = 0; i < Positions.size(); ++i)
+            for (size_t i = 0; i < Positions.size(); ++i)
             {
                 data.push_back(Positions[i].x);
                 data.push_back(Positions[i].y);
                 data.push_back(Positions[i].z);
             }
-            for (int i = 0; i < UV.size(); ++i)
+            for (size_t i = 0; i < UV.size(); ++i)
             {
                 data.push_back(UV[i].x);
                 data.push_back(UV[i].y);
             }
-            for (int i = 0; i < Normals.size(); ++i)
+            for (size_t i = 0; i < Normals.size(); ++i)
             {
                 data.push_back(Normals[i].x);
                 data.push_back(Normals[i].y);
                 data.push_back(Normals[i].z);
             }
-            for (int i = 0; i < Tangents.size(); ++i)
+            for (size_t i = 0; i < Tangents.size(); ++i)
             {
                 data.push_back(Tangents[i].x);
                 data.push_back(Tangents[i].y);
                 data.push_back(Tangents[i].z);
             }
-            for (int i = 0; i < Bitangents.size(); ++i)
+            for (size_t i = 0; i < Bitangents.size(); ++i)
             {
                 data.push_back(Bitangents[i].x);
                 data.push_back(Bitangents[i].y);
@@ -149,88 +165,86 @@ namespace Cell
             }
         }
 
-        // configure vertex attributes (only on vertex data size() > 0)
-        glBindVertexArray(m_VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), &data[0], GL_STATIC_DRAW);
-        // only fill the index buffer if the index array is non-empty.
+        // Configure vertex attributes (only if vertex data size() > 0)
+        m_VBO.genBuffer();
+        m_VBO.bind();
+        m_VBO.setup(data.data(), data.size() * sizeof(float));
+
+        // Only fill the index buffer if the index array is non-empty
         if (Indices.size() > 0)
         {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, Indices.size() * sizeof(unsigned int), &Indices[0], GL_STATIC_DRAW);
+            m_EBO.genBuffer();
+            m_EBO.bind();
+            m_EBO.setup(Indices.data(), Indices.size() * sizeof(unsigned int));
         }
+
         if (interleaved)
         {
-            // calculate stride from number of non-empty vertex attribute arrays
-            size_t stride                      = 3 * sizeof(float);
-            if (UV.size() > 0)         stride += 2 * sizeof(float);
-            if (Normals.size() > 0)    stride += 3 * sizeof(float);
-            if (Tangents.size() > 0)   stride += 3 * sizeof(float);
-            if (Bitangents.size() > 0) stride += 3 * sizeof(float);
+            // Calculate stride from the number of non-empty vertex attribute arrays
+            size_t stride = 3 * sizeof(float);
+            if (UV.size() > 0)
+                stride += 2 * sizeof(float);
+            if (Normals.size() > 0)
+                stride += 3 * sizeof(float);
+            if (Tangents.size() > 0)
+                stride += 3 * sizeof(float);
+            if (Bitangents.size() > 0)
+                stride += 3 * sizeof(float);
 
             size_t offset = 0;
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)offset);
+            setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
             offset += 3 * sizeof(float);
             if (UV.size() > 0)
             {
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)offset);
+                setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
                 offset += 2 * sizeof(float);
             }
             if (Normals.size() > 0)
             {
-                glEnableVertexAttribArray(2);
-                glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)offset);
+                setVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
                 offset += 3 * sizeof(float);
             }
             if (Tangents.size() > 0)
             {
-                glEnableVertexAttribArray(3);
-                glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)offset);
+                setVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
                 offset += 3 * sizeof(float);
             }
             if (Bitangents.size() > 0)
             {
-                glEnableVertexAttribArray(4);
-                glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)offset);
+                setVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
                 offset += 3 * sizeof(float);
             }
         }
         else
         {
             size_t offset = 0;
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)offset);
+            setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
             offset += Positions.size() * sizeof(float);
             if (UV.size() > 0)
             {
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)offset);
+                setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
                 offset += UV.size() * sizeof(float);
             }
             if (Normals.size() > 0)
             {
-                glEnableVertexAttribArray(2);
-                glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)offset);
+                setVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
                 offset += Normals.size() * sizeof(float);
             }
             if (Tangents.size() > 0)
             {
-                glEnableVertexAttribArray(3);
-                glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)offset);
+                setVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
                 offset += Tangents.size() * sizeof(float);
             }
             if (Bitangents.size() > 0)
             {
-                glEnableVertexAttribArray(4);
-                glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)offset);
+                setVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
                 offset += Bitangents.size() * sizeof(float);
             }
         }
-        glBindVertexArray(0);
+        unbind();
+
         vertexCount = Positions.size();
-        std::cout << vertexCount << " vertexes, Pos: " << Positions << "\nIndexes" << Indices << "\nUV: " << UV << "\n";
+        std::cout << vertexCount << " vertices, Positions: " << Positions << "\nIndices: " << Indices << "\nUV: " << UV << "\n";
     }
     // --------------------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------------------
@@ -243,9 +257,9 @@ namespace Cell
     {
         // TODO(Joey): walk overall the vertices and calculate the tangent space vectors manually
         // TODO: based on topology, handle some of the winding orders differently.
-        //tangents.resize(positions.size());
-        //bitangents.resize(positions.size());
-        //for (unsigned int i = 0; i < indices.size() - 2; ++i)
+        // tangents.resize(positions.size());
+        // bitangents.resize(positions.size());
+        // for (unsigned int i = 0; i < indices.size() - 2; ++i)
         //{
         //    unsigned int index1 = indices[i + 0];
         //    unsigned int index2 = indices[i + 1];
@@ -259,7 +273,7 @@ namespace Cell
         //    glm::vec2 uv2 = uv[index2];
         //    glm::vec2 uv3 = uv[index3];
 
-        //    // due to winding order getting changed each next triangle (as we render as triangle strip) we 
+        //    // due to winding order getting changed each next triangle (as we render as triangle strip) we
         //    // change the order of the cross product to account for winding order switch
         //    glm::vec3 edge1 = pos2 - pos1;
         //    glm::vec3 edge2 = pos3 - pos1;
@@ -277,7 +291,7 @@ namespace Cell
         //    bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
         //    bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
         //    bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-        //    //} 
+        //    //}
         //    /*    else
         //    {
         //    bitangent.x = f * (-deltaUV2.x * edge2.x + deltaUV1.x * edge1.x);
@@ -292,10 +306,10 @@ namespace Cell
         //    bitangents[index3] += bitangent;
         //}
         //// normalize all tangents/bi-tangents
-        //for (int i = 0; i < tangents.size(); ++i)
+        // for (int i = 0; i < tangents.size(); ++i)
         //{
-        //    tangents[i] = glm::normalize(tangents[i]);
-        //    bitangents[i] = glm::normalize(bitangents[i]);
-        //}
+        //     tangents[i] = glm::normalize(tangents[i]);
+        //     bitangents[i] = glm::normalize(bitangents[i]);
+        // }
     }
 }

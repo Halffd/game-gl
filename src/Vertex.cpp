@@ -28,58 +28,58 @@ GLenum getPrimitive(TOPOLOGY topology) {
 }
 
 VBO::~VBO() {
-    if (m_id)
-        glDeleteBuffers(1, &m_id);
+    if (id)
+        glDeleteBuffers(1, &id);
 }
 
 VBO &VBO::operator=(VBO &&other) {
     if (this != &other) {
-        if (m_id)
-            glDeleteBuffers(1, &m_id);
-        m_id = std::exchange(other.m_id, 0);
+        if (id)
+            glDeleteBuffers(1, &id);
+        id = std::exchange(other.id, 0);
     }
     return *this;
 }
 
 void VBO::bind() const {
-    glBindBuffer(GL_ARRAY_BUFFER, m_id);
+    glBindBuffer(GL_ARRAY_BUFFER, id);
 }
 
 void VBO::genBuffer() {
-    glGenBuffers(1, &m_id);
+    glGenBuffers(1, &id);
     glCheckError(__FILE__, __LINE__);
 }
 
 void VBO::setup(const GLfloat *vertices, GLsizeiptr size, GLenum usage) {
-    glBindBuffer(GL_ARRAY_BUFFER, m_id);
+    glBindBuffer(GL_ARRAY_BUFFER, id);
     glBufferData(GL_ARRAY_BUFFER, size, vertices, usage);
     glCheckError(__FILE__, __LINE__);
 }
 
 template <typename T>
 void VBO::setup(const T *vertices, GLsizeiptr size, GLenum usage) {
-    glBindBuffer(GL_ARRAY_BUFFER, m_id);
+    glBindBuffer(GL_ARRAY_BUFFER, id);
     glBufferData(GL_ARRAY_BUFFER, size, vertices, usage);
     glCheckError(__FILE__, __LINE__);
 }
 
 template <typename T>
 void VBO::setup(const std::vector<T> &vertices, GLenum usage) {
-    glBindBuffer(GL_ARRAY_BUFFER, m_id);
+    glBindBuffer(GL_ARRAY_BUFFER, id);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(T), vertices.data(), usage);
     glCheckError(__FILE__, __LINE__);
 }
 
 template <typename T>
 void VBO::setupSubData(const T *vertices, GLsizeiptr size, GLintptr offset) {
-    glBindBuffer(GL_ARRAY_BUFFER, m_id);
+    glBindBuffer(GL_ARRAY_BUFFER, id);
     glBufferSubData(GL_ARRAY_BUFFER, offset, size, vertices);
     glCheckError(__FILE__, __LINE__);
 }
 
 template <typename T>
 void VBO::setupSubData(const std::vector<T> &vertices, GLintptr offset) {
-    glBindBuffer(GL_ARRAY_BUFFER, m_id);
+    glBindBuffer(GL_ARRAY_BUFFER, id);
     glBufferSubData(GL_ARRAY_BUFFER, offset, vertices.size() * sizeof(T), vertices.data());
     glCheckError(__FILE__, __LINE__);
 }
@@ -90,22 +90,35 @@ void VBO::unbind() const {
 
 
 VAO::~VAO() {
-    if (m_id)
-        glDeleteVertexArrays(1, &m_id);
+    if (id)
+        glDeleteVertexArrays(1, &id);
 }
-
+VAO::VAO(std::vector<math::vec3> positions, std::vector<unsigned int> indices)
+{
+    Positions = positions;
+    Indices = indices;
+}
 VAO &VAO::operator=(VAO &&other) {
     if (this != &other) {
-        if (m_id)
-            glDeleteVertexArrays(1, &m_id);
-        m_id = std::exchange(other.m_id, 0);
+        if (id)
+            glDeleteVertexArrays(1, &id);
+        id = std::exchange(other.id, 0);
     }
     return *this;
 }
+// --------------------------------------------------------------------------------------------
+void VAO::SetPositions(std::vector<math::vec3> positions)
+{
+    Positions = positions;
+}
+// --------------------------------------------------------------------------------------------
 
 int VAO::bind() const {
-    glBindVertexArray(m_id);
-    return ebo;
+    glBindVertexArray(id);
+    return Indices.size();
+}
+bool VAO::exists() const {
+    return id != 0;
 }
 
 void VAO::setVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer) {
@@ -137,7 +150,7 @@ void VAO::linkAttribFast(GLuint layout, GLuint components, GLenum type, GLsizei 
 }
 
 void VAO::genVertexArray() {
-    glGenVertexArrays(1, &m_id);
+    glGenVertexArrays(1, &id);
     glCheckError(__FILE__, __LINE__);
 }
 
@@ -147,18 +160,18 @@ void VAO::unbind() const {
 
 
 EBO::~EBO() {
-    if (m_id) {
-        glDeleteBuffers(1, &m_id);
+    if (id) {
+        glDeleteBuffers(1, &id);
     }
 }
 
 void EBO::genBuffer() {
-    glGenBuffers(1, &m_id);
+    glGenBuffers(1, &id);
     glCheckError(__FILE__, __LINE__);
 }
 
 void EBO::bind() {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id);
     glCheckError(__FILE__, __LINE__);
 }
 

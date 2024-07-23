@@ -62,12 +62,11 @@ public:
     void unbind() const;
 
 private:
-    GLuint m_id{};
+    unsigned int id;
 };
 
 class VAO {
 public:
-    unsigned int ebo = 0;
     TOPOLOGY Topology = TRIANGLES;
     std::vector<math::vec3> Positions;
     std::vector<unsigned int> Indices;
@@ -77,20 +76,21 @@ public:
     VAO(const VAO &other) = delete;
     VAO(VAO &&other) { *this = std::move(other); }
     ~VAO();
-
+    VAO(std::vector<math::vec3> positions, std::vector<unsigned int> indices);
     VAO &operator=(const VAO &other) = delete;
     VAO &operator=(VAO &&other);
 
     int bind() const;
+    bool exists() const;
     void setVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
     void set(GLuint index, GLint size, GLsizei stride, const void *pointer);
     void linkAttrib(const VBO &vbo, GLuint layout, GLuint components, GLenum type, GLsizei stride, void *offset, GLboolean normalize = GL_FALSE) const;
     void linkAttribFast(GLuint layout, GLuint components, GLenum type, GLsizei stride, void *offset, GLboolean normalize = GL_FALSE) const;
     void genVertexArray();
     void unbind() const;
-
+    void SetPositions(std::vector<math::vec3> positions);
 private:
-    GLuint m_id{};
+    unsigned int id = 0;
 };
 
 class EBO {
@@ -105,6 +105,6 @@ public:
     void setup(const void* indices, GLsizei size);
 
 private:
-    GLuint m_id{};
+    unsigned int id;
 };
 #endif

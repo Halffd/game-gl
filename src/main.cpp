@@ -124,7 +124,7 @@ void processInput(GLFWwindow *window)
     }
 }
 template<typename T>
-void renderScene(GLFWwindow *window, Shader shader, T mesh)
+void renderScene(GLFWwindow *window, Shader shader, T *mesh)
 {
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -160,12 +160,7 @@ void renderScene(GLFWwindow *window, Shader shader, T mesh)
         }
     }
 // Render points
-draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(pointIndices) / sizeof(unsigned int), POINTS);
-draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(lineIndices) / sizeof(unsigned int), LINES);
-draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(lineStripIndices) / sizeof(unsigned int), LINE_STRIP);
-draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(lineLoopIndices) / sizeof(unsigned int), LINE_LOOP);
-draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(triangleStripIndices) / sizeof(unsigned int), TRIANGLE_STRIP);
-draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), sizeof(triangleFanIndices) / sizeof(unsigned int), TRIANGLE_FAN);
+draw(shader, &containerTexture, 1, mesh, glm::mat4(1.0f), 0, TRIANGLES);
 
  canPrint = false;
 
@@ -292,7 +287,7 @@ int main()
         if (!isPaused)
         {
             // Update your program state here
-            renderScene(window, shader, mesh);
+            renderScene(window, shader, &mesh);
         }
     }
 

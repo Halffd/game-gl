@@ -26,16 +26,17 @@ void draw(Shader &shader, Texture* textures, int texturesN, V &vao, const glm::m
         shader.setInt("texture" + std::to_string(i + 1), i); // Set the uniform for the texture
     }
 
-    int ind = vao.bind();
-    unsigned int drawTopology = (topology != NONE) ? topology : getPrimitive(vao.Topology);
-    
+    int ind = vao->bind();
+    unsigned int drawTopology = (topology != NONE) ? topology : getPrimitive(vao->Topology);
+        //std::cout << "Draw topology: " << drawTopology << std::endl;
+        //std::cout << "Vertex count: " << (vertices > 0 ? vertices : vao.vertexCount) << std::endl;
     if (ind > 0)
     {
-        glDrawElements(drawTopology, (vertices > 0 ? vertices : vao.vertexCount), GL_UNSIGNED_INT, 0);
+        glDrawElements(drawTopology, (vertices > 0 ? vertices : vao->vertexCount), GL_UNSIGNED_INT, 0);
     }
     else
     {
-        glDrawArrays(drawTopology, 0, (vertices > 0 ? vertices : vao.vertexCount));
+        glDrawArrays(drawTopology, 0, (vertices > 0 ? vertices : vao->vertexCount));
     }
 }
 // Function to set up the transformation for an object
