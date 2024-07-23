@@ -33,6 +33,7 @@
 #include "circle.h"
 #include "quad.h"
 #include "torus.h"
+#include "ring.h"
 
 // Global variables
 Texture containerTexture, inTexture;
@@ -258,7 +259,7 @@ int main()
         20, 21, 22, 22, 23, 20  // Top face
     };
     // Set up VAO, VBO, and EBO
-    Cell::Plane mesh(2,5);
+    Cell::Ring mesh(25.0f, 25.0f, 7);
 
     shader.use();
 

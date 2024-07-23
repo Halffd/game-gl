@@ -111,6 +111,10 @@ void VAO::SetPositions(std::vector<math::vec3> positions)
 {
     Positions = positions;
 }
+void VAO::SetIndices(std::vector<unsigned int> indices){
+    Indices = indices;
+}
+
 // --------------------------------------------------------------------------------------------
 
 int VAO::bind() const {

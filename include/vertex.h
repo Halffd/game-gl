@@ -89,6 +89,7 @@ public:
     void genVertexArray();
     void unbind() const;
     void SetPositions(std::vector<math::vec3> positions);
+    void SetIndices(std::vector<unsigned int> indices);
 private:
     unsigned int id = 0;
 };
