@@ -14,7 +14,11 @@ uniform vec4 mixColor;
 
 void main()
 {
-    FragColor = vec4(Color, 1.0); // Use color
+    if(Color != vec3(0.0)){
+        FragColor = vec4(Color, 1.0); // Use color
+    } else {
+        FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);
 
-    //FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);
+    }
+
 }

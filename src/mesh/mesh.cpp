@@ -78,84 +78,97 @@ namespace Cell
     }
     // --------------------------------------------------------------------------------------------
     void Mesh::Finalize(bool interleaved)
+{
+    if (!exists())
     {
-        if (!exists())
+        genVertexArray();
+    }
+    bind();
+
+    std::vector<float> data;
+    if (interleaved)
+    {
+        for (size_t i = 0; i < Positions.size(); ++i)
         {
-            // Generate and bind the VAO
-            genVertexArray();
-        }
-        bind();
-        // Preprocess buffer data as interleaved or separate when specified
-        std::vector<float> data;
-        if (interleaved)
-        {
-            for (size_t i = 0; i < Positions.size(); ++i)
+            data.push_back(Positions[i].x);
+            data.push_back(Positions[i].y);
+            data.push_back(Positions[i].z);
+            if (UV.size() > 0)
             {
-                data.push_back(Positions[i].x);
-                data.push_back(Positions[i].y);
-                data.push_back(Positions[i].z);
-                if (UV.size() > 0)
-                {
-                    data.push_back(UV[i].x);
-                    data.push_back(UV[i].y);
-                }
-                if (Normals.size() > 0)
-                {
-                    data.push_back(Normals[i].x);
-                    data.push_back(Normals[i].y);
-                    data.push_back(Normals[i].z);
-                }
-                if (Tangents.size() > 0)
-                {
-                    data.push_back(Tangents[i].x);
-                    data.push_back(Tangents[i].y);
-                    data.push_back(Tangents[i].z);
-                }
-                if (Bitangents.size() > 0)
-                {
-                    data.push_back(Bitangents[i].x);
-                    data.push_back(Bitangents[i].y);
-                    data.push_back(Bitangents[i].z);
-                }
-                if (Colors.size() > 0)
-                {
-                    data.push_back(Colors[i].x);
-                    data.push_back(Colors[i].y);
-                    data.push_back(Colors[i].z);
-                }
+                data.push_back(UV[i].x);
+                data.push_back(UV[i].y);
+            }
+            if (Normals.size() > 0)
+            {
+                data.push_back(Normals[i].x);
+                data.push_back(Normals[i].y);
+                data.push_back(Normals[i].z);
+            }
+            if (Tangents.size() > 0)
+            {
+                data.push_back(Tangents[i].x);
+                data.push_back(Tangents[i].y);
+                data.push_back(Tangents[i].z);
+            }
+            if (Bitangents.size() > 0)
+            {
+                data.push_back(Bitangents[i].x);
+                data.push_back(Bitangents[i].y);
+                data.push_back(Bitangents[i].z);
+            }
+            if (Colors.size() > 0)
+            {
+                data.push_back(Colors[i].x);
+                data.push_back(Colors[i].y);
+                data.push_back(Colors[i].z);
             }
         }
-        else
+    }
+    else
+    {
+        for (size_t i = 0; i < Positions.size(); ++i)
         {
-            for (size_t i = 0; i < Positions.size(); ++i)
-            {
-                data.push_back(Positions[i].x);
-                data.push_back(Positions[i].y);
-                data.push_back(Positions[i].z);
-            }
+            data.push_back(Positions[i].x);
+            data.push_back(Positions[i].y);
+            data.push_back(Positions[i].z);
+        }
+        if (UV.size() > 0)
+        {
             for (size_t i = 0; i < UV.size(); ++i)
             {
                 data.push_back(UV[i].x);
                 data.push_back(UV[i].y);
             }
+        }
+        if (Normals.size() > 0)
+        {
             for (size_t i = 0; i < Normals.size(); ++i)
             {
                 data.push_back(Normals[i].x);
                 data.push_back(Normals[i].y);
                 data.push_back(Normals[i].z);
             }
+        }
+        if (Tangents.size() > 0)
+        {
             for (size_t i = 0; i < Tangents.size(); ++i)
             {
                 data.push_back(Tangents[i].x);
                 data.push_back(Tangents[i].y);
                 data.push_back(Tangents[i].z);
             }
+        }
+        if (Bitangents.size() > 0)
+        {
             for (size_t i = 0; i < Bitangents.size(); ++i)
             {
                 data.push_back(Bitangents[i].x);
                 data.push_back(Bitangents[i].y);
                 data.push_back(Bitangents[i].z);
             }
+        }
+        if (Colors.size() > 0)
+        {
             for (size_t i = 0; i < Colors.size(); ++i)
             {
                 data.push_back(Colors[i].x);
@@ -163,101 +176,97 @@ namespace Cell
                 data.push_back(Colors[i].z);
             }
         }
-
-        // Configure vertex attributes (only if vertex data size() > 0)
-        m_VBO.genBuffer();
-        m_VBO.bind();
-        m_VBO.setup(data.data(), data.size() * sizeof(float));
-
-        // Only fill the index buffer if the index array is non-empty
-        if (Indices.size() > 0)
-        {
-            m_EBO.genBuffer();
-            m_EBO.bind();
-            m_EBO.setup(Indices.data(), Indices.size() * sizeof(unsigned int));
-        }
-
-        if (interleaved)
-        {
-            // Calculate stride from the number of non-empty vertex attribute arrays
-            size_t stride = 3 * sizeof(float);
-            if (UV.size() > 0)
-                stride += 2 * sizeof(float);
-            if (Normals.size() > 0)
-                stride += 3 * sizeof(float);
-            if (Tangents.size() > 0)
-                stride += 3 * sizeof(float);
-            if (Bitangents.size() > 0)
-                stride += 3 * sizeof(float);
-            if (Colors.size() > 0)
-                stride += 3 * sizeof(float);
-            size_t offset = 0;
-            setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
-            offset += 3 * sizeof(float);
-            if (UV.size() > 0)
-            {
-                setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
-                offset += 2 * sizeof(float);
-            }
-            if (Normals.size() > 0)
-            {
-                setVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
-                offset += 3 * sizeof(float);
-            }
-            if (Tangents.size() > 0)
-            {
-                setVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
-                offset += 3 * sizeof(float);
-            }
-            if (Bitangents.size() > 0)
-            {
-                setVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
-                offset += 3 * sizeof(float);
-            }
-
-            if (Colors.size() > 0)
-            {
-                setVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
-                offset += 3 * sizeof(float);
-            }
-        }
-        else
-        {
-            size_t offset = 0;
-            setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
-            offset += Positions.size() * sizeof(float);
-            if (UV.size() > 0)
-            {
-                setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
-                offset += UV.size() * sizeof(float);
-            }
-            if (Normals.size() > 0)
-            {
-                setVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
-                offset += Normals.size() * sizeof(float);
-            }
-            if (Tangents.size() > 0)
-            {
-                setVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
-                offset += Tangents.size() * sizeof(float);
-            }
-            if (Bitangents.size() > 0)
-            {
-                setVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
-                offset += Bitangents.size() * sizeof(float);
-            }
-
-            if (Colors.size() > 0)
-            {
-                setVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
-                offset += Colors.size() * sizeof(float);
-            }
-        }
-        unbind();
-
-        vertexCount = Positions.size();
-        std::cout << vertexCount << " vertices, Positions: " << Positions << "\nIndices: " << Indices << "\nUV: " << UV << "\n";
     }
+
+    m_VBO.genBuffer();
+    m_VBO.bind();
+    m_VBO.setup(data.data(), data.size() * sizeof(float));
+
+    if (Indices.size() > 0)
+    {
+        m_EBO.genBuffer();
+        m_EBO.bind();
+        m_EBO.setup(Indices.data(), Indices.size() * sizeof(unsigned int));
+    }
+
+    if (interleaved)
+    {
+        size_t stride = 3 * sizeof(float);
+        if (UV.size() > 0)
+            stride += 2 * sizeof(float);
+        if (Normals.size() > 0)
+            stride += 3 * sizeof(float);
+        if (Tangents.size() > 0)
+            stride += 3 * sizeof(float);
+        if (Bitangents.size() > 0)
+            stride += 3 * sizeof(float);
+        if (Colors.size() > 0)
+            stride += 3 * sizeof(float);
+
+        size_t offset = 0;
+        setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
+        offset += 3 * sizeof(float);
+        if (UV.size() > 0)
+        {
+            setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
+            offset += 2 * sizeof(float);
+        }
+        if (Normals.size() > 0)
+        {
+            setVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
+            offset += 3 * sizeof(float);
+        }
+        if (Tangents.size() > 0)
+        {
+            setVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
+            offset += 3 * sizeof(float);
+        }
+        if (Bitangents.size() > 0)
+        {
+            setVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
+            offset += 3 * sizeof(float);
+        }
+        if (Colors.size() > 0)
+        {
+            setVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid *)offset);
+        }
+    }
+    else
+    {
+        size_t offset = 0;
+        setVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
+        offset += Positions.size() * sizeof(float);
+        if (UV.size() > 0)
+        {
+            setVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
+            offset += UV.size() * sizeof(float);
+        }
+        if (Normals.size() > 0)
+        {
+            setVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
+            offset += Normals.size() * sizeof(float);
+        }
+        if (Tangents.size() > 0)
+        {
+            setVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
+            offset += Tangents.size() * sizeof(float);
+        }
+        if (Bitangents.size() > 0)
+        {
+            setVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
+            offset += Bitangents.size() * sizeof(float);
+        }
+        if (Colors.size() > 0)
+        {
+            setVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid *)offset);
+        }
+    }
+    unbind();
+
+    vertexCount = Positions.size();
+    std::cout << vertexCount << " vertices, Positions: " << Positions << "\nIndices: " << Indices << "\nUV: " << UV << "\n";
+}
+
     // --------------------------------------------------------------------------------------------
     // --------------------------------------------------------------------------------------------
     void Mesh::calculateNormals(bool smooth)

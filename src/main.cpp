@@ -266,7 +266,8 @@ int main()
 float startAngleRad = 0.0f * DEG_TO_RAD;
 float endAngleRad = 360.0f * DEG_TO_RAD;
 
-Cell::Cube mesh;
+//Cell::Cube mesh;
+Cell::Plane mesh(20,20);
 //std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
 
     shader.use();
