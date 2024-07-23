@@ -1,1 +1,0 @@
-/ucrt64/bin/cc.exe CMakeFiles/game.dir/src/glad.c.obj CMakeFiles/game.dir/src/main.c.obj -o /d/Code/c/game-gl/bin/Game  /d/Code/c/game-gl/libs/glfw3.dll 

@@ -22,6 +22,10 @@ void main()
     Normal = aNormal;
     Tangent = aTangent;
     Bitangent = aBitangent;
-    Color = aColor; // Pass color to fragment shader
+      if (gl_VertexAttribArrayEnabled(5)) {
+        Color = aColor;
+    } else {
+        Color = vec3(1.0, 1.0, 1.0); // Default to white color if no color attribute is provided
+    }
     gl_Position = projection * view * model * vec4(aPos, 1.0);
 }

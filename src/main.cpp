@@ -268,8 +268,6 @@ float endAngleRad = 360.0f * DEG_TO_RAD;
 
 Cell::Cube mesh;
 //std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
-std::vector<math::vec3> colors = {math::vec3(0.5f, 0.5f, 0.5f), math::vec3(0.8f, 0.0f, 0.5f)};
-mesh.SetColors(colors);
 
     shader.use();
 
