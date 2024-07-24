@@ -20,6 +20,7 @@
 #include "root.h"
 
 #include "vertex.h"
+#include "Camera.hpp"
 #include "Shader.hpp"
 #include "Texture.hpp"
 #include "Transform.hpp"
@@ -35,6 +36,11 @@
 #include "torus.h"
 #include "ring.h"
 #include "arc.h"
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void processInput(GLFWwindow *window);
 
 // Global variables
 int screenWidth = WIDTH;
@@ -79,58 +85,51 @@ std::vector<uint32_t> indices = {
 VAO vao;
 VBO vbo;
 EBO ebo;
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-bool input = true;
-float deltaTime = 0.0f; // Time between current frame and last frame
-float lastFrame = 0.0f; // Time of last frame
-float lastX = screenWidth / 2, lastY = screenHeight / 2;
 
-float fov = 60.0f;
-float maxFov = 60.0f;
-float scrollSensivity = 2.5f;
+bool input = true;
+
+// camera
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+bool firstMouse = true;
+
+// timing
+float deltaTime = 0.0f;	// time between current frame and last frame
+float lastFrame = 0.0f;
+
+float lastX = screenWidth / 2.0f, lastY = screenHeight / 2.0f;
+
+// glfw: whenever the mouse scroll wheel scrolls, this callback is called
+// ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    fov -= (float)yoffset * scrollSensivity;
-    if (fov < 1.0f)
-        fov = 1.0f;
-    if (fov > maxFov)
-        fov = maxFov; 
+    camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
-void mouse_callback(GLFWwindow *window, double xpos, double ypos)
+
+// glfw: whenever the mouse moves, this callback is called
+// -------------------------------------------------------
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-    if (firstMouse) // initially set to true
-{
-    lastX = xpos;
-    lastY = ypos;
-    firstMouse = false;
-}
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
     float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
     lastX = xpos;
     lastY = ypos;
 
-    const float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    yaw += xoffset;
-    pitch += yoffset;
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
-
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(direction);
+    camera.ProcessMouseMovement(xoffset, yoffset);
 }
 void processInput(GLFWwindow *window)
 {
@@ -193,23 +192,14 @@ void processInput(GLFWwindow *window)
     lastFrame = currentFrame;
     float cameraSpeed = 2.5f * deltaTime;
 
-    // Handle camera movement
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraSpeed * cameraFront;
+ if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraSpeed * cameraFront;
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
-        cameraPos -= glm::cross(cameraFront, cameraUp) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-        cameraPos += glm::cross(cameraFront, cameraUp) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraUp, cameraFront)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraUp, cameraFront)) * cameraSpeed;
+        camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes, Texture *textures)
 {
@@ -224,7 +214,7 @@ void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes, 
     shader.setInt("texture2", 0);
     if (input)
     {
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        view = camera.GetViewMatrix();
     }
     else
     {
@@ -239,7 +229,7 @@ void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes, 
     // else zoom -= 0.05f;
     // if(zoom >= 10.0f || zoom <= 0.01f) inc = !inc;
     // view = glm::scale(view, glm::vec3(1.0f/zoom,1.0f/zoom,1.0f/zoom)); // Zoom 2x
-    projection = glm::perspective(glm::radians(fov), aspect, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(camera.Zoom), aspect, 0.1f, 100.0f);
 
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
@@ -294,8 +284,15 @@ int main()
         return -1;
     }
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    #ifdef __APPLE__
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    #endif
     // Create a GLFW window
-    GLFWwindow *window = glfwCreateWindow(screenWidth, screenHeight, "OpenGL Square", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(screenWidth, screenHeight, "OpenGL", nullptr, nullptr);
     if (!window)
     {
         std::cerr << "Failed to create GLFW window" << std::endl;
@@ -323,6 +320,14 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback); 
+
+    // glad: load all OpenGL function pointers
+    // ---------------------------------------
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
 
     Shader shader(fs.shader("shader.vs"), fs.shader("shader.fs"));
 
