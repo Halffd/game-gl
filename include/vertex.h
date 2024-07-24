@@ -73,10 +73,10 @@ public:
     size_t vertexCount;
 
     VAO() = default;
+    VAO(std::vector<math::vec3> positions, std::vector<unsigned int> indices);
     VAO(const VAO &other) = delete;
     VAO(VAO &&other) { *this = std::move(other); }
     ~VAO();
-    VAO(std::vector<math::vec3> positions, std::vector<unsigned int> indices);
     VAO &operator=(const VAO &other) = delete;
     VAO &operator=(VAO &&other);
 

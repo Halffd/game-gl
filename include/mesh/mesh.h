@@ -10,9 +10,9 @@
 
 namespace Cell
 {
-    /* 
+    /*
 
-      Base Mesh class. A mesh in its simplest form is purely a list of vertices, with some added 
+      Base Mesh class. A mesh in its simplest form is purely a list of vertices, with some added
       functionality for easily setting up the hardware configuration relevant for rendering.
 
     */
@@ -21,6 +21,7 @@ namespace Cell
     public:
         VBO m_VBO;
         EBO m_EBO;
+
     public:
         std::vector<math::vec2> UV;
         std::vector<math::vec3> Normals;
@@ -33,22 +34,24 @@ namespace Cell
         Mesh() = default;
 
         // Delete copy constructor and assignment operator
-        Mesh(const Mesh&) = delete;
-        Mesh& operator=(const Mesh&) = delete;
+        Mesh(const Mesh &) = delete;
+        Mesh &operator=(const Mesh &) = delete;
 
         // Define move constructor and move assignment operator
-        Mesh(Mesh&& other) noexcept;
-        Mesh& operator=(Mesh&& other) noexcept;
+        Mesh(Mesh &&other) noexcept;
+        Mesh &operator=(Mesh &&other) noexcept;
 
-   Mesh(
-        std::vector<math::vec3> positions,
-        std::vector<math::vec2> uv = {},
-        std::vector<math::vec3> normals = {},
-        std::vector<math::vec3> tangents = {},
-        std::vector<math::vec3> bitangents = {},
-        std::vector<math::vec3> colors = {},
-        std::vector<unsigned int> indices = {}
-    );
+        Mesh(
+            std::vector<math::vec3> positions,
+            std::vector<math::vec2> uv = {},
+            std::vector<math::vec3> normals = {},
+            std::vector<math::vec3> tangents = {},
+            std::vector<math::vec3> bitangents = {},
+            std::vector<math::vec3> colors = {},
+            std::vector<unsigned int> indices = {});
+            Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices, std::vector<math::vec3> colors);
+            Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices);
+            Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices, std::vector<math::vec2> uv);
         // set vertex data manually
         void SetPositions(std::vector<math::vec3> positions);
         void SetUVs(std::vector<math::vec2> uv);
@@ -60,7 +63,7 @@ namespace Cell
         void Finalize(bool interleaved = true);
 
         // generate triangulated mesh from signed distance field
-        void FromSDF(std::function<float(math::vec3)>& sdf, float maxDistance, uint16_t gridResolution);
+        void FromSDF(std::function<float(math::vec3)> &sdf, float maxDistance, uint16_t gridResolution);
 
     private:
         void calculateNormals(bool smooth = true);

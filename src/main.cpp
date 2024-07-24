@@ -38,7 +38,6 @@
 
 // Global variables
 Texture containerTexture, inTexture;
-VAO vao;
 glm::mat4 projection, view;
 float aspect;
 bool canPrint = true;
@@ -63,6 +62,29 @@ glm::vec3 cubePositions[] = {
     glm::vec3(1.5f, 2.0f, -2.5f),
     glm::vec3(1.5f, 0.2f, -1.5f),
     glm::vec3(-1.3f, 1.0f, -1.5f)};
+// Vertex data for the trapezium
+std::vector<math::vec3> vertices = {
+    {-0.5f, 0.5f, 0.0f},  // Top left
+    {0.5f, 0.5f, 0.0f},   // Top right
+    {0.3f, -0.5f, 0.0f},  // Bottom right
+    {-0.3f, -0.5f, 0.0f}  // Bottom left
+};
+
+std::vector<math::vec2> uvs = {
+    {0.0f, 1.0f},  // Top left
+    {1.0f, 1.0f},  // Top right
+    {0.6f, 0.0f},  // Bottom right
+    {0.4f, 0.0f}   // Bottom left
+};
+
+// Index data for the trapezium
+std::vector<uint32_t> indices = {
+    0, 1, 2,
+    0, 2, 3
+};
+VAO vao;
+VBO vbo;
+EBO ebo;
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
@@ -125,8 +147,7 @@ void processInput(GLFWwindow *window)
         spaceKeyWasPressed = false; // Reset the flag
     }
 }
-template<typename T>
-void renderScene(GLFWwindow *window, Shader shader, T *mesh)
+void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO*>& meshes)
 {
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -158,14 +179,18 @@ void renderScene(GLFWwindow *window, Shader shader, T *mesh)
         float time = glfwGetTime() * 90.0f;
         glm::mat4 model = transform(cubePositions[i], std::max(0.1f*((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1+i)/4.4f, 0.3f * time / 3.0f * (float)(1+i), 0.1f * i));
         Texture *textures = new Texture[2]{containerTexture, inTexture};
-        draw(shader, textures, 2, mesh, model);
+        draw(shader, textures, 2, meshes[0], model);
         // Print transforms if needed
         if (canPrint)
         {
             printTransform(model);
         }
     }
-
+meshes[1]->bind();
+glm::mat4 trans = glm::mat4(1.0f);
+shader.setMat4("model", trans);
+glDrawElementsBaseVertex(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr, 0);
+meshes[1]->unbind();
  canPrint = false;
 
     // Unbind the VAO
@@ -221,46 +246,6 @@ int main()
 
     inTexture.Load(fs.texture("troll.png"));
 
-    // Define vertices for two quads (background and character)
-    float vertices[] = {
-        // Front face
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-        // Back face
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
-        // Left face
-        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        // Right face
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        // Bottom face
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-        // Top face
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f};
-    unsigned int indices[] = {
-        0, 1, 2, 2, 3, 0,       // Front face
-        4, 5, 6, 6, 7, 4,       // Back face
-        8, 9, 10, 10, 11, 8,    // Left face
-        12, 13, 14, 14, 15, 12, // Right face
-        16, 17, 18, 18, 19, 16, // Bottom face
-        20, 21, 22, 22, 23, 20  // Top face
-    };
     // Set up VAO, VBO, and EBO
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
 float startAngleRad = 0.0f * DEG_TO_RAD;
@@ -269,8 +254,15 @@ float endAngleRad = 360.0f * DEG_TO_RAD;
 //Cell::Cube mesh;
 Cell::Plane mesh(20,20);
 //std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
-
+Cell::Mesh trap(vertices, indices, uvs);
+trap.Finalize();
     shader.use();
+    
+std::vector<VAO*> meshes = {
+    &mesh,
+    &trap
+};
+
 
     // Set up transformations
     aspect = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
@@ -297,7 +289,7 @@ Cell::Plane mesh(20,20);
         if (!isPaused)
         {
             // Update your program state here
-            renderScene(window, shader, &mesh);
+            renderScene(window, shader, meshes);
         }
     }
 

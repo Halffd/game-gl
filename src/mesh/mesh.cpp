@@ -21,8 +21,33 @@ namespace Cell
     
     // Additional constructor logic here, if any
 }
+     Mesh::Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices, std::vector<math::vec3> colors)
+{
+    // Initialize members in the constructor block
+    this->Positions = std::move(positions);
+    this->Colors = std::move(colors);
+    this->Indices = std::move(indices);
+    
+    // Additional constructor logic here, if any
+}
 
-      // Move constructor
+    Mesh::Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices, std::vector<math::vec2> uv)
+{
+    // Initialize members in the constructor block
+    this->Positions = std::move(positions);
+    this->UV = std::move(uv);
+    this->Indices = std::move(indices);
+    
+    // Additional constructor logic here, if any
+}
+     Mesh::Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices)
+{
+    // Initialize members in the constructor block
+    this->Positions = std::move(positions);
+    this->Indices = std::move(indices);
+    
+    // Additional constructor logic here, if any
+}     // Move constructor
     Mesh::Mesh(Mesh&& other) noexcept
         : VAO(std::move(other)),  // Move base class resources
           m_VBO(std::move(other.m_VBO)),
