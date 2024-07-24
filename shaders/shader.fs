@@ -23,7 +23,7 @@ void main()
     if(Color != vec3(0.0) && tex == vec4(0.0)){
         FragColor = vec4(Color, 1.0); // Use color
     } else if(Color != vec3(0.0)){
-        FragColor = mix(tex, vec4(Color, 1.0), 0.5);
+        FragColor = mix(tex, vec4(Color, 1.0), 0.8);
     } else {
         FragColor = tex;
     }

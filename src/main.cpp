@@ -43,14 +43,7 @@ float aspect;
 bool canPrint = true;
 bool isPaused = false;
 double lastTime = 0.0;
-        // Index data for different primitive types
-unsigned int pointIndices[] = {0, 1, 2, 3, 4, 5};
-unsigned int lineIndices[] = {0, 1, 1, 2, 2, 0, 3, 4, 4, 5, 5, 3};
-unsigned int lineStripIndices[] = {0, 1, 2};
-unsigned int lineLoopIndices[] = {0, 1, 2, 0};
-unsigned int triangleIndices[] = {0, 1, 2, 3, 4, 5};
-unsigned int triangleStripIndices[] = {0, 1, 2, 3, 4, 5};
-unsigned int triangleFanIndices[] = {3, 4, 0, 5, 1, 2};
+
 glm::vec3 cubePositions[] = {
     glm::vec3(0.0f, 0.0f, 0.0f),
     glm::vec3(2.0f, 5.0f, -15.0f),
@@ -64,27 +57,31 @@ glm::vec3 cubePositions[] = {
     glm::vec3(-1.3f, 1.0f, -1.5f)};
 // Vertex data for the trapezium
 std::vector<math::vec3> vertices = {
-    {-0.5f, 0.5f, 0.0f},  // Top left
-    {0.5f, 0.5f, 0.0f},   // Top right
-    {0.3f, -0.5f, 0.0f},  // Bottom right
-    {-0.3f, -0.5f, 0.0f}  // Bottom left
+    {-0.5f, 0.5f, 0.0f}, // Top left
+    {0.5f, 0.5f, 0.0f},  // Top right
+    {0.3f, -0.5f, 0.0f}, // Bottom right
+    {-0.3f, -0.5f, 0.0f} // Bottom left
 };
 
 std::vector<math::vec2> uvs = {
-    {0.0f, 1.0f},  // Top left
-    {1.0f, 1.0f},  // Top right
-    {0.6f, 0.0f},  // Bottom right
-    {0.4f, 0.0f}   // Bottom left
+    {0.0f, 1.0f}, // Top left
+    {1.0f, 1.0f}, // Top right
+    {0.6f, 0.0f}, // Bottom right
+    {0.4f, 0.0f}  // Bottom left
 };
 
 // Index data for the trapezium
 std::vector<uint32_t> indices = {
     0, 1, 2,
-    0, 2, 3
-};
+    0, 2, 3};
 VAO vao;
 VBO vbo;
 EBO ebo;
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+const float cameraSpeed = 0.05f; // adjust accordingly
+bool input = true;
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
@@ -146,8 +143,18 @@ void processInput(GLFWwindow *window)
         glPolygonMode(GL_FRONT_AND_BACK, isLineMode ? GL_LINE : GL_FILL);
         spaceKeyWasPressed = false; // Reset the flag
     }
+
+    // Handle camera movement
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
-void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO*>& meshes)
+void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes)
 {
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -158,40 +165,48 @@ void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO*>& meshes)
     unbindTextures();
     shader.setInt("texture1", 0);
     shader.setInt("texture2", 0);
-
-    const float radius = 10.0f;
-    float camX = sin(glfwGetTime()) * radius;
-    float camZ = cos(glfwGetTime()) * radius;
-    view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0)); 
-    //static float zoom = 0.2f;
-    //static bool inc = true;
-    //if(inc) zoom += 0.05f;
-    //else zoom -= 0.05f;
-    //if(zoom >= 10.0f || zoom <= 0.01f) inc = !inc;
-    //view = glm::scale(view, glm::vec3(1.0f/zoom,1.0f/zoom,1.0f/zoom)); // Zoom 2x
+    if (input)
+    {
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    }
+    else
+    {
+        const float radius = 10.0f;
+        float camX = sin(glfwGetTime()) * radius;
+        float camZ = cos(glfwGetTime()) * radius;
+        view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+    }
+    // static float zoom = 0.2f;
+    // static bool inc = true;
+    // if(inc) zoom += 0.05f;
+    // else zoom -= 0.05f;
+    // if(zoom >= 10.0f || zoom <= 0.01f) inc = !inc;
+    // view = glm::scale(view, glm::vec3(1.0f/zoom,1.0f/zoom,1.0f/zoom)); // Zoom 2x
 
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
     // First container
-    //glBindVertexArray(VAO);
+    // glBindVertexArray(VAO);
     for (unsigned int i = 0; i < 10; i++)
     {
         float time = glfwGetTime() * 90.0f;
-        glm::mat4 model = transform(cubePositions[i], std::max(0.1f*((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1+i)/4.4f, 0.3f * time / 3.0f * (float)(1+i), 0.1f * i));
+        glm::mat4 model = transform(cubePositions[i], std::max(0.1f * ((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1 + i) / 4.4f, 0.3f * time / 3.0f * (float)(1 + i), 0.1f * i));
         Texture *textures = new Texture[2]{containerTexture, inTexture};
-        draw(shader, textures, 2, meshes[0], model);
+        int c = i % 2 == 0 ? 0 : 2;
+        draw(shader, textures, 2, meshes[c], model);
         // Print transforms if needed
         if (canPrint)
         {
             printTransform(model);
         }
     }
-meshes[1]->bind();
-glm::mat4 trans = glm::mat4(1.0f);
-shader.setMat4("model", trans);
-glDrawElementsBaseVertex(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr, 0);
-meshes[1]->unbind();
- canPrint = false;
+    meshes[1]->bind();
+    glm::mat4 trans = glm::mat4(1.0f);
+    trans = glm::translate(trans, glm::vec3(-0.8f, 0.7f, 0.7f));
+    shader.setMat4("model", trans);
+    glDrawElementsBaseVertex(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr, 0);
+    meshes[1]->unbind();
+    canPrint = false;
 
     // Unbind the VAO
     glBindVertexArray(0);
@@ -248,35 +263,35 @@ int main()
 
     // Set up VAO, VBO, and EBO
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
-float startAngleRad = 0.0f * DEG_TO_RAD;
-float endAngleRad = 360.0f * DEG_TO_RAD;
+    float startAngleRad = 0.0f * DEG_TO_RAD;
+    float endAngleRad = 360.0f * DEG_TO_RAD;
 
-//Cell::Cube mesh;
-Cell::Plane mesh(20,20);
-//std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
-Cell::Mesh trap(vertices, indices, uvs);
-trap.Finalize();
+    // Cell::Cube mesh;
+    Cell::Plane mesh(20, 20);
+    // std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
+    Cell::Mesh trap(vertices, indices, uvs);
+    Cell::Cube cube;
+    trap.Finalize();
     shader.use();
-    
-std::vector<VAO*> meshes = {
-    &mesh,
-    &trap
-};
 
+    std::vector<VAO *> meshes = {
+        &mesh,
+        &trap,
+        &cube};
 
     // Set up transformations
     aspect = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
-    std::cout << aspect << " --> "  << WIDTH << "/" << HEIGHT << std::endl;
+    std::cout << aspect << " --> " << WIDTH << "/" << HEIGHT << std::endl;
     //    projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f);
     projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
-    /*view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), 
-  		   glm::vec3(0.0f, 0.0f, 0.0f), 
-  		   glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);  
-    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);   
+    /*view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
+           glm::vec3(0.0f, 0.0f, 0.0f),
+           glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f); 
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
     glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
     glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
     */
