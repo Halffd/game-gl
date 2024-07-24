@@ -37,6 +37,8 @@
 #include "arc.h"
 
 // Global variables
+int screenWidth = WIDTH;
+int screenHeight = HEIGHT;
 Texture containerTexture, inTexture;
 glm::mat4 projection, view;
 float aspect;
@@ -80,17 +82,59 @@ EBO ebo;
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-const float cameraSpeed = 0.05f; // adjust accordingly
 bool input = true;
+float deltaTime = 0.0f; // Time between current frame and last frame
+float lastFrame = 0.0f; // Time of last frame
+float lastX = screenWidth / 2, lastY = screenHeight / 2;
 
+float fov = 60.0f;
+float maxFov = 60.0f;
+float scrollSensivity = 2.5f;
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    fov -= (float)yoffset * scrollSensivity;
+    if (fov < 1.0f)
+        fov = 1.0f;
+    if (fov > maxFov)
+        fov = maxFov; 
+}
 void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
+void mouse_callback(GLFWwindow *window, double xpos, double ypos)
+{
+    if (firstMouse) // initially set to true
+{
+    lastX = xpos;
+    lastY = ypos;
+    firstMouse = false;
+}
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
+    lastX = xpos;
+    lastY = ypos;
+
+    const float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw += xoffset;
+    pitch += yoffset;
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
+        pitch = -89.0f;
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(direction);
+}
 void processInput(GLFWwindow *window)
 {
     glfwPollEvents();
-
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, 1);
     static bool graveAccentPressed = false; // Flag to track if the key is pressed
@@ -144,6 +188,11 @@ void processInput(GLFWwindow *window)
         spaceKeyWasPressed = false; // Reset the flag
     }
 
+    float currentFrame = glfwGetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+    float cameraSpeed = 2.5f * deltaTime;
+
     // Handle camera movement
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
@@ -153,8 +202,16 @@ void processInput(GLFWwindow *window)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+        cameraPos -= glm::cross(cameraFront, cameraUp) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+        cameraPos += glm::cross(cameraFront, cameraUp) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraUp, cameraFront)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraUp, cameraFront)) * cameraSpeed;
 }
-void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes)
+void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes, Texture *textures)
 {
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -182,6 +239,7 @@ void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes)
     // else zoom -= 0.05f;
     // if(zoom >= 10.0f || zoom <= 0.01f) inc = !inc;
     // view = glm::scale(view, glm::vec3(1.0f/zoom,1.0f/zoom,1.0f/zoom)); // Zoom 2x
+    projection = glm::perspective(glm::radians(fov), aspect, 0.1f, 100.0f);
 
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
@@ -191,15 +249,23 @@ void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes)
     {
         float time = glfwGetTime() * 90.0f;
         glm::mat4 model = transform(cubePositions[i], std::max(0.1f * ((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1 + i) / 4.4f, 0.3f * time / 3.0f * (float)(1 + i), 0.1f * i));
-        Texture *textures = new Texture[2]{containerTexture, inTexture};
-        int c = i % 2 == 0 ? 0 : 2;
-        draw(shader, textures, 2, meshes[c], model);
+        int c = i % 2 != 0 ? 0 : 2;
+        int t = (i < 4) ? (i + 1) : (i < 7) ? (i + 4)
+                                            : (i + 8);
+        // Draw the mesh
+        shader.setFloat("mixColor", (float)std::cos(time / 90.0f) * 1.2f);
+        Texture *textures2 = new Texture[2]{textures[t], textures[t + 1]};
+        draw(shader, textures2, 2, meshes[c], model);
         // Print transforms if needed
         if (canPrint)
         {
             printTransform(model);
         }
     }
+
+    unbindTextures();
+    shader.setInt("texture1", 0);
+    shader.setInt("texture2", 0);
     meshes[1]->bind();
     glm::mat4 trans = glm::mat4(1.0f);
     trans = glm::translate(trans, glm::vec3(-0.8f, 0.7f, 0.7f));
@@ -229,7 +295,7 @@ int main()
     }
 
     // Create a GLFW window
-    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL Square", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(screenWidth, screenHeight, "OpenGL Square", nullptr, nullptr);
     if (!window)
     {
         std::cerr << "Failed to create GLFW window" << std::endl;
@@ -254,12 +320,23 @@ int main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback); 
 
     Shader shader(fs.shader("shader.vs"), fs.shader("shader.fs"));
 
     containerTexture.Load(fs.texture("container.jpg"));
 
     inTexture.Load(fs.texture("troll.png"));
+    Texture bricks;
+    bricks.Load(fs.texture("dbrick.png"));
+    Texture mm;
+    mm.Load(fs.texture("mm.png"));
+    Texture sm(fs.texture("sm.png"));
+    Texture sky(fs.texture("sky.png"));
+    Texture *textures = new Texture[6]{
+        bricks, inTexture, containerTexture, mm, sky, sm};
 
     // Set up VAO, VBO, and EBO
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
@@ -280,10 +357,8 @@ int main()
         &cube};
 
     // Set up transformations
-    aspect = static_cast<float>(WIDTH) / static_cast<float>(HEIGHT);
-    std::cout << aspect << " --> " << WIDTH << "/" << HEIGHT << std::endl;
+    aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
     //    projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f);
-    projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
     /*view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
            glm::vec3(0.0f, 0.0f, 0.0f),
@@ -304,7 +379,7 @@ int main()
         if (!isPaused)
         {
             // Update your program state here
-            renderScene(window, shader, meshes);
+            renderScene(window, shader, meshes, textures);
         }
     }
 

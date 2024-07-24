@@ -12,7 +12,16 @@ public:
     unsigned height;
     unsigned width;
     Texture() : ID(0), height(0), width(0), exists(false), activeTextureUnit(GL_TEXTURE0) {}
-
+    Texture(const char *filePath,
+              GLenum textureTarget = GL_TEXTURE_2D,
+              GLint sWrap = GL_REPEAT,
+              GLint tWrap = GL_REPEAT,
+              GLint rWrap = GL_REPEAT,
+              GLint minFilter = GL_LINEAR,
+              GLint magFilter = GL_LINEAR)
+    {
+        Load(filePath, textureTarget, sWrap, tWrap, rWrap, minFilter, magFilter);
+    }
     bool Load(const char *filePath,
               GLenum textureTarget = GL_TEXTURE_2D,
               GLint sWrap = GL_REPEAT,
