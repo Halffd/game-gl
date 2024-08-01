@@ -51,7 +51,7 @@ float aspect;
 bool canPrint = true;
 bool isPaused = false;
 double lastTime = 0.0;
-bool web = true;
+bool web = false;
 
 glm::vec3 cubePositions[] = {
     glm::vec3(0.0f, 0.0f, 0.0f),

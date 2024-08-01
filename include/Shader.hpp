@@ -206,7 +206,7 @@ char *readFile(const std::string &filePath)
     }
 
     char *pContent = new char[content.size() + 1];
-    strcpy(pContent, content.c_str());
+    strcpy_s(pContent, content.size() + 1, content.c_str());
 
     return pContent;
 }

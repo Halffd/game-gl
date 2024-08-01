@@ -20,8 +20,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Set the output directory for binaries
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-set(CMAKE_EXECUTABLE_SUFFIX ".html")
-
 # Add the GLAD library (specifying LANGUAGE C explicitly)
 add_library(glad STATIC src/glad.c)
 set_target_properties(glad PROPERTIES LINKER_LANGUAGE C)
@@ -42,7 +40,7 @@ configure_file(configuration/root_directory.h.in configuration/root_directory.h)
 include_directories(${CMAKE_BINARY_DIR}/configuration)
 
 # Define an array of libraries to link
-set(LIBS glad glfw3)
+set(LIBS glad "${CMAKE_SOURCE_DIR}/lib/glfw3.lib")
 
 # Link libraries
 target_link_libraries(game PRIVATE ${LIBS})
@@ -50,20 +48,3 @@ target_link_libraries(game PRIVATE ${LIBS})
 # Include directories for the game target
 target_include_directories(game PRIVATE ${INCLUDE})
 
-# CMakeLists.txt
-
-# Set the source and destination directories
-set(SOURCE_DIRS
-    "${CMAKE_CURRENT_SOURCE_DIR}/textures"
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
-)
-set(INSTALL_DIR "${CMAKE_SOURCE_DIR}/bin")
-
-# Copy the source directories recursively
-foreach(SOURCE_DIR ${SOURCE_DIRS})
-    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" DEST_DIR "${SOURCE_DIR}")
-    file(GLOB_RECURSE SOURCE_FILES "${SOURCE_DIR}/*")
-    foreach(SOURCE_FILE ${SOURCE_FILES})
-        file(COPY "${SOURCE_FILE}" DESTINATION "${INSTALL_DIR}/${DEST_DIR}")
-    endforeach()
-endforeach()

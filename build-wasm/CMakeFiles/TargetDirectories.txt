@@ -1,4 +1,0 @@
-D:/Code/c/game-gl/build-wasm/CMakeFiles/glad.dir
-D:/Code/c/game-gl/build-wasm/CMakeFiles/game.dir
-D:/Code/c/game-gl/build-wasm/CMakeFiles/edit_cache.dir
-D:/Code/c/game-gl/build-wasm/CMakeFiles/rebuild_cache.dir

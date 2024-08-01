@@ -29,8 +29,8 @@ struct Path {
         char* buffer = new char[BUFFER_SIZE];
         
         // Copy the content of fullPath to buffer
-        std::strcpy(buffer, fullPath.c_str());
-        
+        strcpy_s(buffer, sizeof(buffer), fullPath.c_str());
+
         // Return the pointer to buffer
         return buffer;
     }
