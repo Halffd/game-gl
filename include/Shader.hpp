@@ -32,7 +32,9 @@ public:
         {
             // Get the current directory
             std::filesystem::path currentDir = std::filesystem::current_path();
-            
+            if(currentDir == "/"){
+                currentDir = "";
+            }
             // Construct the full file paths
             std::string vertexFilePath = (currentDir / vertexPath).generic_string();
             std::string fragmentFilePath = (currentDir / fragmentPath).generic_string();

@@ -49,3 +49,21 @@ target_link_libraries(game PRIVATE ${LIBS})
 
 # Include directories for the game target
 target_include_directories(game PRIVATE ${INCLUDE})
+
+# CMakeLists.txt
+
+# Set the source and destination directories
+set(SOURCE_DIRS
+    "${CMAKE_CURRENT_SOURCE_DIR}/textures"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+)
+set(INSTALL_DIR "${CMAKE_SOURCE_DIR}/bin")
+
+# Copy the source directories recursively
+foreach(SOURCE_DIR ${SOURCE_DIRS})
+    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/" "" DEST_DIR "${SOURCE_DIR}")
+    file(GLOB_RECURSE SOURCE_FILES "${SOURCE_DIR}/*")
+    foreach(SOURCE_FILE ${SOURCE_FILES})
+        file(COPY "${SOURCE_FILE}" DESTINATION "${INSTALL_DIR}/${DEST_DIR}")
+    endforeach()
+endforeach()

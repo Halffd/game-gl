@@ -51,6 +51,7 @@ float aspect;
 bool canPrint = true;
 bool isPaused = false;
 double lastTime = 0.0;
+bool web = true;
 
 glm::vec3 cubePositions[] = {
     glm::vec3(0.0f, 0.0f, 0.0f),
@@ -273,9 +274,15 @@ void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes, 
 
 int main()
 {
-    fs.root = std::string(logl_root); // GetParentDirectory();
+    if(!web){
+        fs.root = std::string(logl_root);
+    } else {
+        fs.root = "";
+    }
     std::cout << fs.root << "\n"
               << fs.file("src/main.cpp") << "\n";
+    std::cout << fs.shader("") << "\n"
+              << fs.root.empty() << "\n";
     // Initialize GLFW
     // return vectortest();
     if (!glfwInit())
