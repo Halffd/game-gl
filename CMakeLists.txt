@@ -1,10 +1,4 @@
 cmake_minimum_required(VERSION 3.28.1)
-list(APPEND CMAKE_MODULE_PATH "S:/emsdk/upstream/emscripten/cmake/Modules")
-set(CMAKE_TOOLCHAIN_FILE "S:/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake")
-# Set the C and C++ compilers to use the LLVM/Clang compilers
-set(CMAKE_C_COMPILER "C:/Program Files/LLVM/bin/clang.exe")
-set(CMAKE_CXX_COMPILER "C:/Program Files/LLVM/bin/clang++.exe")
-
 # Rest of your CMakeLists.txt file
 
 project(game LANGUAGES C CXX)
@@ -25,6 +19,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Set the output directory for binaries
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+set(CMAKE_EXECUTABLE_SUFFIX ".html")
 
 # Add the GLAD library (specifying LANGUAGE C explicitly)
 add_library(glad STATIC src/glad.c)
