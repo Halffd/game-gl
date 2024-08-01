@@ -1,0 +1,26 @@
+CMakeFiles/glad.dir/src/glad.c.o: D:\Code\c\game-gl\src\glad.c \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\stdio.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\wasi\api.h \
+  S:\emsdk\upstream\lib\clang\19\include\stddef.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\stddef.h \
+  S:\emsdk\upstream\lib\clang\19\include\__stddef_header_macro.h \
+  S:\emsdk\upstream\lib\clang\19\include\__stddef_ptrdiff_t.h \
+  S:\emsdk\upstream\lib\clang\19\include\__stddef_size_t.h \
+  S:\emsdk\upstream\lib\clang\19\include\__stddef_wchar_t.h \
+  S:\emsdk\upstream\lib\clang\19\include\__stddef_null.h \
+  S:\emsdk\upstream\lib\clang\19\include\__stddef_max_align_t.h \
+  S:\emsdk\upstream\lib\clang\19\include\__stddef_offsetof.h \
+  S:\emsdk\upstream\lib\clang\19\include\stdint.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\stdint.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\bits\alltypes.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\bits\stdint.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\features.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\compat\stdlib.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\stdlib.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\alloca.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\compat\string.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\string.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\strings.h \
+  D:\Code\c\game-gl\include_libs\glad\glad.h \
+  D:\Code\c\game-gl\include_libs\KHR\khrplatform.h \
+  S:\emsdk\upstream\emscripten\cache\sysroot\include\dlfcn.h

@@ -87,7 +87,11 @@ public:
         xoffset *= MouseSensitivity;
         yoffset *= MouseSensitivity;
 
-        Yaw += xoffset;
+        // If we don't constrain the yaw to only use values between 0-360
+        // we would lose floating precission with very high values, hence
+        // the movement would look like big "steps" instead a smooth one!
+        Yaw = std::fmod((Yaw + xoffset), (GLfloat)360.0f);
+
         Pitch += yoffset;
 
         // make sure that when pitch is out of bounds, screen doesn't get flipped

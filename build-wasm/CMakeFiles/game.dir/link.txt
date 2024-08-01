@@ -1,0 +1,1 @@
+S:\emsdk\upstream\emscripten\em++.bat -O3 -DNDEBUG @CMakeFiles\game.dir\objects1.rsp -o D:\Code\c\game-gl\bin\game.js @CMakeFiles\game.dir\linkLibs.rsp

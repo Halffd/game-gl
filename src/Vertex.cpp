@@ -8,6 +8,8 @@
 
 GLenum getPrimitive(TOPOLOGY topology) {
     switch (topology) {
+        case NONE:
+            return GL_INVALID_ENUM;
         case POINTS:
             return GL_POINTS;
         case LINES:
@@ -257,19 +259,32 @@ std::ostream& operator<<(std::ostream& os, const std::vector<unsigned int>& vec)
 }
 
 // Overload operator<< to print the TOPOLOGY enum
+
 std::ostream& operator<<(std::ostream& os, const TOPOLOGY& t) {
     switch (t) {
-        case TRIANGLES:
-            os << "TRIANGLES";
+        case TOPOLOGY::NONE:
+            os << "NONE";
             break;
-        case LINE_STRIP:
-            os << "LINE_STRIP";
+        case TOPOLOGY::POINTS:
+            os << "POINTS";
             break;
-        case LINES:
+        case TOPOLOGY::LINES:
             os << "LINES";
             break;
-        case POINTS:
-            os << "POINTS";
+        case TOPOLOGY::LINE_STRIP:
+            os << "LINE_STRIP";
+            break;
+        case TOPOLOGY::LINE_LOOP:
+            os << "LINE_LOOP";
+            break;
+        case TOPOLOGY::TRIANGLES:
+            os << "TRIANGLES";
+            break;
+        case TOPOLOGY::TRIANGLE_STRIP:
+            os << "TRIANGLE_STRIP";
+            break;
+        case TOPOLOGY::TRIANGLE_FAN:
+            os << "TRIANGLE_FAN";
             break;
     }
     return os;
