@@ -1,0 +1,25 @@
+# ninja log v6
+7816	10023	7441993594248675	CMakeFiles/game.dir/src/mesh/mesh.cpp.obj	4f8a62010bf11958
+67	455	7441993516762460	CMakeFiles/game.dir/src/Shader.cpp.obj	997d6702da0b5384
+2640	3245	7441993542486646	CMakeFiles/game.dir/src/math/plane.cpp.obj	8ec5af87dc86fcc
+9831	11676	7441993614401651	CMakeFiles/game.dir/src/mesh/quad.cpp.obj	a561c42ae9fc7ad7
+6020	6461	7441993576289870	CMakeFiles/game.dir/src/mesh/import.cpp.obj	c1424a25affc190f
+75	1843	7441993516837652	CMakeFiles/game.dir/src/Util.cpp.obj	fb61d029494b6198
+480	2640	7441993520889773	CMakeFiles/game.dir/src/Vertex.cpp.obj	57ca8be3a00b7d8e
+2709	3197	7441993543171229	libglad.a	19845f897e32707d
+53	2707	7441993516615623	CMakeFiles/glad.dir/src/glad.c.obj	e9578a289f9f03ec
+3245	4242	7441993548540545	CMakeFiles/game.dir/src/math/spherical.cpp.obj	c027f2811e20c3f1
+3197	4260	7441993548051868	CMakeFiles/game.dir/src/math/polar.cpp.obj	c577701290a1ea91
+4242	5784	7441993558517559	CMakeFiles/game.dir/src/mesh/arc.cpp.obj	3fcc25a6090c6f66
+4262	6020	7441993558710042	CMakeFiles/game.dir/src/mesh/circle.cpp.obj	9300f9408e1c7b60
+5784	7816	7441993573930517	CMakeFiles/game.dir/src/mesh/cube.cpp.obj	b557022387efaf52
+6461	8152	7441993580695708	CMakeFiles/game.dir/src/mesh/line_strip.cpp.obj	9e5282bb99db60c0
+8152	9831	7441993597610126	CMakeFiles/game.dir/src/mesh/plane.cpp.obj	220a489cdca71399
+1845	11994	7441993534533698	CMakeFiles/game.dir/src/main.cpp.obj	f7c469d5865f556f
+10023	12101	7441993616326100	CMakeFiles/game.dir/src/mesh/ring.cpp.obj	ad273567825fd6bd
+11676	13780	7441993632852268	CMakeFiles/game.dir/src/mesh/sphere.cpp.obj	399be4802b137780
+12101	14045	7441993637094191	CMakeFiles/game.dir/src/utility/log.cpp.obj	82e1facd8e0434a3
+12000	14231	7441993636087243	CMakeFiles/game.dir/src/mesh/torus.cpp.obj	e636df979000ffb6
+14045	14476	7441993656541829	CMakeFiles/game.dir/src/utility/time.cpp.obj	f31d50b9c6f1e4a4
+13780	14537	7441993653898100	CMakeFiles/game.dir/src/utility/random.cpp.obj	a7504dc75f583577
+254	1814	7441999276696628	build.ninja	67269419d9401224

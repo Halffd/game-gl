@@ -40,7 +40,17 @@ configure_file(configuration/root_directory.h.in configuration/root_directory.h)
 include_directories(${CMAKE_BINARY_DIR}/configuration)
 
 # Define an array of libraries to link
-set(LIBS glad "${CMAKE_SOURCE_DIR}/lib/glfw3.lib")
+#set(LIBS glad "${CMAKE_SOURCE_DIR}/lib/glfw3.lib")
+
+# Add the GLFW DLL as an imported library
+add_library(glfw3dll SHARED IMPORTED)
+set_target_properties(glfw3dll PROPERTIES
+        IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/libglfw3.a"
+        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
+)
+
+# Define an array of libraries to link
+set(LIBS glad glfw3dll)
 
 # Link libraries
 target_link_libraries(game PRIVATE ${LIBS})

@@ -27,9 +27,9 @@ struct Path {
     const char* fullPath(const std::string& fullPath) const {
         // Allocate memory dynamically for buffer
         char* buffer = new char[BUFFER_SIZE];
-        
+
         // Copy the content of fullPath to buffer
-        strcpy_s(buffer, sizeof(buffer), fullPath.c_str());
+        strcpy_s(buffer, BUFFER_SIZE, fullPath.c_str());
 
         // Return the pointer to buffer
         return buffer;
