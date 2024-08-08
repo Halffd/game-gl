@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <map>
 
 #include "setup.h"
 #include "root.h"
@@ -41,6 +42,10 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
+
+typedef std::map<std::string, Shader> shaderMap;
+typedef std::map<std::string, Texture> textureMap;
+typedef std::map<std::string, VAO> meshMap;
 
 // Global variables
 int screenWidth = WIDTH;
@@ -98,6 +103,8 @@ float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
 float lastX = screenWidth / 2.0f, lastY = screenHeight / 2.0f;
+
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
@@ -202,12 +209,14 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 }
-void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes, Texture *textures)
+void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &meshes, Texture *textures)
 {
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Use the shader program
+    Shader shader = shaders["main"];
+    std::cout << shader.ID << "\n";
     shader.use();
 
     unbindTextures();
@@ -236,17 +245,21 @@ void renderScene(GLFWwindow *window, Shader shader, std::vector<VAO *> &meshes, 
     shader.setMat4("projection", projection);
     // First container
     // glBindVertexArray(VAO);
+    shader.setVec3("lightColor",  1.0f, 1.0f, 1.0f);
+    //glm::mat4 lightModel = transform(lightPos, 0.2f, 1.0f);
+    //draw(shaders["light"], meshes[2], lightModel);
     for (unsigned int i = 0; i < 10; i++)
     {
-        float time = glfwGetTime() * 90.0f;
+        float time = glfwGetTime();
         glm::mat4 model = transform(cubePositions[i], std::max(0.1f * ((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1 + i) / 4.4f, 0.3f * time / 3.0f * (float)(1 + i), 0.1f * i));
         int c = i % 2 != 0 ? 0 : 2;
         int t = (i < 4) ? (i + 1) : (i < 7) ? (i + 4)
                                             : (i + 8);
         // Draw the mesh
-        shader.setFloat("mixColor", (float)std::cos(time / 90.0f) * 1.2f);
-        Texture *textures2 = new Texture[2]{textures[t], textures[t + 1]};
-        draw(shader, textures2, 2, meshes[c], model);
+        shader.setVec3("objectColor", std::tanh(time), std::cos(time), std::tan(time));
+        shader.setFloat("mixColor", (float)std::cos(time) * 1.2f);
+        Texture *textures2 = nullptr; //new Texture[2]{textures[t], textures[t + 1]};
+        draw(shader, textures2, 0, meshes[c], model);
         // Print transforms if needed
         if (canPrint)
         {
@@ -326,7 +339,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback); 
+    glfwSetScrollCallback(window, scroll_callback);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -336,7 +349,14 @@ int main()
         return -1;
     }
 
-    Shader shader(fs.shader("shader.vs"), fs.shader("shader.fs"));
+    Shader shader(fs.shader("vertex.glsl"), fs.shader("fragment.glsl"));
+    Shader lightShader(fs.shader("light/vertex.glsl"), fs.shader("light/fragment.glsl"));
+    shaderMap shaders = {
+        {"main", shader},
+        {"light", lightShader}
+    };
+    std::cout << shaders["main"].ID << "\n";
+    std::cout << shaders["light"].ID << "\n";
 
     containerTexture.Load(fs.texture("container.jpg"));
 
@@ -391,7 +411,7 @@ int main()
         if (!isPaused)
         {
             // Update your program state here
-            renderScene(window, shader, meshes, textures);
+            renderScene(window, shaders, meshes, textures);
         }
     }
 

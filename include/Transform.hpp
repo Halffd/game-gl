@@ -14,6 +14,10 @@
 #include <glm/gtx/quaternion.hpp> // Ensure this is included
 
 template<typename V>
+void draw(Shader &shader, V &vao, const glm::mat4 &transform, int vertices = -1, TOPOLOGY topology = NONE) {
+    draw(shader, nullptr, 0, vao, transform, vertices, topology);
+}
+template<typename V>
 void draw(Shader &shader, Texture* textures, int texturesN, V &vao, const glm::mat4 &transform, int vertices = -1, TOPOLOGY topology = NONE)
 {
     shader.use();

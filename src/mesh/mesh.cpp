@@ -289,7 +289,9 @@ namespace Cell
     unbind();
 
     vertexCount = Positions.size();
-    std::cout << vertexCount << " vertices, Positions: " << Positions << "\nIndices: " << Indices << "\nUV: " << UV << "\n";
+    #ifdef MESH_DEBUG
+         std::cout << vertexCount << " vertices, Positions: " << Positions << "\nIndices: " << Indices << "\nUV: " << UV << "\n";
+    #endif
 }
 
     // --------------------------------------------------------------------------------------------

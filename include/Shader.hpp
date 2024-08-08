@@ -2,6 +2,7 @@
 #define SHADER_H
 
 #include <glad/glad.h>
+#include "Util.hpp"
 
 #include <string>
 #include <string.h>
@@ -95,7 +96,8 @@ public:
     // ------------------------------------------------------------------------
     void use() 
     { 
-        glUseProgram(ID); 
+        glUseProgram(ID);
+        glCheckError(__FILE__, __LINE__);
     }
     // utility uniform functions
     // ------------------------------------------------------------------------
@@ -104,50 +106,66 @@ public:
     }   
     void setBool(const std::string &name, bool value) const
     {         
-        glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value); 
+        glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
+        glCheckError(__FILE__, __LINE__);
     }
     // ------------------------------------------------------------------------
     void setInt(const std::string &name, int value) const
     { 
-        glUniform1i(glGetUniformLocation(ID, name.c_str()), value); 
+        glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
+        glCheckError(__FILE__, __LINE__);
     }
     // ------------------------------------------------------------------------
     void setFloat(const std::string &name, float value) const
     { 
-        glUniform1f(glGetUniformLocation(ID, name.c_str()), value); 
+        glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+        glCheckError(__FILE__, __LINE__);
     }
     void setFloat(const std::string& name, const std::vector<float>& values) const
     {
         glUniform1fv(glGetUniformLocation(ID, name.c_str()), static_cast<GLsizei>(values.size()), values.data());
+        glCheckError(__FILE__, __LINE__);
     }
      void setVec2(const std::string &name, const glm::vec2 &value) const
     {
         glUniform2fv(getUniformLocation(name), 1, glm::value_ptr(value));
+        glCheckError(__FILE__, __LINE__);
     }
 
     void setVec3(const std::string &name, const glm::vec3 &value) const
     {
         glUniform3fv(getUniformLocation(name), 1, glm::value_ptr(value));
+        glCheckError(__FILE__, __LINE__);
+    }
+    void setVec3(const std::string& name, float x, float y, float z) const {
+        setVec3(name, glm::vec3(x, y, z));
+    }
+    void setVec4(const std::string& name, float x, float y, float z, float w) const {
+        setVec4(name, glm::vec4(x, y, z, w));
     }
 
     void setVec4(const std::string &name, const glm::vec4 &value) const
     {
         glUniform4fv(getUniformLocation(name), 1, glm::value_ptr(value));
+        glCheckError(__FILE__, __LINE__);
     }
 
     void setMat2(const std::string &name, const glm::mat2 &mat) const
     {
         glUniformMatrix2fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat));
+        glCheckError(__FILE__, __LINE__);
     }
 
     void setMat3(const std::string &name, const glm::mat3 &mat) const
     {
         glUniformMatrix3fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat));
+        glCheckError(__FILE__, __LINE__);
     }
 
     void setMat4(const std::string &name, const glm::mat4 &mat) const
     {
         glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat));
+        glCheckError(__FILE__, __LINE__);
     }
 
 private:

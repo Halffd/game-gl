@@ -57,6 +57,7 @@ public:
     void setup(const T *vertices, GLsizeiptr size, GLenum usage = GL_STATIC_DRAW)
     {
         glBindBuffer(GL_ARRAY_BUFFER, m_id);
+        glCheckError(__FILE__, __LINE__);
         glBufferData(GL_ARRAY_BUFFER, size, vertices, usage);
         glCheckError(__FILE__, __LINE__);
     }
@@ -64,9 +65,7 @@ public:
     template <typename T>
     void setup(const std::vector<T> &vertices, GLenum usage = GL_STATIC_DRAW)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, m_id);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(T), vertices.data(), usage);
-        glCheckError(__FILE__, __LINE__);
+     glCheckError(__FILE__, __LINE__);
     }
 
     template <typename T>
@@ -106,16 +105,20 @@ public:
     VAO(VAO &&other) { *this = std::move(other); }
     ~VAO()
     {
-        if (m_id)
+        if (m_id){
             glDeleteVertexArrays(1, &m_id);
+            glCheckError(__FILE__, __LINE__);
+        }
     }
     VAO &operator=(const VAO &other) = delete;
     VAO &operator=(VAO &&other)
     {
         if (this != &other)
         {
-            if (m_id)
+            if (m_id){
                 glDeleteVertexArrays(1, &m_id);
+                glCheckError(__FILE__, __LINE__);
+            }
             m_id = std::exchange(other.m_id, 0);
         }
         return *this;
@@ -124,13 +127,19 @@ public:
     /**
      * @brief Binds the VAO.
      */
-    int bind() const { glBindVertexArray(m_id); return ebo; }
+    int bind() const {
+     glBindVertexArray(m_id);
+     glCheckError(__FILE__, __LINE__);
+      return ebo;
+       }
 
     void setVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer)
     {
         bind();
         glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+        glCheckError(__FILE__, __LINE__);
         glEnableVertexAttribArray(index);
+        glCheckError(__FILE__, __LINE__);
         unbind();
     }
     void set(GLuint index, GLint size, GLsizei stride, const void *pointer)
@@ -139,7 +148,9 @@ public:
         GLboolean normalized = GL_FALSE;
         bind();
         glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+        glCheckError(__FILE__, __LINE__);
         glEnableVertexAttribArray(index);
+        glCheckError(__FILE__, __LINE__);
         unbind();
     }
 
@@ -147,14 +158,18 @@ public:
     {
         vbo.bind();
         glVertexAttribPointer(layout, components, type, normalize, stride, offset);
+        glCheckError(__FILE__, __LINE__);
         glEnableVertexAttribArray(layout);
+        glCheckError(__FILE__, __LINE__);
         vbo.unbind();
     }
 
     void linkAttribFast(GLuint layout, GLuint components, GLenum type, GLsizei stride, void *offset, GLboolean normalize = GL_FALSE) const
     {
         glVertexAttribPointer(layout, components, type, normalize, stride, offset);
+        glCheckError(__FILE__, __LINE__);
         glEnableVertexAttribArray(layout);
+        glCheckError(__FILE__, __LINE__);
     }
 
     void genVertexArray()
@@ -180,6 +195,7 @@ public:
     {
         if (m_id) {
             glDeleteBuffers(1, &m_id);
+            glCheckError(__FILE__, __LINE__);
         }
     }
 
@@ -212,11 +228,13 @@ public:
         #endif
         
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, arr, GL_STATIC_DRAW);
+        glCheckError(__FILE__, __LINE__);
     }
     void setup(const void* indices, GLsizei size)
     {
         bind();
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, GL_STATIC_DRAW);
+        glCheckError(__FILE__, __LINE__);
     }
 
 private:
