@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include "Shader.hpp"
 #include "Texture.hpp"
+#include "Util.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <type_traits>
@@ -42,6 +43,7 @@ void draw(Shader &shader, Texture* textures, int texturesN, V &vao, const glm::m
     {
         glDrawArrays(drawTopology, 0, (vertices > 0 ? vertices : vao->vertexCount));
     }
+    glCheckError(__FILE__, __LINE__);
 }
 // Function to set up the transformation for an object
 glm::mat4 transform(float translateX, float translateY, float scaleX, float scaleY, float rotationAngle = 0.0f, glm::vec3 rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f))

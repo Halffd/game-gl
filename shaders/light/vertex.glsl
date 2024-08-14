@@ -23,5 +23,7 @@ void main()
     Tangent = aTangent;
     Bitangent = aBitangent;
     Color = aColor; // Pass color to fragment shader
-    gl_Position = vec4(aPos, 1.0);
+    //gl_Position = vec4(aPos, 1.0);
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+
 }

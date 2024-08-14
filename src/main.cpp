@@ -115,6 +115,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void framebufferSizeCallback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
+    glCheckError(__FILE__, __LINE__);
 }
 
 // glfw: whenever the mouse moves, this callback is called
@@ -216,7 +217,6 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
 
     // Use the shader program
     Shader shader = shaders["main"];
-    std::cout << shader.ID << "\n";
     shader.use();
 
     unbindTextures();
@@ -246,17 +246,31 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
     // First container
     // glBindVertexArray(VAO);
     shader.setVec3("lightColor",  1.0f, 1.0f, 1.0f);
-    //glm::mat4 lightModel = transform(lightPos, 0.2f, 1.0f);
-    //draw(shaders["light"], meshes[2], lightModel);
+
+    shaders["light"].use();
+    shaders["light"].setMat4("view", view);
+    shaders["light"].setMat4("projection", projection);
+    glm::mat4 lightModel = transform(lightPos, 0.2f, 1.0f);
+    draw(shaders["light"], meshes[3], lightModel);
+
     for (unsigned int i = 0; i < 10; i++)
     {
+        shader.use();
         float time = glfwGetTime();
-        glm::mat4 model = transform(cubePositions[i], std::max(0.1f * ((float)i + 0.3f), 1.0f), glm::vec3(time * (float)(1 + i) / 4.4f, 0.3f * time / 3.0f * (float)(1 + i), 0.1f * i));
+        float time2 = time * 15.0f;
+        glm::mat4 model = transform(cubePositions[i],
+            std::max(0.1f * ((float)i + 0.3f), 1.0f),
+            glm::vec3(time2, 0.3f * time2, 0.1f * i));
+        std::cout << model << i << "\n";
+        shader.setMat4("model", model);
         int c = i % 2 != 0 ? 0 : 2;
         int t = (i < 4) ? (i + 1) : (i < 7) ? (i + 4)
                                             : (i + 8);
         // Draw the mesh
-        shader.setVec3("objectColor", std::tanh(time), std::cos(time), std::tan(time));
+        float r = (std::sin(i * 0.5f) + 1.0f) * 0.5f;
+        float g = (std::cos(i * 0.7f) + 1.0f) * 0.5f;
+        float b = (std::sin(i * 0.9f) + 1.0f) * 0.5f;
+        shader.setVec3("objectColor", r, g, b);
         shader.setFloat("mixColor", (float)std::cos(time) * 1.2f);
         Texture *textures2 = nullptr; //new Texture[2]{textures[t], textures[t + 1]};
         draw(shader, textures2, 0, meshes[c], model);
@@ -275,11 +289,13 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
     trans = glm::translate(trans, glm::vec3(-0.8f, 0.7f, 0.7f));
     shader.setMat4("model", trans);
     glDrawElementsBaseVertex(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr, 0);
+    glCheckError(__FILE__, __LINE__);
     meshes[1]->unbind();
     canPrint = false;
 
     // Unbind the VAO
     glBindVertexArray(0);
+    glCheckError(__FILE__, __LINE__);
 
     // Swap buffers
     glfwSwapBuffers(window);
@@ -349,14 +365,20 @@ int main()
         return -1;
     }
 
-    Shader shader(fs.shader("vertex.glsl"), fs.shader("fragment.glsl"));
-    Shader lightShader(fs.shader("light/vertex.glsl"), fs.shader("light/fragment.glsl"));
+
     shaderMap shaders = {
-        {"main", shader},
-        {"light", lightShader}
+        {"main",
+            Shader(fs.shader("vertex.glsl"),
+                fs.shader("fragment.glsl")
+                )},
+        {"light",
+            Shader(fs.shader("light/vertex.glsl"),
+                fs.shader("light/fragment.glsl")
+                )}
     };
     std::cout << shaders["main"].ID << "\n";
     std::cout << shaders["light"].ID << "\n";
+    shaders["main"].use();
 
     containerTexture.Load(fs.texture("container.jpg"));
 
@@ -381,12 +403,15 @@ int main()
     Cell::Mesh trap(vertices, indices, uvs);
     Cell::Cube cube;
     trap.Finalize();
-    shader.use();
+    shaders["light"].use();
+    Cell::Cube lightCube;
+    shaders["main"].use();
 
     std::vector<VAO *> meshes = {
         &mesh,
         &trap,
-        &cube};
+        &cube,
+        &lightCube};
 
     // Set up transformations
     aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);

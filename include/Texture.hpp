@@ -5,6 +5,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 #include <glad/glad.h>
+#include "Util.hpp"
 
 class Texture
 {
@@ -60,22 +61,31 @@ public:
         if (data)
         {
             glGenTextures(1, &ID);
+            glCheckError(__FILE__, __LINE__);
+
             glBindTexture(textureTarget, ID);
+            glCheckError(__FILE__, __LINE__);
 
             // Set the texture wrapping parameters
             switch (textureTarget)
             {
             case GL_TEXTURE_1D:
                 glTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, sWrap);
+                glCheckError(__FILE__, __LINE__);
                 break;
             case GL_TEXTURE_2D:
                 glTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, sWrap);
+                glCheckError(__FILE__, __LINE__);
                 glTexParameteri(textureTarget, GL_TEXTURE_WRAP_T, tWrap);
+                glCheckError(__FILE__, __LINE__);
                 break;
             case GL_TEXTURE_3D:
                 glTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, sWrap);
+                glCheckError(__FILE__, __LINE__);
                 glTexParameteri(textureTarget, GL_TEXTURE_WRAP_T, tWrap);
+                glCheckError(__FILE__, __LINE__);
                 glTexParameteri(textureTarget, GL_TEXTURE_WRAP_R, rWrap);
+                glCheckError(__FILE__, __LINE__);
                 break;
             default:
                 break;
@@ -91,6 +101,7 @@ public:
             case GL_NEAREST_MIPMAP_LINEAR:
             case GL_LINEAR_MIPMAP_LINEAR:
                 glTexParameteri(textureTarget, GL_TEXTURE_MIN_FILTER, minFilter);
+                glCheckError(__FILE__, __LINE__);
                 break;
             default:
                 std::cout << "Unsupported min filter: " << minFilter << std::endl;
@@ -102,6 +113,7 @@ public:
             case GL_NEAREST:
             case GL_LINEAR:
                 glTexParameteri(textureTarget, GL_TEXTURE_MAG_FILTER, magFilter);
+                glCheckError(__FILE__, __LINE__);
                 break;
             default:
                 std::cout << "Unsupported mag filter: " << magFilter << std::endl;
@@ -130,14 +142,17 @@ public:
             if (textureTarget == GL_TEXTURE_1D)
             {
                 glTexImage1D(textureTarget, 0, format, width, 0, format, GL_UNSIGNED_BYTE, data);
+                glCheckError(__FILE__, __LINE__);
             }
             else if (textureTarget == GL_TEXTURE_2D)
             {
                 glTexImage2D(textureTarget, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+                glCheckError(__FILE__, __LINE__);
             }
             else if (textureTarget == GL_TEXTURE_3D)
             {
                 glTexImage3D(textureTarget, 0, format, width, height, depth, 0, format, GL_UNSIGNED_BYTE, data);
+                glCheckError(__FILE__, __LINE__);
             }
             else
             {
@@ -147,6 +162,7 @@ public:
             }
 
             glGenerateMipmap(textureTarget);
+            glCheckError(__FILE__, __LINE__);
             stbi_image_free(data);
 
             this->width = width;
@@ -168,16 +184,20 @@ public:
             return;
         activeTextureUnit = textureUnit;
         glActiveTexture(activeTextureUnit);
+        glCheckError(__FILE__, __LINE__);
         glBindTexture(GL_TEXTURE_2D, ID);
+        glCheckError(__FILE__, __LINE__);
     }
-    void Free()
-    {
-        if (exists)
-            glDeleteTextures(1, &ID);
+    void Free() {
+        if (exists && ID != 0) {
+            //glDeleteTextures(1, &ID);
+            //glCheckError(__FILE__, __LINE__);
+        }
         exists = false;
+        ID = 0;
     }
-    ~Texture()
-    {
+
+    ~Texture() {
         Free();
     }
 
@@ -189,9 +209,13 @@ private:
     GLenum activeTextureUnit;
 };
 void unbindTextures() {
-    for (int i = 0; i < GL_MAX_TEXTURE_IMAGE_UNITS; ++i) {
+    int maxTextureUnits;
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
+    for (int i = 0; i < maxTextureUnits; ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
+        glCheckError(__FILE__, __LINE__);
         glBindTexture(GL_TEXTURE_2D, 0);
+        glCheckError(__FILE__, __LINE__);
     }
 }
 #endif
