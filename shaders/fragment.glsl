@@ -5,19 +5,31 @@ in vec3 Normal;
 in vec3 Tangent;
 in vec3 Bitangent;
 in vec3 Color; // Receive color from vertex shader
+in vec3 FragPos;
 
 out vec4 FragColor;
 
 uniform sampler2D texture1;
 uniform sampler2D texture2;
 uniform float mixColor;
+uniform float darkness;
 
 uniform vec3 objectColor;
 uniform vec3 lightColor;
+uniform vec3 lightPos;
 
 void main()
 {
-    FragColor = vec4(lightColor * objectColor, 1.0);
+
+    vec3 norm = normalize(Normal);
+    vec3 lightDir = normalize(lightPos - FragPos);
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor;
+    float steps = 7.2; // Adjust this value to control the number of shading levels
+    float cellShade = clamp(floor(diff * steps) / (steps - 1.0), 0.0, 1.0);
+    vec3 ambient = lightColor * darkness;
+    vec3 result = (ambient + cellShade) * objectColor;
+    FragColor = vec4(result, 1.0);
     return;
     vec4 tex1 = texture(texture1, TexCoord);
     vec4 tex2 = texture(texture2, TexCoord);

@@ -245,11 +245,16 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
     shader.setMat4("projection", projection);
     // First container
     // glBindVertexArray(VAO);
-    shader.setVec3("lightColor",  1.0f, 1.0f, 1.0f);
+    float time1 = glfwGetTime();
+    shader.setFloat("darkness",  (std::cos(time1) + 1.0f) * 0.5f);
+    glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    shader.setVec3("lightColor",  lightColor);
+    shader.setVec3("lightPos", lightPos);
 
     shaders["light"].use();
     shaders["light"].setMat4("view", view);
     shaders["light"].setMat4("projection", projection);
+    shaders["light"].setVec3("lightColor",  lightColor);
     glm::mat4 lightModel = transform(lightPos, 0.2f, 1.0f);
     draw(shaders["light"], meshes[3], lightModel);
 
@@ -257,19 +262,19 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
     {
         shader.use();
         float time = glfwGetTime();
-        float time2 = time * 15.0f;
+        float time2 = canPrint ? 0.0f : time * 15.0f;
         glm::mat4 model = transform(cubePositions[i],
             std::max(0.1f * ((float)i + 0.3f), 1.0f),
-            glm::vec3(time2, 0.3f * time2, 0.1f * i));
+            glm::vec3(time2, 0.3f * time2, 0.0f * i));
         std::cout << model << i << "\n";
         shader.setMat4("model", model);
         int c = i % 2 != 0 ? 0 : 2;
         int t = (i < 4) ? (i + 1) : (i < 7) ? (i + 4)
                                             : (i + 8);
         // Draw the mesh
-        float r = (std::sin(i * 0.5f) + 1.0f) * 0.5f;
-        float g = (std::cos(i * 0.7f) + 1.0f) * 0.5f;
-        float b = (std::sin(i * 0.9f) + 1.0f) * 0.5f;
+        float r = std::max((std::sin(i * 0.5f) + 1.0f) * 0.5f, 0.1f);
+        float g = std::max((std::cos(i * 0.7f) + 1.0f) * 0.5f, 0.1f);
+        float b = std::max((std::sin(i * 0.9f) + 1.0f) * 0.5f, 0.1f);
         shader.setVec3("objectColor", r, g, b);
         shader.setFloat("mixColor", (float)std::cos(time) * 1.2f);
         Texture *textures2 = nullptr; //new Texture[2]{textures[t], textures[t + 1]};

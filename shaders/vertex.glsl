@@ -11,6 +11,7 @@ out vec3 Normal;
 out vec3 Tangent;
 out vec3 Bitangent;
 out vec3 Color; // Pass color to fragment shader
+out vec3 FragPos;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -24,4 +25,5 @@ void main()
     Bitangent = aBitangent;
     Color = aColor; // Pass color to fragment shader
     gl_Position = projection * view * model * vec4(aPos, 1.0);
+    FragPos = vec3(model * vec4(aPos, 1.0));
 }
