@@ -20,7 +20,7 @@ uniform mat4 projection;
 void main()
 {
     TexCoord = aUV;
-    Normal = aNormal;
+    Normal = mat3(transpose(inverse(model))) * aNormal;
     Tangent = aTangent;
     Bitangent = aBitangent;
     Color = aColor; // Pass color to fragment shader

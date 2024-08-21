@@ -250,6 +250,7 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
     glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
     shader.setVec3("lightColor",  lightColor);
     shader.setVec3("lightPos", lightPos);
+    shader.setVec3("viewPos", camera.Position);
 
     shaders["light"].use();
     shaders["light"].setMat4("view", view);
@@ -262,6 +263,10 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
     {
         shader.use();
         float time = glfwGetTime();
+
+        shader.setFloat("specularStrength", clamp(time, atan));
+        shader.setFloat("steps", clamp(time * 120.0f, sin, 0.1f, 120.0f));
+        shader.setInt("factor", (int) clamp(time * 1024.0f, cos, 2.0f, 1024.0f));
         float time2 = canPrint ? 0.0f : time * 15.0f;
         glm::mat4 model = transform(cubePositions[i],
             std::max(0.1f * ((float)i + 0.3f), 1.0f),

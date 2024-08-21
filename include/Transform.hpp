@@ -144,7 +144,18 @@ std::ostream &operator<<(std::ostream &os, const glm::mat<C, R, T, P> &m)
     }
     return os;
 }
+
+template <typename T>
+T clamp(T value, T min, T max) {
+    return std::min(std::max(value, min), max);
+}
+
+float clamp(const float value, float (*operation)(float), const float min = 0.1f, const float max = 1.0f) {
+    return clamp((operation(value) + 1.0f) * 0.5f, min, max);
+}
+
 // Custom printing function for glm::quat
+
 template <typename T, glm::precision P>
 std::ostream &operator<<(std::ostream &os, const glm::qua<T, P> &q)
 {

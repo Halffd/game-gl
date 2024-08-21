@@ -13,10 +13,14 @@ uniform sampler2D texture1;
 uniform sampler2D texture2;
 uniform float mixColor;
 uniform float darkness;
+uniform float specularStrength;
+uniform int factor;
+uniform float steps;
 
 uniform vec3 objectColor;
 uniform vec3 lightColor;
 uniform vec3 lightPos;
+uniform vec3 viewPos;
 
 void main()
 {
@@ -25,10 +29,16 @@ void main()
     vec3 lightDir = normalize(lightPos - FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
-    float steps = 7.2; // Adjust this value to control the number of shading levels
+//    float steps = 7.2; // Adjust this value to control the number of shading levels
     float cellShade = clamp(floor(diff * steps) / (steps - 1.0), 0.0, 1.0);
     vec3 ambient = lightColor * darkness;
-    vec3 result = (ambient + cellShade) * objectColor;
+
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), factor);
+    vec3 specular = specularStrength * spec * lightColor;
+
+    vec3 result = (ambient + cellShade + specular) * objectColor;
     FragColor = vec4(result, 1.0);
     return;
     vec4 tex1 = texture(texture1, TexCoord);
