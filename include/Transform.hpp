@@ -153,7 +153,10 @@ T clamp(T value, T min, T max) {
 float clamp(const float value, float (*operation)(float), const float min = 0.1f, const float max = 1.0f) {
     return clamp((operation(value) + 1.0f) * 0.5f, min, max);
 }
-
+float lerp(float a, float b, float f)
+{
+    return a + f * (b - a);
+}
 // Custom printing function for glm::quat
 
 template <typename T, glm::precision P>

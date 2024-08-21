@@ -249,6 +249,9 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
     shader.setFloat("darkness",  (std::cos(time1) + 1.0f) * 0.5f);
     glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
     shader.setVec3("lightColor",  lightColor);
+    lightPos.x = sin(glfwGetTime()) * 2.0f;
+    lightPos.z = cos(glfwGetTime()) * 2.0f;
+    lightPos.y = 0;
     shader.setVec3("lightPos", lightPos);
     shader.setVec3("viewPos", camera.Position);
 
@@ -257,12 +260,15 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
     shaders["light"].setMat4("projection", projection);
     shaders["light"].setVec3("lightColor",  lightColor);
     glm::mat4 lightModel = transform(lightPos, 0.2f, 1.0f);
-    draw(shaders["light"], meshes[3], lightModel);
+    Texture* lightTex = new Texture[1]{textures[4]};
+    draw(shaders["light"], lightTex, 1, meshes[3], lightModel);
 
     for (unsigned int i = 0; i < 10; i++)
     {
         shader.use();
         float time = glfwGetTime();
+        float targetValue = 1.0f;
+        float interpolatedValue = lerp(0.0f, targetValue, time);
 
         shader.setFloat("specularStrength", clamp(time, atan));
         shader.setFloat("steps", clamp(time * 120.0f, sin, 0.1f, 120.0f));
@@ -274,16 +280,18 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
         std::cout << model << i << "\n";
         shader.setMat4("model", model);
         int c = i % 2 != 0 ? 0 : 2;
-        int t = (i < 4) ? (i + 1) : (i < 7) ? (i + 4)
-                                            : (i + 8);
+        int t = (int)(i / 2);
+        if(t >= 4) {
+            t += 1;
+        }
         // Draw the mesh
         float r = std::max((std::sin(i * 0.5f) + 1.0f) * 0.5f, 0.1f);
         float g = std::max((std::cos(i * 0.7f) + 1.0f) * 0.5f, 0.1f);
         float b = std::max((std::sin(i * 0.9f) + 1.0f) * 0.5f, 0.1f);
         shader.setVec3("objectColor", r, g, b);
         shader.setFloat("mixColor", (float)std::cos(time) * 1.2f);
-        Texture *textures2 = nullptr; //new Texture[2]{textures[t], textures[t + 1]};
-        draw(shader, textures2, 0, meshes[c], model);
+        Texture *textures2 = new Texture[1]{textures[t]};
+        draw(shader, textures2, 1, meshes[c], model);
         // Print transforms if needed
         if (canPrint)
         {
@@ -390,15 +398,15 @@ int main()
     std::cout << shaders["light"].ID << "\n";
     shaders["main"].use();
 
-    containerTexture.Load(fs.texture("container.jpg"));
+    containerTexture.Load(fs.texture("4l.jpg"));
 
-    inTexture.Load(fs.texture("troll.png"));
+    inTexture.Load(fs.texture("yellowstone.jpg"));
     Texture bricks;
-    bricks.Load(fs.texture("dbrick.png"));
+    bricks.Load(fs.texture("dbricks.png"));
     Texture mm;
-    mm.Load(fs.texture("mm.png"));
-    Texture sm(fs.texture("sm.png"));
-    Texture sky(fs.texture("sky.png"));
+    mm.Load(fs.texture("bookshelf.jpg"));
+    Texture sm(fs.texture("glowstone.jpg"));
+    Texture sky(fs.texture("pumpkin.png"));
     Texture *textures = new Texture[6]{
         bricks, inTexture, containerTexture, mm, sky, sm};
 

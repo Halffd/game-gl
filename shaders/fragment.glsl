@@ -38,13 +38,12 @@ void main()
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), factor);
     vec3 specular = specularStrength * spec * lightColor;
 
-    vec3 result = (ambient + cellShade + specular) * objectColor;
-    FragColor = vec4(result, 1.0);
-    return;
     vec4 tex1 = texture(texture1, TexCoord);
     vec4 tex2 = texture(texture2, TexCoord);
     vec4 tex = tex1;
     float mixFactor;
+
+    vec4 colors;
     if(mixColor <= 0){
         mixFactor = 0.3;
     } else {
@@ -54,10 +53,13 @@ void main()
         tex = mix(tex1, tex2, mixFactor);
     }
     if(Color != vec3(0.0) && tex == vec4(0.0)){
-        FragColor = vec4(Color, 1.0); // Use color
+        colors = vec4(Color, 1.0); // Use color
     } else if(Color != vec3(0.0)){
-        FragColor = mix(tex, vec4(Color, 1.0), mixFactor);
+        colors = mix(tex, vec4(Color, 1.0), mixFactor);
     } else {
-        FragColor = tex;
+        colors = tex;
     }
+
+    vec3 result = (ambient + cellShade + specular) * colors.rgb;
+    FragColor = vec4(result, 1.0);
 }
