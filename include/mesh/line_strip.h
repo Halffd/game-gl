@@ -1,9 +1,9 @@
-#ifndef CELL_MESH_LINE_STRIP_H
-#define CELL_MESH_LINE_STRIP_H
+#ifndef ENGINE_MESH_LINE_STRIP_H
+#define ENGINE_MESH_LINE_STRIP_H
 
 #include "mesh.h"
 
-namespace Cell
+namespace Engine
 {
     /* 
 

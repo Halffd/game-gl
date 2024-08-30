@@ -1,9 +1,9 @@
-#ifndef CELL_MESH_QUAD_H
-#define CELL_MESH_QUAD_H
+#ifndef ENGINE_MESH_QUAD_H
+#define ENGINE_MESH_QUAD_H
 
 #include "mesh.h"
 
-namespace Cell
+namespace Engine
 {
     /* 
 

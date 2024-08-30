@@ -3,7 +3,7 @@
 #include <vector>
 
 
-namespace Cell
+namespace Engine
 {
     // --------------------------------------------------------------------------------------------
     LineStrip::LineStrip(float width, unsigned int segments)

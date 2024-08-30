@@ -4,7 +4,7 @@
 
 #include <math/math.h>
 
-namespace Cell
+namespace Engine
 {
     // --------------------------------------------------------------------------------------------
     // NOTE(Joey): resources:

@@ -1,5 +1,5 @@
-#ifndef CELL_ARC_H
-#define CELL_ARC_H
+#ifndef ENGINE_ARC_H
+#define ENGINE_ARC_H
 
 #include "mesh.h"
 #include <cmath>
@@ -7,7 +7,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-namespace Cell
+namespace Engine
 {
     class Arc : public Mesh
     {
@@ -117,4 +117,4 @@ namespace Cell
     };
 }
 
-#endif // CELL_ARC_H
+#endif // ENGINE_ARC_H

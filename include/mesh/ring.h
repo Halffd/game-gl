@@ -5,7 +5,7 @@
 #include "mesh.h"
 #include <cmath>
 
-namespace Cell {
+namespace Engine {
 
     class Ring : public Mesh {
     public:

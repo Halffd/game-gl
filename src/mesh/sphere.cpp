@@ -3,7 +3,7 @@
 #include <math.h>
 #include <math/math.h>
 #include "sphere.h" 
-namespace Cell
+namespace Engine
 {
     Sphere::Sphere(unsigned int latitudeBands, unsigned int longitudeBands)
     {

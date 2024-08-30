@@ -3,7 +3,7 @@
 #include <math.h>
 #include <math/math.h>
 
-namespace Cell
+namespace Engine
 {
     // --------------------------------------------------------------------------------------------
     Circle::Circle(unsigned int edgeSegments, unsigned int ringSegments)
@@ -44,6 +44,6 @@ namespace Cell
         }
 
         Topology = TRIANGLE_STRIP;
-        Cell::Mesh::Finalize();
+        Engine::Mesh::Finalize();
     }
 }

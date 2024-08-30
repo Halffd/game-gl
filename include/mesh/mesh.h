@@ -1,5 +1,5 @@
-#ifndef CELL_MESH_H
-#define CELL_MESH_H
+#ifndef ENGINE_MESH_H
+#define ENGINE_MESH_H
 
 #include <vector>
 #include <functional>
@@ -8,7 +8,7 @@
 #include "math/vector.h"
 #include "vertex.h"
 
-namespace Cell
+namespace Engine
 {
     /*
 
@@ -52,6 +52,8 @@ namespace Cell
             Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices, std::vector<math::vec3> colors);
             Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices);
             Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices, std::vector<math::vec2> uv);
+            Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices, std::vector<math::vec2> uv, std::vector<math::vec3> normals);
+
         // set vertex data manually
         void SetPositions(std::vector<math::vec3> positions);
         void SetUVs(std::vector<math::vec2> uv);

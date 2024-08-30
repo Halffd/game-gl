@@ -2,8 +2,8 @@
 #define TRANSFORM_H
 
 #include <glad/glad.h>
-#include "Shader.hpp"
-#include "Texture.hpp"
+#include "shader.h"
+#include "Texture2D.h"
 #include "Util.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,16 +19,16 @@ void draw(Shader &shader, V &vao, const glm::mat4 &transform, int vertices = -1,
     draw(shader, nullptr, 0, vao, transform, vertices, topology);
 }
 template<typename V>
-void draw(Shader &shader, Texture* textures, int texturesN, V &vao, const glm::mat4 &transform, int vertices = -1, TOPOLOGY topology = NONE)
+void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm::mat4 &transform, int vertices = -1, TOPOLOGY topology = NONE)
 {
-    shader.use();
-    shader.setMat4("model", transform);
+    shader.Use();
+    shader.SetMatrix4("model", transform);
 
     // Bind textures
     for (int i = 0; i < texturesN; ++i)
     {
-        textures[i].Activate(GL_TEXTURE0 + i);             // Activate texture unit
-        shader.setInt("texture" + std::to_string(i + 1), i); // Set the uniform for the texture
+        textures[i].Bind();             // Activate texture unit
+        shader.SetInteger(("texture" + std::to_string(i + 1)).c_str(), i); // Set the uniform for the texture
     }
 
     int ind = vao->bind();

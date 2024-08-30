@@ -2,7 +2,7 @@
 #include <cmath>
 #include <algorithm> // For std::clamp
 
-namespace Cell {
+namespace Engine {
 
     Ring::Ring(float innerRadius, float outerRadius, unsigned int edgeSegments, unsigned int ringSegments) {
         generateMesh(innerRadius, outerRadius, edgeSegments, ringSegments);
@@ -54,7 +54,7 @@ namespace Cell {
         }
 
         Topology = TRIANGLE_STRIP;
-        Cell::Mesh::Finalize();
+        Engine::Mesh::Finalize();
     }
 
 }

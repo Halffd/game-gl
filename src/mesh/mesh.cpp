@@ -6,7 +6,7 @@
 #include <utility/logging/log.h>
 #include <iostream>
 
-namespace Cell
+namespace Engine
 {
      Mesh::Mesh(std::vector<math::vec3> positions, std::vector<math::vec2> uv, std::vector<math::vec3> normals, std::vector<math::vec3> tangents, std::vector<math::vec3> bitangents, std::vector<math::vec3> colors, std::vector<unsigned int> indices)
 {
@@ -40,6 +40,14 @@ namespace Cell
     
     // Additional constructor logic here, if any
 }
+    Mesh::Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices, std::vector<math::vec2> uv, std::vector<math::vec3> normals)
+     {
+         // Initialize members in the constructor block
+         this->Positions = std::move(positions);
+         this->UV = std::move(uv);
+         this->Indices = std::move(indices);
+         this->Normals = std::move(normals);
+     }
      Mesh::Mesh(std::vector<math::vec3> positions, std::vector<unsigned int> indices)
 {
     // Initialize members in the constructor block

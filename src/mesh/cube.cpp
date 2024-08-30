@@ -1,18 +1,18 @@
 #include "cube.h"
 
-namespace Cell
-{
+namespace Engine {
     // --------------------------------------------------------------------------------------------
-    Cube::Cube()
-    {
-        Positions = std::vector<math::vec3>{
+    Cube::Cube() {
+        Positions = {
+            // Front face
             math::vec3(-0.5f, -0.5f, -0.5f),
-            math::vec3(0.5f, 0.5f, -0.5f),
             math::vec3(0.5f, -0.5f, -0.5f),
             math::vec3(0.5f, 0.5f, -0.5f),
-            math::vec3(-0.5f, -0.5f, -0.5f),
+            math::vec3(0.5f, 0.5f, -0.5f),
             math::vec3(-0.5f, 0.5f, -0.5f),
+            math::vec3(-0.5f, -0.5f, -0.5f),
 
+            // Back face
             math::vec3(-0.5f, -0.5f, 0.5f),
             math::vec3(0.5f, -0.5f, 0.5f),
             math::vec3(0.5f, 0.5f, 0.5f),
@@ -20,6 +20,7 @@ namespace Cell
             math::vec3(-0.5f, 0.5f, 0.5f),
             math::vec3(-0.5f, -0.5f, 0.5f),
 
+            // Left face
             math::vec3(-0.5f, 0.5f, 0.5f),
             math::vec3(-0.5f, 0.5f, -0.5f),
             math::vec3(-0.5f, -0.5f, -0.5f),
@@ -27,13 +28,15 @@ namespace Cell
             math::vec3(-0.5f, -0.5f, 0.5f),
             math::vec3(-0.5f, 0.5f, 0.5f),
 
+            // Right face
             math::vec3(0.5f, 0.5f, 0.5f),
-            math::vec3(0.5f, -0.5f, -0.5f),
             math::vec3(0.5f, 0.5f, -0.5f),
             math::vec3(0.5f, -0.5f, -0.5f),
-            math::vec3(0.5f, 0.5f, 0.5f),
+            math::vec3(0.5f, -0.5f, -0.5f),
             math::vec3(0.5f, -0.5f, 0.5f),
+            math::vec3(0.5f, 0.5f, 0.5f),
 
+            // Bottom face
             math::vec3(-0.5f, -0.5f, -0.5f),
             math::vec3(0.5f, -0.5f, -0.5f),
             math::vec3(0.5f, -0.5f, 0.5f),
@@ -41,98 +44,108 @@ namespace Cell
             math::vec3(-0.5f, -0.5f, 0.5f),
             math::vec3(-0.5f, -0.5f, -0.5f),
 
+            // Top face
             math::vec3(-0.5f, 0.5f, -0.5f),
-            math::vec3(0.5f, 0.5f, 0.5f),
             math::vec3(0.5f, 0.5f, -0.5f),
             math::vec3(0.5f, 0.5f, 0.5f),
-            math::vec3(-0.5f, 0.5f, -0.5f),
+            math::vec3(0.5f, 0.5f, 0.5f),
             math::vec3(-0.5f, 0.5f, 0.5f),
+            math::vec3(-0.5f, 0.5f, -0.5f)
         };
-        UV = std::vector<math::vec2>{
-            math::vec2(0.0f, 0.0f),
-            math::vec2(1.0f, 1.0f),
-            math::vec2(1.0f, 0.0f),
-            math::vec2(1.0f, 1.0f),
-            math::vec2(0.0f, 0.0f),
-            math::vec2(0.0f, 1.0f),
 
-            math::vec2(0.0f, 0.0f),
-            math::vec2(1.0f, 0.0f),
-            math::vec2(1.0f, 1.0f),
-            math::vec2(1.0f, 1.0f),
-            math::vec2(0.0f, 1.0f),
-            math::vec2(0.0f, 0.0f),
+        Normals = {
+            math::vec3(0.0f, 0.0f, -1.0f),
+            math::vec3(0.0f, 0.0f, -1.0f),
+            math::vec3(0.0f, 0.0f, -1.0f),
+            math::vec3(0.0f, 0.0f, -1.0f),
+            math::vec3(0.0f, 0.0f, -1.0f),
+            math::vec3(0.0f, 0.0f, -1.0f),
 
-            math::vec2(1.0f, 0.0f),
-            math::vec2(1.0f, 1.0f),
-            math::vec2(0.0f, 1.0f),
-            math::vec2(0.0f, 1.0f),
-            math::vec2(0.0f, 0.0f),
-            math::vec2(1.0f, 0.0f),
+            math::vec3(0.0f, 0.0f, 1.0f),
+            math::vec3(0.0f, 0.0f, 1.0f),
+            math::vec3(0.0f, 0.0f, 1.0f),
+            math::vec3(0.0f, 0.0f, 1.0f),
+            math::vec3(0.0f, 0.0f, 1.0f),
+            math::vec3(0.0f, 0.0f, 1.0f),
 
-            math::vec2(1.0f, 0.0f),
-            math::vec2(0.0f, 1.0f),
-            math::vec2(1.0f, 1.0f),
-            math::vec2(0.0f, 1.0f),
-            math::vec2(1.0f, 0.0f),
-            math::vec2(0.0f, 0.0f),
+            math::vec3(-1.0f, 0.0f, 0.0f),
+            math::vec3(-1.0f, 0.0f, 0.0f),
+            math::vec3(-1.0f, 0.0f, 0.0f),
+            math::vec3(-1.0f, 0.0f, 0.0f),
+            math::vec3(-1.0f, 0.0f, 0.0f),
+            math::vec3(-1.0f, 0.0f, 0.0f),
 
-            math::vec2(0.0f, 1.0f),
-            math::vec2(1.0f, 1.0f),
-            math::vec2(1.0f, 0.0f),
-            math::vec2(1.0f, 0.0f),
-            math::vec2(0.0f, 0.0f),
-            math::vec2(0.0f, 1.0f),
+            math::vec3(1.0f, 0.0f, 0.0f),
+            math::vec3(1.0f, 0.0f, 0.0f),
+            math::vec3(1.0f, 0.0f, 0.0f),
+            math::vec3(1.0f, 0.0f, 0.0f),
+            math::vec3(1.0f, 0.0f, 0.0f),
+            math::vec3(1.0f, 0.0f, 0.0f),
 
-            math::vec2(0.0f, 1.0f),
-            math::vec2(1.0f, 0.0f),
-            math::vec2(1.0f, 1.0f),
-            math::vec2(1.0f, 0.0f),
-            math::vec2(0.0f, 1.0f),
-            math::vec2(0.0f, 0.0f),
+            math::vec3(0.0f, -1.0f, 0.0f),
+            math::vec3(0.0f, -1.0f, 0.0f),
+            math::vec3(0.0f, -1.0f, 0.0f),
+            math::vec3(0.0f, -1.0f, 0.0f),
+            math::vec3(0.0f, -1.0f, 0.0f),
+            math::vec3(0.0f, -1.0f, 0.0f),
+
+            math::vec3(0.0f, 1.0f, 0.0f),
+            math::vec3(0.0f, 1.0f, 0.0f),
+            math::vec3(0.0f, 1.0f, 0.0f),
+            math::vec3(0.0f, 1.0f, 0.0f),
+            math::vec3(0.0f, 1.0f, 0.0f),
+            math::vec3(0.0f, 1.0f, 0.0f)
         };
-        Normals = std::vector<math::vec3>{
-            math::vec3(0.0f, 0.0f, -1.0f),
-            math::vec3(0.0f, 0.0f, -1.0f),
-            math::vec3(0.0f, 0.0f, -1.0f),
-            math::vec3(0.0f, 0.0f, -1.0f),
-            math::vec3(0.0f, 0.0f, -1.0f),
-            math::vec3(0.0f, 0.0f, -1.0f),
 
-            math::vec3(0.0f, 0.0f, 1.0f),
-            math::vec3(0.0f, 0.0f, 1.0f),
-            math::vec3(0.0f, 0.0f, 1.0f),
-            math::vec3(0.0f, 0.0f, 1.0f),
-            math::vec3(0.0f, 0.0f, 1.0f),
-            math::vec3(0.0f, 0.0f, 1.0f),
 
-            math::vec3(-1.0f, 0.0f, 0.0f),
-            math::vec3(-1.0f, 0.0f, 0.0f),
-            math::vec3(-1.0f, 0.0f, 0.0f),
-            math::vec3(-1.0f, 0.0f, 0.0f),
-            math::vec3(-1.0f, 0.0f, 0.0f),
-            math::vec3(-1.0f, 0.0f, 0.0f),
+        UV = {
+            // Front face
+            math::vec2(0.0f, 0.0f),
+            math::vec2(1.0f, 0.0f),
+            math::vec2(1.0f, 1.0f),
+            math::vec2(1.0f, 1.0f),
+            math::vec2(0.0f, 1.0f),
+            math::vec2(0.0f, 0.0f),
 
-            math::vec3(1.0f, 0.0f, 0.0f),
-            math::vec3(1.0f, 0.0f, 0.0f),
-            math::vec3(1.0f, 0.0f, 0.0f),
-            math::vec3(1.0f, 0.0f, 0.0f),
-            math::vec3(1.0f, 0.0f, 0.0f),
-            math::vec3(1.0f, 0.0f, 0.0f),
+            // Back face
+            math::vec2(1.0f, 0.0f),
+            math::vec2(0.0f, 0.0f),
+            math::vec2(0.0f, 1.0f),
+            math::vec2(0.0f, 1.0f),
+            math::vec2(1.0f, 1.0f),
+            math::vec2(1.0f, 0.0f),
 
-            math::vec3(0.0f, -1.0f, 0.0f),
-            math::vec3(0.0f, -1.0f, 0.0f),
-            math::vec3(0.0f, -1.0f, 0.0f),
-            math::vec3(0.0f, -1.0f, 0.0f),
-            math::vec3(0.0f, -1.0f, 0.0f),
-            math::vec3(0.0f, -1.0f, 0.0f),
+            // Left face
+            math::vec2(1.0f, 0.0f),
+            math::vec2(1.0f, 1.0f),
+            math::vec2(0.0f, 1.0f),
+            math::vec2(0.0f, 1.0f),
+            math::vec2(0.0f, 0.0f),
+            math::vec2(1.0f, 0.0f),
 
-            math::vec3(0.0f, 1.0f, 0.0f),
-            math::vec3(0.0f, 1.0f, 0.0f),
-            math::vec3(0.0f, 1.0f, 0.0f),
-            math::vec3(0.0f, 1.0f, 0.0f),
-            math::vec3(0.0f, 1.0f, 0.0f),
-            math::vec3(0.0f, 1.0f, 0.0f),
+            // Right face
+            math::vec2(0.0f, 0.0f),
+            math::vec2(0.0f, 1.0f),
+            math::vec2(1.0f, 1.0f),
+            math::vec2(1.0f, 1.0f),
+            math::vec2(1.0f, 0.0f),
+            math::vec2(0.0f, 0.0f),
+
+            // Bottom face
+            math::vec2(0.0f, 0.0f),
+            math::vec2(1.0f, 0.0f),
+            math::vec2(1.0f, 1.0f),
+            math::vec2(1.0f, 1.0f),
+            math::vec2(0.0f, 1.0f),
+            math::vec2(0.0f, 0.0f),
+
+            // Top face
+            math::vec2(0.0f, 1.0f),
+            math::vec2(1.0f, 1.0f),
+            math::vec2(1.0f, 0.0f),
+            math::vec2(1.0f, 0.0f),
+            math::vec2(0.0f, 0.0f),
+            math::vec2(0.0f, 1.0f)
         };
         Colors = {
             // Front face (yellow)
@@ -140,27 +153,44 @@ namespace Cell
             {1.0f, 1.0f, 0.0f},
             {1.0f, 1.0f, 0.0f},
             {1.0f, 1.0f, 0.0f},
+            {1.0f, 1.0f, 0.0f},
+            {1.0f, 1.0f, 0.0f},
+
             // Back face (red)
             {1.0f, 0.0f, 0.0f},
             {1.0f, 0.0f, 0.0f},
             {1.0f, 0.0f, 0.0f},
             {1.0f, 0.0f, 0.0f},
+            {1.0f, 0.0f, 0.0f},
+            {1.0f, 0.0f, 0.0f},
+
             // Left face (green)
             {0.0f, 1.0f, 0.0f},
             {0.0f, 1.0f, 0.0f},
             {0.0f, 1.0f, 0.0f},
             {0.0f, 1.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f},
+
             // Right face (blue)
             {0.0f, 0.0f, 1.0f},
             {0.0f, 0.0f, 1.0f},
             {0.0f, 0.0f, 1.0f},
             {0.0f, 0.0f, 1.0f},
+            {0.0f, 0.0f, 1.0f},
+            {0.0f, 0.0f, 1.0f},
+
             // Top face (white)
             {1.0f, 1.0f, 1.0f},
             {1.0f, 1.0f, 1.0f},
             {1.0f, 1.0f, 1.0f},
             {1.0f, 1.0f, 1.0f},
+            {1.0f, 1.0f, 1.0f},
+            {1.0f, 1.0f, 1.0f},
+
             // Bottom face (cyan)
+            {0.0f, 1.0f, 1.0f},
+            {0.0f, 1.0f, 1.0f},
             {0.0f, 1.0f, 1.0f},
             {0.0f, 1.0f, 1.0f},
             {0.0f, 1.0f, 1.0f},

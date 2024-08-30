@@ -1,6 +1,6 @@
 #include "plane.h" 
 
-namespace Cell
+namespace Engine
 {
     // --------------------------------------------------------------------------------------------
     Plane::Plane(unsigned int xSegments, unsigned int ySegments)

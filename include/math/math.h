@@ -1,5 +1,5 @@
-#ifndef CELL_MATH_H
-#define CELL_MATH_H
+#ifndef ENGINE_MATH_H
+#define ENGINE_MATH_H
 
 // todo: rename math.h, might not be the best name, google.
 

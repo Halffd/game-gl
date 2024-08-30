@@ -22,8 +22,7 @@
 
 #include "vertex.h"
 #include "Camera.hpp"
-#include "Shader.hpp"
-#include "Texture.hpp"
+#include "ResourceManager.h"
 #include "Transform.hpp"
 #include "Util.hpp"
 #include "root_directory.h"
@@ -43,14 +42,9 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
-typedef std::map<std::string, Shader> shaderMap;
-typedef std::map<std::string, Texture> textureMap;
-typedef std::map<std::string, VAO> meshMap;
-
 // Global variables
 int screenWidth = WIDTH;
 int screenHeight = HEIGHT;
-Texture containerTexture, inTexture;
 glm::mat4 projection, view;
 float aspect;
 bool canPrint = true;
@@ -71,23 +65,71 @@ glm::vec3 cubePositions[] = {
     glm::vec3(-1.3f, 1.0f, -1.5f)};
 // Vertex data for the trapezium
 std::vector<math::vec3> vertices = {
-    {-0.5f, 0.5f, 0.0f}, // Top left
-    {0.5f, 0.5f, 0.0f},  // Top right
-    {0.3f, -0.5f, 0.0f}, // Bottom right
-    {-0.3f, -0.5f, 0.0f} // Bottom left
+    // Front face
+    {-0.5f, 0.5f, 0.5f}, // Top left
+    {0.5f, 0.5f, 0.5f},  // Top right
+    {0.3f, -0.5f, 0.5f}, // Bottom right
+    {-0.3f, -0.5f, 0.5f}, // Bottom left
+
+    // Back face
+    {-0.5f, 0.5f, -0.5f}, // Top left
+    {0.5f, 0.5f, -0.5f},  // Top right
+    {0.3f, -0.5f, -0.5f}, // Bottom right
+    {-0.3f, -0.5f, -0.5f}, // Bottom left
 };
 
 std::vector<math::vec2> uvs = {
+    // Front face
+    {0.0f, 1.0f}, // Top left
+    {1.0f, 1.0f}, // Top right
+    {0.6f, 0.0f}, // Bottom right
+    {0.4f, 0.0f}, // Bottom left
+
+    // Back face
     {0.0f, 1.0f}, // Top left
     {1.0f, 1.0f}, // Top right
     {0.6f, 0.0f}, // Bottom right
     {0.4f, 0.0f}  // Bottom left
 };
 
-// Index data for the trapezium
 std::vector<uint32_t> indices = {
+    // Front face
     0, 1, 2,
-    0, 2, 3};
+    0, 2, 3,
+
+    // Right face
+    1, 5, 6,
+    1, 6, 2,
+
+    // Back face
+    5, 4, 7,
+    5, 7, 6,
+
+    // Left face
+    4, 0, 3,
+    4, 3, 7,
+
+    // Top face
+    4, 5, 1,
+    4, 1, 0,
+
+    // Bottom face
+    3, 2, 6,
+    3, 6, 7
+};
+std::vector<math::vec3> normals = {
+    // Front face
+    {0.0f, 0.0f, 1.0f}, // Top left
+    {0.0f, 0.0f, 1.0f}, // Top right
+    {0.0f, 0.0f, 1.0f}, // Bottom right
+    {0.0f, 0.0f, 1.0f}, // Bottom left
+
+    // Back face
+    {0.0f, 0.0f, -1.0f}, // Top left
+    {0.0f, 0.0f, -1.0f}, // Top right
+    {0.0f, 0.0f, -1.0f}, // Bottom right
+    {0.0f, 0.0f, -1.0f}  // Bottom left
+};
 VAO vao;
 VBO vbo;
 EBO ebo;
@@ -210,18 +252,17 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 }
-void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &meshes, Texture *textures)
+void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
 {
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Use the shader program
-    Shader shader = shaders["main"];
-    shader.use();
-
-    unbindTextures();
-    shader.setInt("texture1", 0);
-    shader.setInt("texture2", 0);
+    Shader shader = ResourceManager::GetShader("main");
+    shader.Use();
+    
+    shader.SetInteger("texture1", 0);
+    shader.SetInteger("texture2", 0);
     if (input)
     {
         view = camera.GetViewMatrix();
@@ -241,56 +282,66 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
     // view = glm::scale(view, glm::vec3(1.0f/zoom,1.0f/zoom,1.0f/zoom)); // Zoom 2x
     projection = glm::perspective(glm::radians(camera.Zoom), aspect, 0.1f, 100.0f);
 
-    shader.setMat4("view", view);
-    shader.setMat4("projection", projection);
+    shader.SetMatrix4("view", view);
+    shader.SetMatrix4("projection", projection);
     // First container
     // glBindVertexArray(VAO);
-    float time1 = glfwGetTime();
-    shader.setFloat("darkness",  (std::cos(time1) + 1.0f) * 0.5f);
-    glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    shader.setVec3("lightColor",  lightColor);
-    lightPos.x = sin(glfwGetTime()) * 2.0f;
-    lightPos.z = cos(glfwGetTime()) * 2.0f;
-    lightPos.y = 0;
-    shader.setVec3("lightPos", lightPos);
-    shader.setVec3("viewPos", camera.Position);
+    float t = glfwGetTime();
+    float dark = clamp(t, cos, 0.5f, 1.0f);
+    shader.SetFloat("darkness",  dark);
+    glm::vec3 lightColor = glm::vec3(dark, dark, dark);
+    shader.SetVector3f("lightColor",  lightColor);
+    float radius = 3.0f;
+    float angularSpeed = 0.5f;
 
-    shaders["light"].use();
-    shaders["light"].setMat4("view", view);
-    shaders["light"].setMat4("projection", projection);
-    shaders["light"].setVec3("lightColor",  lightColor);
+    lightPos.x = radius * cos(angularSpeed * t);
+    lightPos.y = radius * sin(angularSpeed * t);
+    lightPos.z = radius * sin(angularSpeed * t * 0.5f);
+    shader.SetVector3f("lightPos", lightPos);
+    shader.SetVector3f("viewPos", camera.Position);
+
+    Shader light = ResourceManager::GetShader("light");
+    light.Use();
+    light.SetMatrix4("view", view);
+    light.SetMatrix4("projection", projection);
+    light.SetVector3f("lightColor",  lightColor);
     glm::mat4 lightModel = transform(lightPos, 0.2f, 1.0f);
-    Texture* lightTex = new Texture[1]{textures[4]};
-    draw(shaders["light"], lightTex, 1, meshes[3], lightModel);
+    Texture2D* lightTex = new Texture2D[1] {
+        ResourceManager::GetTexture2D("light")
+    };
+    draw(light, lightTex, 1, meshes[3], lightModel);
 
     for (unsigned int i = 0; i < 10; i++)
     {
-        shader.use();
+        shader.Use();
         float time = glfwGetTime();
         float targetValue = 1.0f;
         float interpolatedValue = lerp(0.0f, targetValue, time);
 
-        shader.setFloat("specularStrength", clamp(time, atan));
-        shader.setFloat("steps", clamp(time * 120.0f, sin, 0.1f, 120.0f));
-        shader.setInt("factor", (int) clamp(time * 1024.0f, cos, 2.0f, 1024.0f));
+        shader.SetVector3f("material.ambient", 1.0f, 0.5f, 0.31f);
+        shader.SetVector3f("material.diffuse", 1.0f, 0.5f, 0.31f);
+        shader.SetVector3f("material.specular",  0.5f, 0.5f, 0.5f); //clamp(time, atan));
+        shader.SetFloat("material.shininess", 1024);//(int) clamp(time * 1024.0f, cos, 2.0f, 1024.0f));
+        shader.SetFloat("steps", 7.5f);//clamp(time * 120.0f, sin, 0.1f, 120.0f));
         float time2 = canPrint ? 0.0f : time * 15.0f;
+        glm::vec3 rot = glm::vec3(i % 3 == 0 || i < 4 ? time2 : 0.0f, i % 2 == 0 ? 0.3f * time2 : 0.0f, i == 5 || i == 7 ? time2 : 0.0f);
         glm::mat4 model = transform(cubePositions[i],
             std::max(0.1f * ((float)i + 0.3f), 1.0f),
-            glm::vec3(time2, 0.3f * time2, 0.0f * i));
+            rot);
         std::cout << model << i << "\n";
-        shader.setMat4("model", model);
-        int c = i % 2 != 0 ? 0 : 2;
-        int t = (int)(i / 2);
-        if(t >= 4) {
-            t += 1;
+        shader.SetMatrix4("model", model);
+        int c = i % 2 != 0 ? i % 3 == 0 ? 4 : 0 : 2;
+        int t = 5 - (int)(i / 2);
+        if(t == 5) {
+            t -= 1;
         }
         // Draw the mesh
         float r = std::max((std::sin(i * 0.5f) + 1.0f) * 0.5f, 0.1f);
         float g = std::max((std::cos(i * 0.7f) + 1.0f) * 0.5f, 0.1f);
         float b = std::max((std::sin(i * 0.9f) + 1.0f) * 0.5f, 0.1f);
-        shader.setVec3("objectColor", r, g, b);
-        shader.setFloat("mixColor", (float)std::cos(time) * 1.2f);
-        Texture *textures2 = new Texture[1]{textures[t]};
+        //shader.SetVector3f("objectColor", r, g, b);
+        shader.SetFloat("mixColor", 0.0f);
+        Texture2D *textures2 = new Texture2D[1]{ResourceManager::GetTexture2DByIndex(t)};
         draw(shader, textures2, 1, meshes[c], model);
         // Print transforms if needed
         if (canPrint)
@@ -298,14 +349,10 @@ void renderScene(GLFWwindow *window, shaderMap shaders, std::vector<VAO *> &mesh
             printTransform(model);
         }
     }
-
-    unbindTextures();
-    shader.setInt("texture1", 0);
-    shader.setInt("texture2", 0);
     meshes[1]->bind();
     glm::mat4 trans = glm::mat4(1.0f);
     trans = glm::translate(trans, glm::vec3(-0.8f, 0.7f, 0.7f));
-    shader.setMat4("model", trans);
+    shader.SetMatrix4("model", trans);
     glDrawElementsBaseVertex(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr, 0);
     glCheckError(__FILE__, __LINE__);
     meshes[1]->unbind();
@@ -384,31 +431,19 @@ int main()
     }
 
 
-    shaderMap shaders = {
-        {"main",
-            Shader(fs.shader("vertex.glsl"),
-                fs.shader("fragment.glsl")
-                )},
-        {"light",
-            Shader(fs.shader("light/vertex.glsl"),
-                fs.shader("light/fragment.glsl")
-                )}
-    };
-    std::cout << shaders["main"].ID << "\n";
-    std::cout << shaders["light"].ID << "\n";
-    shaders["main"].use();
+    Shader shader = ResourceManager::LoadShader(fs.shader("vertex.glsl") , fs.shader("fragment.glsl"), "main");
+    Shader light = ResourceManager::LoadShader(fs.shader("light/vertex.glsl"), fs.shader("light/fragment.glsl"), "light");
 
-    containerTexture.Load(fs.texture("4l.jpg"));
+    std::cout << shader.ID << "\n";
+    std::cout << light.ID << "\n";
+    shader.Use();
 
-    inTexture.Load(fs.texture("yellowstone.jpg"));
-    Texture bricks;
-    bricks.Load(fs.texture("dbricks.png"));
-    Texture mm;
-    mm.Load(fs.texture("bookshelf.jpg"));
-    Texture sm(fs.texture("glowstone.jpg"));
-    Texture sky(fs.texture("pumpkin.png"));
-    Texture *textures = new Texture[6]{
-        bricks, inTexture, containerTexture, mm, sky, sm};
+    ResourceManager::LoadTexture2D(fs.texture("copper.png"));
+    ResourceManager::LoadTexture2D(fs.texture("yellowstone.jpg"));
+    ResourceManager::LoadTexture2D(fs.texture("dbricks.png"));
+    ResourceManager::LoadTexture2D(fs.texture("bookshelf.jpg"));
+    ResourceManager::LoadTexture2D(fs.texture("glowstone.jpg"), "light");
+    ResourceManager::LoadTexture2D(fs.texture("pumpkin.png"));
 
     // Set up VAO, VBO, and EBO
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
@@ -416,20 +451,23 @@ int main()
     float endAngleRad = 360.0f * DEG_TO_RAD;
 
     // Cell::Cube mesh;
-    Cell::Plane mesh(20, 20);
+    Engine::Plane mesh(20, 20);
     // std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
-    Cell::Mesh trap(vertices, indices, uvs);
-    Cell::Cube cube;
+    Engine::Mesh trap(vertices, indices, uvs, normals);
+    Engine::Cube cube;
     trap.Finalize();
-    shaders["light"].use();
-    Cell::Cube lightCube;
-    shaders["main"].use();
+    light.Use();
+    Engine::Cube lightCube;
+    shader.Use();
+    Engine::Sphere sphere(30, 30);
 
     std::vector<VAO *> meshes = {
         &mesh,
         &trap,
         &cube,
-        &lightCube};
+        &lightCube,
+        &sphere
+    };
 
     // Set up transformations
     aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
@@ -454,7 +492,7 @@ int main()
         if (!isPaused)
         {
             // Update your program state here
-            renderScene(window, shaders, meshes, textures);
+            renderScene(window, meshes);
         }
     }
 
