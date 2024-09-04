@@ -52,6 +52,13 @@ Texture2D ResourceManager::GetTexture2D(std::string name)
 {
     return Textures2D[name];
 }
+Texture2D* ResourceManager::GetTexture(std::string name) {
+    auto it = Textures2D.find(name);
+    if (it != Textures2D.end()) {
+        return &(it->second); // Return the address of the found texture
+    }
+    return nullptr; // Texture not found
+}
 
 Texture3D ResourceManager::LoadTexture3D(const char *file, bool alpha, std::string name,
                                          GLint sWrap, GLint tWrap, GLint rWrap,
@@ -66,14 +73,14 @@ Texture3D ResourceManager::GetTexture3D(std::string name)
     return Textures3D[name];
 }
 // Implementation of GetTexture2DByIndex
-Texture2D ResourceManager::GetTexture2DByIndex(size_t index) {
-    std::vector<Texture2D> textureList = ConvertMapToList(Textures2D);
+Texture2D* ResourceManager::GetTexture2DByIndex(size_t index) {
+    static std::vector<Texture2D> textureList = ConvertMapToList(Textures2D);
 
     if (index >= textureList.size()) {
         throw std::out_of_range("Index out of range");
     }
 
-    return textureList[index];
+    return &textureList[index]; // Safe because textureList persists
 }
 void ResourceManager::Clear()
 {

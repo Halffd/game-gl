@@ -263,6 +263,8 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     
     shader.SetInteger("texture1", 0);
     shader.SetInteger("texture2", 0);
+    shader.SetInteger("material.diffuse", 0);
+
     if (input)
     {
         view = camera.GetViewMatrix();
@@ -318,12 +320,22 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         float targetValue = 1.0f;
         float interpolatedValue = lerp(0.0f, targetValue, time);
 
-        shader.SetVector3f("material.ambient", 1.0f, 0.5f, 0.31f);
-        shader.SetVector3f("material.diffuse", 1.0f, 0.5f, 0.31f);
-        shader.SetVector3f("material.specular",  0.5f, 0.5f, 0.5f); //clamp(time, atan));
-        shader.SetFloat("material.shininess", 1024);//(int) clamp(time * 1024.0f, cos, 2.0f, 1024.0f));
-        shader.SetFloat("steps", 7.5f);//clamp(time * 120.0f, sin, 0.1f, 120.0f));
-        float time2 = canPrint ? 0.0f : time * 15.0f;
+        float specularValue = 0.7f;
+        float shininessValue = 1024.0f;
+        float ambientValue = 0.5f; //clamp(time, 0.05f, 0.68f);
+        float diffuseValue1 = 0.3f; //clamp(time * 1.7f, 0.0f, 1.0f);
+        float diffuseValue2 = clamp(time * 0.5f, 0.0f, 1.0f);
+        float diffuseValue3 = 0.3f; //clamp(time * 0.7f, 0.0f, 1.0f);
+        float specularLightValue1 = 0.25; //clamp(time, 0.5f, 1.0f);
+        float specularLightValue2 = clamp(time * 0.3f, 0.0f, 1.0f);
+        float stepsValue = 7.5f;
+
+        shader.SetVector3f("material.specular", specularValue, sin(time), 0.5f);
+        shader.SetFloat("material.shininess", shininessValue);
+        shader.SetVector3f("light.ambient", ambientValue, 0.28f, 0.3f);
+        shader.SetVector3f("light.diffuse", diffuseValue1, diffuseValue2, diffuseValue3);
+        shader.SetVector3f("light.specular", specularLightValue1, specularLightValue2, cos(time));
+        shader.SetFloat("steps", stepsValue);    float time2 = canPrint ? 0.0f : time * 15.0f;
         glm::vec3 rot = glm::vec3(i % 3 == 0 || i < 4 ? time2 : 0.0f, i % 2 == 0 ? 0.3f * time2 : 0.0f, i == 5 || i == 7 ? time2 : 0.0f);
         glm::mat4 model = transform(cubePositions[i],
             std::max(0.1f * ((float)i + 0.3f), 1.0f),
@@ -331,7 +343,7 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         std::cout << model << i << "\n";
         shader.SetMatrix4("model", model);
         int c = i % 2 != 0 ? i % 3 == 0 ? 4 : 0 : 2;
-        int t = 5 - (int)(i / 2);
+        int t = 0; //5 - (int)(i / 2);
         if(t == 5) {
             t -= 1;
         }
@@ -341,21 +353,23 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         float b = std::max((std::sin(i * 0.9f) + 1.0f) * 0.5f, 0.1f);
         //shader.SetVector3f("objectColor", r, g, b);
         shader.SetFloat("mixColor", 0.0f);
-        Texture2D *textures2 = new Texture2D[1]{ResourceManager::GetTexture2DByIndex(t)};
-        draw(shader, textures2, 1, meshes[c], model);
+        Texture2D *textures2 = ResourceManager::GetTexture2DByIndex(t);
+        Texture2D *diff = ResourceManager::GetTexture("diffuse");
+        draw(shader, textures2, 1, meshes[c], model, diff);
         // Print transforms if needed
         if (canPrint)
         {
             printTransform(model);
         }
     }
+    /*
     meshes[1]->bind();
     glm::mat4 trans = glm::mat4(1.0f);
     trans = glm::translate(trans, glm::vec3(-0.8f, 0.7f, 0.7f));
     shader.SetMatrix4("model", trans);
     glDrawElementsBaseVertex(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr, 0);
     glCheckError(__FILE__, __LINE__);
-    meshes[1]->unbind();
+    meshes[1]->unbind();*/
     canPrint = false;
 
     // Unbind the VAO
@@ -438,12 +452,14 @@ int main()
     std::cout << light.ID << "\n";
     shader.Use();
 
+    ResourceManager::LoadTexture2D(fs.texture("container.jpg"));
     ResourceManager::LoadTexture2D(fs.texture("copper.png"));
     ResourceManager::LoadTexture2D(fs.texture("yellowstone.jpg"));
     ResourceManager::LoadTexture2D(fs.texture("dbricks.png"));
     ResourceManager::LoadTexture2D(fs.texture("bookshelf.jpg"));
     ResourceManager::LoadTexture2D(fs.texture("glowstone.jpg"), "light");
     ResourceManager::LoadTexture2D(fs.texture("pumpkin.png"));
+    ResourceManager::LoadTexture2D(fs.texture("maps/diffuse_container.png"), "diffuse");
 
     // Set up VAO, VBO, and EBO
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;

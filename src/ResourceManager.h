@@ -36,12 +36,13 @@ public:
               GLint minFilter = GL_LINEAR,
               GLint magFilter = GL_LINEAR);
     static Texture2D GetTexture2D(std::string name);
+    static Texture2D* GetTexture(std::string name);
 
     static Texture3D LoadTexture3D(const char *file, bool alpha, std::string name,
                                    GLint sWrap = GL_REPEAT, GLint tWrap = GL_REPEAT, GLint rWrap = GL_REPEAT,
                                    GLint minFilter = GL_LINEAR, GLint magFilter = GL_LINEAR);
     static Texture3D GetTexture3D(std::string name);
-    static Texture2D GetTexture2DByIndex(size_t index);
+    static Texture2D* GetTexture2DByIndex(size_t index);
 
     static void      Clear();
 

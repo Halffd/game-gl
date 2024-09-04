@@ -10,13 +10,20 @@ in vec3 FragPos;
 out vec4 FragColor;
 
 struct Material {
+    sampler2D diffuse;
+    vec3      specular;
+    float     shininess;
+};
+struct Light {
+    vec3 position;
+
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
-    float shininess;
 };
 
 uniform Material material;
+uniform Light light;
 uniform sampler2D texture1;
 uniform sampler2D texture2;
 uniform float mixColor;
@@ -30,19 +37,18 @@ uniform vec3 viewPos;
 
 void main()
 {
-
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPos - FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
-//    float steps = 7.2; // Adjust this value to control the number of shading levels
-    vec3 diffuse = lightColor * (diff * material.diffuse);
+    //    float steps = 7.2; // Adjust this value to control the number of shading levels
+    vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoord));
     float cellShade = clamp(floor(diff * steps) / (steps - 1.0), 0.0, 1.0);
-    vec3 ambient = material.ambient * (lightColor * darkness);
+    vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoord));
 
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = lightColor * (material.specular * spec);
+    vec3 specular = light.diffuse * (material.specular * spec);
 
     vec4 tex1 = texture(texture1, TexCoord);
     vec4 tex2 = texture(texture2, TexCoord);

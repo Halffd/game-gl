@@ -19,18 +19,28 @@ void draw(Shader &shader, V &vao, const glm::mat4 &transform, int vertices = -1,
     draw(shader, nullptr, 0, vao, transform, vertices, topology);
 }
 template<typename V>
-void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm::mat4 &transform, int vertices = -1, TOPOLOGY topology = NONE)
+void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm::mat4 &transform, Texture2D* diffuse = nullptr, int vertices = -1, TOPOLOGY topology = NONE)
 {
     shader.Use();
     shader.SetMatrix4("model", transform);
 
     // Bind textures
-    for (int i = 0; i < texturesN; ++i)
-    {
-        textures[i].Bind();             // Activate texture unit
-        shader.SetInteger(("texture" + std::to_string(i + 1)).c_str(), i); // Set the uniform for the texture
+    if(texturesN > 1){
+        for (int i = 0; i < texturesN; ++i)
+        {
+            textures[i].Bind();             // Activate texture unit
+            shader.SetInteger(("texture" + std::to_string(i + 1)).c_str(), i); // Set the uniform for the texture
+        }
+    } else {
+        glActiveTexture(GL_TEXTURE0 + textures->ID);
+        textures->Bind();             // Activate texture unit
+        shader.SetInteger("texture1", textures->ID); // Set the uniform for the texture
     }
-
+    if(diffuse != nullptr) {
+        glActiveTexture(GL_TEXTURE0 + diffuse->ID);
+        diffuse->Bind();
+        shader.SetInteger("material.diffuse", diffuse->ID);
+    }
     int ind = vao->bind();
     unsigned int drawTopology = (topology != NONE) ? topology : getPrimitive(vao->Topology);
         //std::cout << "Draw topology: " << drawTopology << std::endl;
