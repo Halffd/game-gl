@@ -24,6 +24,8 @@ public:
     static Shader    LoadShader(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile, std::string name);
     static Shader    GetShader(std::string name);
 
+    static Shader* ShaderP(std::string& name);
+
     static Texture1D LoadTexture1D(const char *file, bool alpha, std::string name,
                                    GLint sWrap = GL_REPEAT, GLint minFilter = GL_LINEAR, GLint magFilter = GL_LINEAR);
     static Texture1D GetTexture1D(std::string name);

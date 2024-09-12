@@ -26,6 +26,10 @@ Shader ResourceManager::GetShader(std::string name)
 {
     return Shaders[name];
 }
+Shader* ResourceManager::ShaderP(std::string& name)
+{
+    return &Shaders[name]; // Assuming Shaders is a map or similar structure
+}
 
 Texture1D ResourceManager::LoadTexture1D(const char *file, bool alpha, std::string name,
                                          GLint sWrap, GLint minFilter, GLint magFilter)

@@ -19,7 +19,7 @@ void draw(Shader &shader, V &vao, const glm::mat4 &transform, int vertices = -1,
     draw(shader, nullptr, 0, vao, transform, vertices, topology);
 }
 template<typename V>
-void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm::mat4 &transform, Texture2D* diffuse = nullptr, int vertices = -1, TOPOLOGY topology = NONE)
+void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm::mat4 &transform, Texture2D* diffuse = nullptr, Texture2D* specular = nullptr, int vertices = -1, TOPOLOGY topology = NONE)
 {
     shader.Use();
     shader.SetMatrix4("model", transform);
@@ -40,6 +40,11 @@ void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm:
         glActiveTexture(GL_TEXTURE0 + diffuse->ID);
         diffuse->Bind();
         shader.SetInteger("material.diffuse", diffuse->ID);
+    }
+    if(specular != nullptr) {
+        glActiveTexture(GL_TEXTURE0 + specular->ID);
+        specular->Bind();
+        shader.SetInteger("material.specular", specular->ID);
     }
     int ind = vao->bind();
     unsigned int drawTopology = (topology != NONE) ? topology : getPrimitive(vao->Topology);
@@ -97,12 +102,6 @@ glm::mat4 transform(const T1& position, const T2& scale, const T3& rotation) {
         model = glm::translate(model, position);
     }
 
-    if constexpr (std::is_same_v<T2, float>) {
-        model = glm::scale(model, glm::vec3(scale, scale, scale));
-    } else if constexpr (is_glm_vec3<T2>::value) {
-        model = glm::scale(model, scale);
-    }
-
     if constexpr (std::is_same_v<T3, float>) {
         if (rotation != 0.0f) {
             model = glm::rotate(model, glm::radians(15.0f * rotation), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -111,13 +110,19 @@ glm::mat4 transform(const T1& position, const T2& scale, const T3& rotation) {
         }
     } else if constexpr (is_glm_vec3<T3>::value) {
         if (glm::length(rotation) != 0.0f) {
-             model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-             model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+            model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
             model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
         }
     } else if constexpr (is_glm_quat<T3>::value) {
         model *= glm::mat4_cast(rotation);
     }
+    if constexpr (std::is_same_v<T2, float>) {
+        model = glm::scale(model, glm::vec3(scale, scale, scale));
+    } else if constexpr (is_glm_vec3<T2>::value) {
+        model = glm::scale(model, scale);
+    }
+
 
     return model;
 }

@@ -36,8 +36,8 @@
 #include "torus.h"
 #include "ring.h"
 #include "arc.h"
+///#include "Game/Game.h"
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
@@ -148,6 +148,103 @@ float lastX = screenWidth / 2.0f, lastY = screenHeight / 2.0f;
 
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
+// GLFW function declarations
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+
+// The Width of the screen
+const unsigned int SCREEN_WIDTH = 800;
+// The height of the screen
+const unsigned int SCREEN_HEIGHT = 600;
+
+Game Breakout(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+int game(int argc, char *argv[])
+{
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+    glfwWindowHint(GLFW_RESIZABLE, false);
+
+    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Breakout", nullptr, nullptr);
+    glfwMakeContextCurrent(window);
+
+    // glad: load all OpenGL function pointers
+    // ---------------------------------------
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    // OpenGL configuration
+    // --------------------
+    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // initialize game
+    // ---------------
+    Breakout.Init();
+
+    // deltaTime variables
+    // -------------------
+    float deltaTime = 0.0f;
+    float lastFrame = 0.0f;
+
+    while (!glfwWindowShouldClose(window))
+    {
+        // calculate delta time
+        // --------------------
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        glfwPollEvents();
+
+        // manage user input
+        // -----------------
+        Breakout.ProcessInput(deltaTime);
+
+        // update game state
+        // -----------------
+        Breakout.Update(deltaTime);
+
+        // render
+        // ------
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        Breakout.Render();
+
+        glfwSwapBuffers(window);
+    }
+
+    // delete all resources as loaded using the resource manager
+    // ---------------------------------------------------------
+    ResourceManager::Clear();
+
+    glfwTerminate();
+    return 0;
+}
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+    // when a user presses the escape key, we set the WindowShouldClose property to true, closing the application
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+    if (key >= 0 && key < 1024)
+    {
+        if (action == GLFW_PRESS)
+            Breakout.Keys[key] = true;
+        else if (action == GLFW_RELEASE)
+            Breakout.Keys[key] = false;
+    }
+}
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
@@ -320,7 +417,6 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         float targetValue = 1.0f;
         float interpolatedValue = lerp(0.0f, targetValue, time);
 
-        float specularValue = 0.7f;
         float shininessValue = 1024.0f;
         float ambientValue = 0.5f; //clamp(time, 0.05f, 0.68f);
         float diffuseValue1 = 0.3f; //clamp(time * 1.7f, 0.0f, 1.0f);
@@ -330,7 +426,6 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         float specularLightValue2 = clamp(time * 0.3f, 0.0f, 1.0f);
         float stepsValue = 7.5f;
 
-        shader.SetVector3f("material.specular", specularValue, sin(time), 0.5f);
         shader.SetFloat("material.shininess", shininessValue);
         shader.SetVector3f("light.ambient", ambientValue, 0.28f, 0.3f);
         shader.SetVector3f("light.diffuse", diffuseValue1, diffuseValue2, diffuseValue3);
@@ -343,19 +438,18 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         std::cout << model << i << "\n";
         shader.SetMatrix4("model", model);
         int c = i % 2 != 0 ? i % 3 == 0 ? 4 : 0 : 2;
-        int t = 0; //5 - (int)(i / 2);
-        if(t == 5) {
-            t -= 1;
-        }
+        int t = i; //5 - (int)(i / 2);
         // Draw the mesh
         float r = std::max((std::sin(i * 0.5f) + 1.0f) * 0.5f, 0.1f);
         float g = std::max((std::cos(i * 0.7f) + 1.0f) * 0.5f, 0.1f);
         float b = std::max((std::sin(i * 0.9f) + 1.0f) * 0.5f, 0.1f);
         //shader.SetVector3f("objectColor", r, g, b);
         shader.SetFloat("mixColor", 0.0f);
-        Texture2D *textures2 = ResourceManager::GetTexture2DByIndex(t);
-        Texture2D *diff = ResourceManager::GetTexture("diffuse");
-        draw(shader, textures2, 1, meshes[c], model, diff);
+        Texture2D *textures2 = // ResourceManager::GetTexture("diffuse");
+            ResourceManager::GetTexture2DByIndex(t);
+        Texture2D *diff = ResourceManager::GetTexture("diffusex");
+        Texture2D *spec = ResourceManager::GetTexture("specular");
+        draw(shader, textures2, 1, meshes[c], model, diff, spec);
         // Print transforms if needed
         if (canPrint)
         {
@@ -452,14 +546,20 @@ int main()
     std::cout << light.ID << "\n";
     shader.Use();
 
-    ResourceManager::LoadTexture2D(fs.texture("container.jpg"));
+    ResourceManager::LoadTexture2D(fs.texture("bookshelf.jpg"), "bookshelf");
     ResourceManager::LoadTexture2D(fs.texture("copper.png"));
     ResourceManager::LoadTexture2D(fs.texture("yellowstone.jpg"));
     ResourceManager::LoadTexture2D(fs.texture("dbricks.png"));
-    ResourceManager::LoadTexture2D(fs.texture("bookshelf.jpg"));
+    ResourceManager::LoadTexture2D(fs.texture("container.jpg"), "main");
     ResourceManager::LoadTexture2D(fs.texture("glowstone.jpg"), "light");
     ResourceManager::LoadTexture2D(fs.texture("pumpkin.png"));
-    ResourceManager::LoadTexture2D(fs.texture("maps/diffuse_container.png"), "diffuse");
+    ResourceManager::LoadTexture2D(fs.texture("maps/diffuse_container.png"), "diffused");
+    ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-01-18-39-42_cf_m_face_00_Texture2.png"), "diffusex");
+    ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-18-18-28-39_cf_m_tang_DetailMask.png"), "diffuse");
+    ResourceManager::LoadTexture2D(fs.texture("maps/specular_container.png"), "speculars");
+    ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-01-18-40-01_cf_m_face_00_NormalMask.png"), "specular");
+    ResourceManager::LoadTexture2D(fs.texture("maps/WaterBottle_specularGlossiness.png"), "speculard");
+
 
     // Set up VAO, VBO, and EBO
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
