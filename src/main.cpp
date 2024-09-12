@@ -293,16 +293,20 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     // First container
     // glBindVertexArray(VAO);
     float t = glfwGetTime();
-    float dark = clamp(t, cos, 0.5f, 1.0f);
+    float dark = clamp(t, cos, 0.9f, 1.0f);
     shader.SetFloat("darkness",  dark);
-    float radius = 3.0f;
-    float angularSpeed = 0.5f;
+    float radius = 0.8f;
+    float angularSpeed = 0.4f;
 
-    //lightPos.x = radius * cos(angularSpeed * t);
-    //lightPos.y = radius * sin(angularSpeed * t);
-    //lightPos.z = radius * sin(angularSpeed * t * 0.5f);
-    lightPos = glm::vec3(-0.2f, -1.0f, -0.3f);
-    shader.SetVector3f("light.direction", lightPos);
+    lightPos.x = radius * cos(angularSpeed * t);
+    lightPos.y = radius * sin(angularSpeed * t);
+    lightPos.z = radius * sin(angularSpeed * t * 0.2f);
+
+    shader.SetFloat("light.constant",  1.0f);
+    shader.SetFloat("light.linear",    0.0009f);
+    shader.SetFloat("light.quadratic", 0.00002f);
+    //lightPos = glm::vec3(-0.2f, -1.0f, -0.3f);
+    shader.SetVector3f("light.position", lightPos);
     shader.SetVector3f("viewPos", camera.Position);
 
     glm::vec3 lightColor = glm::vec3(dark, dark, dark);
@@ -326,18 +330,18 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         float interpolatedValue = lerp(0.0f, targetValue, time);
 
         float shininessValue = 1024.0f;
-        float ambientValue = 0.5f; //clamp(time, 0.05f, 0.68f);
-        float diffuseValue1 = 0.3f; //clamp(time * 1.7f, 0.0f, 1.0f);
-        float diffuseValue2 = clamp(time * 0.5f, 0.0f, 1.0f);
-        float diffuseValue3 = 0.3f; //clamp(time * 0.7f, 0.0f, 1.0f);
-        float specularLightValue1 = 0.25; //clamp(time, 0.5f, 1.0f);
-        float specularLightValue2 = clamp(time * 0.3f, 0.0f, 1.0f);
+        float ambientValue = 0.2f; //clamp(time, 0.05f, 0.68f);
+        float diffuseValue1 = 0.5f; //clamp(time * 1.7f, 0.0f, 1.0f);
+        float diffuseValue2 = 0.5f; //clamp(time * 0.5f, 0.01f, 0.6f);
+        float diffuseValue3 = 0.5f; //clamp(time * 0.7f, 0.0f, 1.0f);
+        float specularLightValue4 = 1.0f; //0.25; //clamp(time, 0.5f, 1.0f);
+        float specularLightValue2 = 1.0f; //clamp(time * 0.3f, 0.0f, 1.0f);
         float stepsValue = 7.5f;
 
         shader.SetFloat("material.shininess", shininessValue);
-        shader.SetVector3f("light.ambient", ambientValue, 0.28f, 0.3f);
+        shader.SetVector3f("light.ambient", ambientValue, ambientValue, ambientValue);
         shader.SetVector3f("light.diffuse", diffuseValue1, diffuseValue2, diffuseValue3);
-        shader.SetVector3f("light.specular", specularLightValue1, specularLightValue2, cos(time));
+        shader.SetVector3f("light.specular", specularLightValue4, specularLightValue2, clamp(time, sin, 0.6f, 1.0f));
         shader.SetFloat("steps", stepsValue);    float time2 = canPrint ? 0.0f : time * 15.0f;
         glm::vec3 rot = glm::vec3(i % 3 == 0 || i < 4 ? time2 : 0.0f, i % 2 == 0 ? 0.3f * time2 : 0.0f, i == 5 || i == 7 ? time2 : 0.0f);
         glm::mat4 model = transform(cubePositions[i],
@@ -355,7 +359,7 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         shader.SetFloat("mixColor", 0.0f);
         Texture2D *textures2 = // ResourceManager::GetTexture("diffuse");
             ResourceManager::GetTexture2DByIndex(t);
-        Texture2D *diff = ResourceManager::GetTexture("diffusex");
+        Texture2D *diff = ResourceManager::GetTexture("diffuse");
         Texture2D *spec = ResourceManager::GetTexture("specular");
         draw(shader, textures2, 1, meshes[c], model, diff, spec);
         // Print transforms if needed
@@ -461,12 +465,12 @@ int main()
     ResourceManager::LoadTexture2D(fs.texture("container.jpg"), "main");
     ResourceManager::LoadTexture2D(fs.texture("glowstone.jpg"), "light");
     ResourceManager::LoadTexture2D(fs.texture("pumpkin.png"));
-    ResourceManager::LoadTexture2D(fs.texture("maps/diffuse_container.png"), "diffused");
+    ResourceManager::LoadTexture2D(fs.texture("maps/diffuse_container.png"), "diffuse");
     ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-01-18-39-42_cf_m_face_00_Texture2.png"), "diffusex");
-    ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-18-18-28-39_cf_m_tang_DetailMask.png"), "diffuse");
+    ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-18-18-28-39_cf_m_tang_DetailMask.png"), "diffusez");
     ResourceManager::LoadTexture2D(fs.texture("maps/specular_container.png"), "speculars");
-    ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-01-18-40-01_cf_m_face_00_NormalMask.png"), "specular");
-    ResourceManager::LoadTexture2D(fs.texture("maps/WaterBottle_specularGlossiness.png"), "speculard");
+    ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-01-18-40-01_cf_m_face_00_NormalMask.png"), "specularf");
+    ResourceManager::LoadTexture2D(fs.texture("maps/WaterBottle_specularGlossiness.png"), "specular");
 
 
     // Set up VAO, VBO, and EBO
