@@ -294,7 +294,7 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     // glBindVertexArray(VAO);
     float t = glfwGetTime();
     float dark = clamp(t, cos, 0.9f, 1.0f);
-    shader.SetFloat("darkness",  dark);
+    //shader.SetFloat("darkness",  dark);
     float radius = 0.8f;
     float angularSpeed = 0.4f;
 
@@ -302,13 +302,18 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     lightPos.y = radius * sin(angularSpeed * t);
     lightPos.z = radius * sin(angularSpeed * t * 0.2f);
 
+    float pLinear= -30;
+    float pQuadratic = -80;
     shader.SetFloat("light.constant",  1.0f);
-    shader.SetFloat("light.linear",    0.0009f);
-    shader.SetFloat("light.quadratic", 0.00002f);
+    shader.SetFloat("light.linear",    pow(2, pLinear));
+    shader.SetFloat("light.quadratic", pow(2, pQuadratic));
     //lightPos = glm::vec3(-0.2f, -1.0f, -0.3f);
-    shader.SetVector3f("light.position", lightPos);
+    //shader.SetVector3f("light.position", lightPos);
     shader.SetVector3f("viewPos", camera.Position);
-
+    shader.SetVector3f("light.position",  camera.Position);
+    shader.SetVector3f("light.direction", camera.Front);
+    shader.SetFloat("light.cutOff",   glm::cos(glm::radians(12.5f)));
+    shader.SetFloat("light.outerCutOff",   glm::cos(glm::radians(17.5f)));
     glm::vec3 lightColor = glm::vec3(dark, dark, dark);
 
     Shader light = ResourceManager::GetShader("light");
@@ -330,10 +335,10 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         float interpolatedValue = lerp(0.0f, targetValue, time);
 
         float shininessValue = 1024.0f;
-        float ambientValue = 0.2f; //clamp(time, 0.05f, 0.68f);
-        float diffuseValue1 = 0.5f; //clamp(time * 1.7f, 0.0f, 1.0f);
-        float diffuseValue2 = 0.5f; //clamp(time * 0.5f, 0.01f, 0.6f);
-        float diffuseValue3 = 0.5f; //clamp(time * 0.7f, 0.0f, 1.0f);
+        float ambientValue = 0.5f; //clamp(time, 0.05f, 0.68f);
+        float diffuseValue1 = 0.7f; //clamp(time * 1.7f, 0.0f, 1.0f);
+        float diffuseValue2 = 0.7f; //clamp(time * 0.5f, 0.01f, 0.6f);
+        float diffuseValue3 = 0.7f; //clamp(time * 0.7f, 0.0f, 1.0f);
         float specularLightValue4 = 1.0f; //0.25; //clamp(time, 0.5f, 1.0f);
         float specularLightValue2 = 1.0f; //clamp(time * 0.3f, 0.0f, 1.0f);
         float stepsValue = 7.5f;
