@@ -84,3 +84,76 @@ void glCheckError()
         errorCode = glGetError();
     }
 }
+namespace util {
+    std::string to_string(const glm::vec2& vec) {
+        std::ostringstream oss;
+        oss << "vec2(" << vec.x << ", " << vec.y << ")";
+        return oss.str();
+    }
+
+    std::string to_string(const glm::vec3& vec) {
+        std::ostringstream oss;
+        oss << "vec3(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
+        return oss.str();
+    }
+
+    std::string to_string(const glm::vec4& vec) {
+        std::ostringstream oss;
+        oss << "vec4(" << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ")";
+        return oss.str();
+    }
+
+    std::string to_string(const glm::quat& quat) {
+        std::ostringstream oss;
+        oss << "quat(" << quat.w << ", " << quat.x << ", " << quat.y << ", " << quat.z << ")";
+        return oss.str();
+    }
+
+    std::string to_string(const glm::mat2& mat) {
+        std::ostringstream oss;
+        oss << "mat2(\n[";
+        for (int i = 0; i < 2; ++i) {
+            oss << "[";
+            for (int j = 0; j < 2; ++j) {
+                oss << mat[i][j];
+                if (j < 1) oss << ", ";
+            }
+            oss << "]";
+            if (i < 1) oss << ", \n";
+        }
+        oss << "]\n)";
+        return oss.str();
+    }
+
+    std::string to_string(const glm::mat3& mat) {
+        std::ostringstream oss;
+        oss << "mat3(\n[";
+        for (int i = 0; i < 3; ++i) {
+            oss << "[";
+            for (int j = 0; j < 3; ++j) {
+                oss << mat[i][j];
+                if (j < 2) oss << ", ";
+            }
+            oss << "]";
+            if (i < 2) oss << ", \n";
+        }
+        oss << "]\n)";
+        return oss.str();
+    }
+
+    std::string to_string(const glm::mat4& mat) {
+        std::ostringstream oss;
+        oss << "mat4(\n[";
+        for (int i = 0; i < 4; ++i) {
+            oss << "[";
+            for (int j = 0; j < 4; ++j) {
+                oss << mat[i][j];
+                if (j < 3) oss << ", ";
+            }
+            oss << "]";
+            if (i < 3) oss << ", \n";
+        }
+        oss << "]\n)";
+        return oss.str();
+    }
+}

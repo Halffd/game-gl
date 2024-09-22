@@ -16,7 +16,7 @@
 
 template<typename V>
 void draw(Shader &shader, V &vao, const glm::mat4 &transform, int vertices = -1, TOPOLOGY topology = NONE) {
-    draw(shader, nullptr, 0, vao, transform, vertices, topology);
+    draw(shader, nullptr, 0, vao, transform, nullptr, nullptr, vertices, topology);
 }
 template<typename V>
 void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm::mat4 &transform, Texture2D* diffuse = nullptr, Texture2D* specular = nullptr, int vertices = -1, TOPOLOGY topology = NONE)
@@ -26,15 +26,18 @@ void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm:
 
     // Bind textures
     if(texturesN > 1){
-        for (int i = 0; i < texturesN; ++i)
-        {
-            textures[i].Bind();             // Activate texture unit
-            shader.SetInteger(("texture" + std::to_string(i + 1)).c_str(), i); // Set the uniform for the texture
+        if(textures != nullptr) {
+            for (int i = 0; i < texturesN; ++i) {
+                textures[i].Bind();             // Activate texture unit
+                shader.SetInteger(("texture" + std::to_string(i + 1)).c_str(), i); // Set the uniform for the texture
+            }
         }
-    } else {
-        glActiveTexture(GL_TEXTURE0 + textures->ID);
-        textures->Bind();             // Activate texture unit
-        shader.SetInteger("texture1", textures->ID); // Set the uniform for the texture
+    } else if(texturesN == 1){
+        if(textures != nullptr) {
+            glActiveTexture(GL_TEXTURE0 + textures->ID);
+            textures->Bind();             // Activate texture unit
+            shader.SetInteger("texture1", textures->ID); // Set the uniform for the texture
+        }
     }
     if(diffuse != nullptr) {
         glActiveTexture(GL_TEXTURE0 + diffuse->ID);
@@ -101,6 +104,11 @@ glm::mat4 transform(const T1& position, const T2& scale, const T3& rotation) {
     } else if constexpr (is_glm_vec3<T1>::value) {
         model = glm::translate(model, position);
     }
+    if constexpr (std::is_same_v<T2, float>) {
+        model = glm::scale(model, glm::vec3(scale, scale, scale));
+    } else if constexpr (is_glm_vec3<T2>::value) {
+        model = glm::scale(model, scale);
+    }
 
     if constexpr (std::is_same_v<T3, float>) {
         if (rotation != 0.0f) {
@@ -116,11 +124,6 @@ glm::mat4 transform(const T1& position, const T2& scale, const T3& rotation) {
         }
     } else if constexpr (is_glm_quat<T3>::value) {
         model *= glm::mat4_cast(rotation);
-    }
-    if constexpr (std::is_same_v<T2, float>) {
-        model = glm::scale(model, glm::vec3(scale, scale, scale));
-    } else if constexpr (is_glm_vec3<T2>::value) {
-        model = glm::scale(model, scale);
     }
 
 

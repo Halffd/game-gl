@@ -52,6 +52,7 @@ bool canPrint = true;
 bool isPaused = false;
 double lastTime = 0.0;
 bool web = false;
+Log logger("", "game.log", Log::Mode::OVERWRITE);
 
 glm::vec3 cubePositions[] = {
     glm::vec3(0.0f, 0.0f, 0.0f),
@@ -355,7 +356,7 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         glm::mat4 model = transform(cubePositions[i],
             std::max(0.1f * ((float)i + 0.3f), 1.0f),
             rot);
-        std::cout << model << i << "\n";
+        //std::cout << model << i << "\n";
         shader.SetMatrix4("model", model);
         int c = i % 2 != 0 ? i % 3 == 0 ? 4 : 0 : 2;
         int t = i; //5 - (int)(i / 2);
@@ -376,6 +377,46 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
             printTransform(model);
         }
     }
+    Texture2D *textures = ResourceManager::GetTexture("white");
+    //Texture2D *diff = ResourceManager::GetTexture("diffuse");
+    //Texture2D *spec = ResourceManager::GetTexture("specular");
+    glm::mat4 cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(0.01f, 0.01f, 500.0f), 0.0f);
+    shader.SetMatrix4("model", cartesian);
+    draw(shader, textures, 1, meshes[2], cartesian, textures, textures);
+    cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
+                glm::vec3(0.01f, 500.0f, 0.01f), 0.0f);
+    shader.SetMatrix4("model", cartesian);
+    draw(shader, textures, 1, meshes[2], cartesian, textures, textures);
+    cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(500.0f, 0.01f, 0.01f), 0.0f);
+    shader.SetMatrix4("model", cartesian);
+    draw(shader, textures, 1, meshes[2], cartesian, textures, textures);
+
+    float st = sin(glfwGetTime());
+    Texture2D *texture = ResourceManager::GetTexture("sky");
+    glm::vec3 pos = glm::vec3(0.0f, 0.0f, -3.0f);
+    glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec3 rot = glm::vec3(0.0f, 0.0f,st);
+    glm::mat4 cube = transform(pos, scale, rot);
+
+    glm::mat4 M1 = glm::mat4(1.0f);
+    M1[0][0] = 1.0/3.0f; M1[0][1] = -2.0f / 3.0f;
+    M1[1][0] = 5.0f / 3.0f; M1[1][1] = -1.0f/3.0f;
+    logger.log("INFO", M1);
+
+    // Combine the two transformations
+    glm::mat4 transformation = glm::inverse(cube) * M1;  // Matrix multiplication order matters here
+    logger.log("INFO", transformation);
+
+    // Apply this transformation to the model matrix
+    logger.log("INFO", cube);
+    cube = transformation * cube;
+    logger.log("INFO", cube);
+
+    shader.SetMatrix4("model", cube);
+    draw(shader, texture, 1, meshes[2], cube, textures, textures);
+
     /*
     meshes[1]->bind();
     glm::mat4 trans = glm::mat4(1.0f);
@@ -401,6 +442,7 @@ int main()
     } else {
         fs.root = "";
     }
+    logger.setDir(fs.root);
     std::cout << fs.root << "\n"
               << fs.file("src/main.cpp") << "\n";
     std::cout << fs.shader("") << "\n"
@@ -473,13 +515,14 @@ int main()
     ResourceManager::LoadTexture2D(fs.texture("container.jpg"), "main");
     ResourceManager::LoadTexture2D(fs.texture("glowstone.jpg"), "light");
     ResourceManager::LoadTexture2D(fs.texture("pumpkin.png"));
+    ResourceManager::LoadTexture2D(fs.texture("sky.png"), "sky");
     ResourceManager::LoadTexture2D(fs.texture("maps/diffuse_container.png"), "diffuse");
     ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-01-18-39-42_cf_m_face_00_Texture2.png"), "diffusex");
     ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-18-18-28-39_cf_m_tang_DetailMask.png"), "diffusez");
     ResourceManager::LoadTexture2D(fs.texture("maps/specular_container.png"), "speculars");
     ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-01-18-40-01_cf_m_face_00_NormalMask.png"), "specularf");
     ResourceManager::LoadTexture2D(fs.texture("maps/WaterBottle_specularGlossiness.png"), "specular");
-
+    ResourceManager::LoadTexture2D(fs.texture("white.png"), "white");
 
     // Set up VAO, VBO, and EBO
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
