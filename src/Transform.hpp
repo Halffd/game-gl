@@ -164,9 +164,21 @@ template <typename T>
 T clamp(T value, T min, T max) {
     return std::min(std::max(value, min), max);
 }
+// Function to scale the output of a given operation within specified ranges
+float clamp(const float value, float (*operation)(float),
+            float min = 0.1f, float max = 1.0f,
+            float minOpRange=-1.0f, float maxOpRange=1.0f) {
+    // Apply the operation
+    float opValue = operation(value);
 
-float clamp(const float value, float (*operation)(float), const float min = 0.1f, const float max = 1.0f) {
-    return clamp((operation(value) + 1.0f) * 0.5f, min, max);
+    // Scale the operation output from [minOpRange, maxOpRange] to [min, max]
+    float scaledValue = min + (opValue - minOpRange) / (maxOpRange - minOpRange) * (max - min);
+
+    // Clamp the final value
+    return clamp(scaledValue, min, max);
+}
+float clampSin(const float value, float (*operation)(float), const float min = 0.1f, const float max = 1.0f) {
+    return clamp(min + (operation(value) + 1.0f) * 0.5f * (max - min), min, max);
 }
 float lerp(float a, float b, float f)
 {

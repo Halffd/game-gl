@@ -36,6 +36,7 @@
 #include "torus.h"
 #include "ring.h"
 #include "arc.h"
+#include "math.h"
 ///#include "Game/Game.h"
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -264,7 +265,7 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     // Use the shader program
     Shader shader = ResourceManager::GetShader("main");
     shader.Use();
-    
+
     shader.SetInteger("texture1", 0);
     shader.SetInteger("texture2", 0);
     shader.SetInteger("material.diffuse", 0);
@@ -302,18 +303,22 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     lightPos.y = radius * sin(angularSpeed * t);
     lightPos.z = radius * sin(angularSpeed * t * 0.2f);
 
-    float pLinear= -30;
-    float pQuadratic = -80;
-    shader.SetFloat("light.constant",  1.0f);
-    shader.SetFloat("light.linear",    pow(2, pLinear));
+    float pLinear = -clamp(t, sin, 1.0f, 380.f);
+    float pQuadratic = -clamp(t, cos, 1.0f, 220.f);
+    float constant = clamp(t, tan, 0.7f, 3.5f);
+    shader.SetFloat("light.constant", constant);
+    shader.SetFloat("light.linear", pow(2, pLinear));
     shader.SetFloat("light.quadratic", pow(2, pQuadratic));
-    //lightPos = glm::vec3(-0.2f, -1.0f, -0.3f);
-    //shader.SetVector3f("light.position", lightPos);
+
+    // Avoid undefined values for tan and sec:
+    //float clampedTanInput = glm::clamp(t, 0.0f, glm::pi<float>()); // Clamp to [0, π]
+    float co = clamp(t, tan, 10.0f, 40.f);
+
+    shader.SetFloat("light.cutOff", glm::cos(glm::radians(co)));
+    shader.SetFloat("light.outerCutOff", glm::cos(glm::radians(co + clamp(t, sin, 0.1f, 45.0f))));
     shader.SetVector3f("viewPos", camera.Position);
     shader.SetVector3f("light.position",  camera.Position);
     shader.SetVector3f("light.direction", camera.Front);
-    shader.SetFloat("light.cutOff",   glm::cos(glm::radians(12.5f)));
-    shader.SetFloat("light.outerCutOff",   glm::cos(glm::radians(17.5f)));
     glm::vec3 lightColor = glm::vec3(dark, dark, dark);
 
     Shader light = ResourceManager::GetShader("light");
@@ -335,19 +340,17 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         float interpolatedValue = lerp(0.0f, targetValue, time);
 
         float shininessValue = 1024.0f;
-        float ambientValue = 0.5f; //clamp(time, 0.05f, 0.68f);
-        float diffuseValue1 = 0.7f; //clamp(time * 1.7f, 0.0f, 1.0f);
-        float diffuseValue2 = 0.7f; //clamp(time * 0.5f, 0.01f, 0.6f);
-        float diffuseValue3 = 0.7f; //clamp(time * 0.7f, 0.0f, 1.0f);
-        float specularLightValue4 = 1.0f; //0.25; //clamp(time, 0.5f, 1.0f);
-        float specularLightValue2 = 1.0f; //clamp(time * 0.3f, 0.0f, 1.0f);
+        glm::vec3 ambientValue(0.5f, 0.5f, 0.5f); // All three components are the same
+        glm::vec3 diffuseValue(0.7f, 0.7f, 0.7f); // All three components are the same
+        glm::vec3 specularValue(clamp(t, sin), clamp(t, cot), clamp(time, sin, 0.6f, 1.0f));
         float stepsValue = 7.5f;
 
         shader.SetFloat("material.shininess", shininessValue);
-        shader.SetVector3f("light.ambient", ambientValue, ambientValue, ambientValue);
-        shader.SetVector3f("light.diffuse", diffuseValue1, diffuseValue2, diffuseValue3);
-        shader.SetVector3f("light.specular", specularLightValue4, specularLightValue2, clamp(time, sin, 0.6f, 1.0f));
-        shader.SetFloat("steps", stepsValue);    float time2 = canPrint ? 0.0f : time * 15.0f;
+        shader.SetVector3f("light.ambient", ambientValue);
+        shader.SetVector3f("light.diffuse", diffuseValue);
+        shader.SetVector3f("light.specular", specularValue);
+        shader.SetFloat("steps", stepsValue);
+        float time2 = canPrint ? 0.0f : time * 15.0f;
         glm::vec3 rot = glm::vec3(i % 3 == 0 || i < 4 ? time2 : 0.0f, i % 2 == 0 ? 0.3f * time2 : 0.0f, i == 5 || i == 7 ? time2 : 0.0f);
         glm::mat4 model = transform(cubePositions[i],
             std::max(0.1f * ((float)i + 0.3f), 1.0f),
