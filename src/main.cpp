@@ -132,6 +132,29 @@ std::vector<math::vec3> normals = {
     {0.0f, 0.0f, -1.0f}, // Bottom right
     {0.0f, 0.0f, -1.0f}  // Bottom left
 };
+// Vertices
+// Define the vertices, UVs, normals, and indices
+std::vector<math::vec3> verticest = {
+    math::vec3(0.0f, 0.0f, 0.0f), // A
+    math::vec3(1.0f, 0.0f, 0.0f), // B
+    math::vec3(0.0f, 1.0f, 0.0f)  // C
+};
+
+std::vector<math::vec2> uvst = {
+    math::vec2(0.0f, 0.0f), // A
+    math::vec2(1.0f, 0.0f), // B
+    math::vec2(0.0f, 1.0f)  // C
+};
+
+std::vector<math::vec3> normalst = {
+    math::vec3(0.0f, 0.0f, 1.0f), // A
+    math::vec3(0.0f, 0.0f, 1.0f), // B
+    math::vec3(0.0f, 0.0f, 1.0f)  // C
+};
+
+std::vector<unsigned int> indicest = {
+    0, 1, 2 // Triangle
+};
 VAO vao;
 VBO vbo;
 EBO ebo;
@@ -378,6 +401,8 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         }
     }
     Texture2D *textures = ResourceManager::GetTexture("white");
+    Texture2D *rect = ResourceManager::GetTexture("rect");
+
     //Texture2D *diff = ResourceManager::GetTexture("diffuse");
     //Texture2D *spec = ResourceManager::GetTexture("specular");
     glm::mat4 cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
@@ -395,27 +420,114 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
 
     float st = sin(glfwGetTime());
     Texture2D *texture = ResourceManager::GetTexture("sky");
-    glm::vec3 pos = glm::vec3(0.0f, 0.0f, -3.0f);
+    glm::vec3 pos = glm::vec3(4.0f, 0.0f, -3.0f);
     glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
-    glm::vec3 rot = glm::vec3(0.0f, 0.0f,st);
+    glm::vec3 rot = glm::vec3(0.0f, 0.0f,st*45.0f);
     glm::mat4 cube = transform(pos, scale, rot);
 
-    glm::mat4 M1 = glm::mat4(1.0f);
-    M1[0][0] = 1.0/3.0f; M1[0][1] = -2.0f / 3.0f;
-    M1[1][0] = 5.0f / 3.0f; M1[1][1] = -1.0f/3.0f;
-    logger.log("INFO", M1);
+    // Define x, y, z as per your requirement (either static or dynamic)
+    float x = sin(glfwGetTime());  // Dynamic scaling on x-axis
+    float y = cos(glfwGetTime()) * 0.5f;  // Dynamic shearing on y-axis
+    float z = 0.3f * sin(glfwGetTime() * 2.0f);  // Dynamic shearing on z-axis
 
-    // Combine the two transformations
-    glm::mat4 transformation = glm::inverse(cube) * M1;  // Matrix multiplication order matters here
-    logger.log("INFO", transformation);
+    // Create the shearing and scaling transformation matrix
+    glm::mat4 shearingMatrix = glm::mat4(1.0f);
+    shearingMatrix[0][0] = x;  // Scale along the x-axis
+    shearingMatrix[1][0] = y;  // Shear along the y-axis due to x
+    shearingMatrix[2][0] = z;  // Shear along the z-axis due to x
 
-    // Apply this transformation to the model matrix
-    logger.log("INFO", cube);
-    cube = transformation * cube;
-    logger.log("INFO", cube);
+    // Combine with rotation and other transformations
+    //glm::mat4 cube = transform(pos, scale, rot);  // Assuming pos, scale, rot are defined
+    //glm::mat4 finalTransformation = cube * shearingMatrix;  // Matrix multiplication
+    glm::mat4 mat = glm::mat4(0.0f); // Initialize to zero
+
+    // Set the matrix values
+    mat[0] = glm::vec4(1, 2, -0.5f, 3); // First row
+    mat[1] = glm::vec4(0, 1, -1.5f, 4); // Second row
+    mat[2] = glm::vec4(0, 0, 1, -4); // Third row
+    mat[3] = glm::vec4(5, -2, -4, 1); // Fourth row (identity component)
+float theta = glfwGetTime();
+    mat = glm::mat4(
+        1, sin(theta), tan(theta), 0,
+        sin(theta), 2, cos(theta), 0,
+        0, cos(theta), 1, 0,
+        0, 0, 0, 1
+    );/*glm::mat4(
+        -sin(theta), -sin(theta), 0, 0,
+        sin(theta), sin(theta), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    );*/
+    // Apply the model matrix
+    // Extracting the rows as glm::vec3
+    glm::vec3 row1_cube = glm::vec3(cube[0]);
+    glm::vec3 row2_cube = glm::vec3(cube[1]);
+    glm::vec3 row3_cube = glm::vec3(cube[2]);
+
+    glm::vec3 row1_mat = glm::vec3(mat[0]);
+    glm::vec3 row2_mat = glm::vec3(mat[1]);
+    glm::vec3 row3_mat = glm::vec3(mat[2]);
+
+    // Calculate the new basis vectors using cross products
+    glm::vec3 new_u = glm::cross(row1_cube, row1_mat); // Cross product of first rows
+    glm::vec3 new_v = glm::cross(row2_cube, row2_mat); // Cross product of second rows
+    glm::vec3 new_w = glm::cross(row3_cube, row3_mat); // Cross product of third rows
+
+    // Assuming you also want to include a translation component
+    glm::vec3 translation = glm::vec3(1, 2, 3); // Example translation
+
+    // Create the new transformation matrix
+    glm::mat4 transformationMatrix;
+
+    transformationMatrix[0] = glm::vec4(new_u, 0); // First column
+    transformationMatrix[1] = glm::vec4(new_v, 0); // Second column
+    transformationMatrix[2] = glm::vec4(new_w, 0); // Third column
+    transformationMatrix[3] = glm::vec4(translation, 1); // Translation
+
+    // Combine with the original cube matrix
+    logger.log("cube", cube);
+    glm::mat4 cube3 = cube * glm::mat4(
+           2, 1, 2, 0,
+        0, sin(theta)/2.2f, 1, 0,
+        0, 0, log(sin(theta))*1.5f, 0,
+        0, 0, 0, 1
+    );;
+    glm::mat4 cube2 = cube * mat; /* * glm::mat4(
+        sin(theta), sin(theta), 0, 0,
+        -cos(theta), cos(theta), 0, 0,
+        -sin(theta), cos(theta), 1, 0,
+        sin(theta), cos(theta), 0, 1
+    ) ;*/
+    logger.log("cube2",cube2);
+    logger.log("cross",transformationMatrix);
+    logger.log("cube3",cube3);
+
+    cube *= glm::mat4(
+        cos(30*theta), -sin(30*theta), 0, 0,
+        -sin(30*theta), cos(30*theta), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+        );/* * glm::mat4(
+            2, 0, 0, 0,
+            0, 2, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ) ;*/
 
     shader.SetMatrix4("model", cube);
+    // Render the object
     draw(shader, texture, 1, meshes[2], cube, textures, textures);
+    draw(shader, rect, 1, meshes[2], cube2, textures, textures);
+    draw(shader, textures, 1, meshes[2], cube3, textures, textures);
+    glm::mat4 tmat = glm::mat4(
+        -1, 3, 0, 0,
+        0, -1, 0, 0,
+        0, 0, 1, 0,
+        5, 3, 0, 1
+    );
+    draw(shader, rect, 1, meshes[5], tmat, textures, textures);
+
+
 
     /*
     meshes[1]->bind();
@@ -513,6 +625,7 @@ int main()
     ResourceManager::LoadTexture2D(fs.texture("yellowstone.jpg"));
     ResourceManager::LoadTexture2D(fs.texture("dbricks.png"));
     ResourceManager::LoadTexture2D(fs.texture("container.jpg"), "main");
+    ResourceManager::LoadTexture2D(fs.texture("rect.jpg"), "rect");
     ResourceManager::LoadTexture2D(fs.texture("glowstone.jpg"), "light");
     ResourceManager::LoadTexture2D(fs.texture("pumpkin.png"));
     ResourceManager::LoadTexture2D(fs.texture("sky.png"), "sky");
@@ -533,6 +646,9 @@ int main()
     Engine::Plane mesh(20, 20);
     // std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
     Engine::Mesh trap(vertices, indices, uvs, normals);
+    math::vec3 it = math::vec3();
+    Engine::Mesh triang(verticest, indicest, uvst, normalst);
+    triang.Finalize();
     Engine::Cube cube;
     trap.Finalize();
     light.Use();
@@ -545,7 +661,8 @@ int main()
         &trap,
         &cube,
         &lightCube,
-        &sphere
+        &sphere,
+        &triang
     };
 
     // Set up transformations
