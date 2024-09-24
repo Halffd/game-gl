@@ -135,9 +135,9 @@ std::vector<math::vec3> normals = {
 // Vertices
 // Define the vertices, UVs, normals, and indices
 std::vector<math::vec3> verticest = {
-    math::vec3(0.0f, 0.0f, 0.0f), // A
-    math::vec3(1.0f, 0.0f, 0.0f), // B
-    math::vec3(0.0f, 1.0f, 0.0f)  // C
+    math::vec3(-0.5f, 0.0f, 0.0f), // A
+    math::vec3(0.5f, 0.0f, 0.0f), // B
+    math::vec3(0.0f, 0.5f, 0.0f)  // C
 };
 
 std::vector<math::vec2> uvst = {
@@ -397,7 +397,10 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         // Print transforms if needed
         if (canPrint)
         {
-            printTransform(model);
+            logger.log("MODEL", model);
+            logger.log("LIGHT-MODEL", lightModel);
+            logger.log("VIEW", view);
+            logger.log("PROJECTION", projection);
         }
     }
     Texture2D *textures = ResourceManager::GetTexture("white");
@@ -424,119 +427,23 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 rot = glm::vec3(0.0f, 0.0f,st*45.0f);
     glm::mat4 cube = transform(pos, scale, rot);
-
-    // Define x, y, z as per your requirement (either static or dynamic)
-    float x = sin(glfwGetTime());  // Dynamic scaling on x-axis
-    float y = cos(glfwGetTime()) * 0.5f;  // Dynamic shearing on y-axis
-    float z = 0.3f * sin(glfwGetTime() * 2.0f);  // Dynamic shearing on z-axis
-
-    // Create the shearing and scaling transformation matrix
-    glm::mat4 shearingMatrix = glm::mat4(1.0f);
-    shearingMatrix[0][0] = x;  // Scale along the x-axis
-    shearingMatrix[1][0] = y;  // Shear along the y-axis due to x
-    shearingMatrix[2][0] = z;  // Shear along the z-axis due to x
-
-    // Combine with rotation and other transformations
-    //glm::mat4 cube = transform(pos, scale, rot);  // Assuming pos, scale, rot are defined
-    //glm::mat4 finalTransformation = cube * shearingMatrix;  // Matrix multiplication
-    glm::mat4 mat = glm::mat4(0.0f); // Initialize to zero
-
-    // Set the matrix values
-    mat[0] = glm::vec4(1, 2, -0.5f, 3); // First row
-    mat[1] = glm::vec4(0, 1, -1.5f, 4); // Second row
-    mat[2] = glm::vec4(0, 0, 1, -4); // Third row
-    mat[3] = glm::vec4(5, -2, -4, 1); // Fourth row (identity component)
-float theta = glfwGetTime();
-    mat = glm::mat4(
-        1, sin(theta), tan(theta), 0,
-        sin(theta), 2, cos(theta), 0,
-        0, cos(theta), 1, 0,
-        0, 0, 0, 1
-    );/*glm::mat4(
-        -sin(theta), -sin(theta), 0, 0,
-        sin(theta), sin(theta), 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-    );*/
-    // Apply the model matrix
-    // Extracting the rows as glm::vec3
-    glm::vec3 row1_cube = glm::vec3(cube[0]);
-    glm::vec3 row2_cube = glm::vec3(cube[1]);
-    glm::vec3 row3_cube = glm::vec3(cube[2]);
-
-    glm::vec3 row1_mat = glm::vec3(mat[0]);
-    glm::vec3 row2_mat = glm::vec3(mat[1]);
-    glm::vec3 row3_mat = glm::vec3(mat[2]);
-
-    // Calculate the new basis vectors using cross products
-    glm::vec3 new_u = glm::cross(row1_cube, row1_mat); // Cross product of first rows
-    glm::vec3 new_v = glm::cross(row2_cube, row2_mat); // Cross product of second rows
-    glm::vec3 new_w = glm::cross(row3_cube, row3_mat); // Cross product of third rows
-
-    // Assuming you also want to include a translation component
-    glm::vec3 translation = glm::vec3(1, 2, 3); // Example translation
-
-    // Create the new transformation matrix
-    glm::mat4 transformationMatrix;
-
-    transformationMatrix[0] = glm::vec4(new_u, 0); // First column
-    transformationMatrix[1] = glm::vec4(new_v, 0); // Second column
-    transformationMatrix[2] = glm::vec4(new_w, 0); // Third column
-    transformationMatrix[3] = glm::vec4(translation, 1); // Translation
-
-    // Combine with the original cube matrix
-    logger.log("cube", cube);
-    glm::mat4 cube3 = cube * glm::mat4(
-        theta/cos(30), -sin(30), 0, 0,
-     -sin(30), theta*cos(30), 0, 0,
-     0, 0, 1, 0,
-     0, 0, 0, 1
-    );
-    glm::mat4 cube2 = cube * mat; /* * glm::mat4(
-        sin(theta), sin(theta), 0, 0,
-        -cos(theta), cos(theta), 0, 0,
-        -sin(theta), cos(theta), 1, 0,
-        sin(theta), cos(theta), 0, 1
-    ) ;*/
-    logger.log("cube2",cube2);
-    logger.log("cross",transformationMatrix);
-    logger.log("cube3",cube3);
-
-    cube *= glm::mat4(
-        cos(30*theta), -sin(30*theta), 0, 0,
-        -sin(30*theta), cos(30*theta), 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-        );/* * glm::mat4(
-            2, 0, 0, 0,
-            0, 2, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        ) ;*/
-
-    shader.SetMatrix4("model", cube);
     // Render the object
     draw(shader, texture, 1, meshes[2], cube, textures, textures);
-    draw(shader, rect, 1, meshes[2], cube2, textures, textures);
-    draw(shader, textures, 1, meshes[2], cube3, textures, textures);
     glm::mat4 tmat = glm::mat4(
-        -1, 3, 0, 0,
-        0, -1, 0, 0,
+        0.3f, 0, 0, 0,
+        0, 1, 0, 0,
         0, 0, 1, 0,
-        5, 3, 0, 1
+        5, 0, 0, 1
+    );
+    draw(shader, rect, 1, meshes[5], tmat, textures, textures);
+    tmat *= glm::mat4(
+        -1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, -1, 0,
+        0, 0, 0, 1
     );
     draw(shader, rect, 1, meshes[5], tmat, textures, textures);
 
-
-
-    /*
-    meshes[1]->bind();
-    glm::mat4 trans = glm::mat4(1.0f);
-    trans = glm::translate(trans, glm::vec3(-0.8f, 0.7f, 0.7f));
-    shader.SetMatrix4("model", trans);
-    glDrawElementsBaseVertex(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr, 0);
-    glCheckError(__FILE__, __LINE__);
-    meshes[1]->unbind();*/
     canPrint = false;
 
     // Unbind the VAO
