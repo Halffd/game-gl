@@ -28,7 +28,8 @@ set_target_properties(glad PROPERTIES LINKER_LANGUAGE C)
 file(GLOB_RECURSE source_files "src/*.cpp")
 
 # Add executable
-add_executable(game ${source_files})
+add_executable(game ${source_files}
+        src/game)
 
 # Include directories
 include_directories(include)

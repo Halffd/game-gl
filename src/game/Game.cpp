@@ -10,6 +10,14 @@
 
 SpriteRenderer  *Renderer;
 
+Game::Game(unsigned int width, unsigned int height)
+{
+    this->Width = width;
+    this->Height = height;
+}
+Game::~Game() {
+    delete Renderer;
+}
 void Game::Init()
 {
     // load shaders
@@ -30,4 +38,11 @@ void Game::Render()
 {
     Renderer->DrawSprite(ResourceManager::GetTexture2D("face"),
         glm::vec2(200.0f, 200.0f), glm::vec2(300.0f, 400.0f), 45.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+}
+void Game::ProcessInput(float dt) {
+
+}
+
+void Game::Update(float dt) {
+    // Implementation here
 }

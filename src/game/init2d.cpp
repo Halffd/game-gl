@@ -1,20 +1,15 @@
 //
 // Created by halff on 12/09/2024.
 //
-
-#include "glad/glad.h"
-#include <GLFW/glfw3.h>
+#include "init2d.h"
 
 
-// The Width of the screen
-const unsigned int SCREEN_WIDTH = 800;
-// The height of the screen
-const unsigned int SCREEN_HEIGHT = 600;
+// Define the dimensions
+const unsigned SCREEN_WIDTH = 800; // Example value
+const unsigned int SCREEN_HEIGHT = 600; // Example value
 
+// Define the Breakout variable
 Game Breakout(SCREEN_WIDTH, SCREEN_HEIGHT);
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
 int game(int argc, char *argv[])
 {
@@ -39,7 +34,7 @@ int game(int argc, char *argv[])
     }
 
     glfwSetKeyCallback(window, key_callback);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     // OpenGL configuration
     // --------------------
@@ -102,3 +97,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             Breakout.Keys[key] = false;
     }
 }
+void framebufferSizeCallback(GLFWwindow *window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+    glCheckError(__FILE__, __LINE__);
+}
+

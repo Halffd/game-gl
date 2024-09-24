@@ -29,8 +29,6 @@ public:
     void ProcessInput(float dt);
     void Update(float dt);
     void Render();
-
-    void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 };
 
 
