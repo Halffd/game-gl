@@ -358,7 +358,6 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         5, 0, 0, 1
     );
     draw(shader, rect, 1, meshes[5], tmat, textures, textures);
-    glBindVertexArray(0);
     // Draw the base triangle
     glm::mat4 baseTransform = glm::mat4(1.0f); // Identity matrix for the base
     draw(shader, rect, 1, meshes[5], baseTransform, textures, textures); // Draw base triangle
@@ -368,19 +367,20 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     draw(shader, rect, 1, meshes[5], apexTransform, textures, textures); // Draw apex
 
     // Draw edges connecting the apex to the base vertices
-    for (int i = 0.0f; i < 3.0f; i += 0.2) {
+    for (int i = 0.0f; i < 32.0f; i ++) {
         glm::mat4 edgeTransform = glm::mat4(1.0f); // Identity matrix for edge
         glm::vec3 baseVertex = (i == 0) ? glm::vec3(-0.5f, 0.0f, -0.5f) :
                                    (i == 1) ? glm::vec3(0.5f, 0.0f, -0.5f) :
                                        glm::vec3(0.0f, 0.0f, 0.5f);
 
         // Midpoint between the apex and the base vertex
-        glm::vec3 midpoint = (baseVertex + glm::vec3(0.0f, i, 0.0f));
-        edgeTransform = glm::scale(edgeTransform, glm::vec3(i,i,i));
+        glm::vec3 midpoint = (glm::vec3(0.0f, i, 0.0f));
         edgeTransform = glm::translate(edgeTransform, midpoint);
+        edgeTransform = glm::scale(edgeTransform, glm::vec3(i,i,i));
 
         draw(shader, rect, 1, meshes[5], edgeTransform, textures, textures); // Draw edge
     }
+    glBindVertexArray(0);
     canPrint = false;
 
     // Unbind the VAO
