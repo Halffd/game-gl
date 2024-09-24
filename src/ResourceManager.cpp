@@ -13,11 +13,34 @@ std::map<std::string, Texture1D> ResourceManager::Textures1D;
 std::map<std::string, Texture2D> ResourceManager::Textures2D;
 std::map<std::string, Texture3D> ResourceManager::Textures3D;
 
+// Static member initialization
+std::string ResourceManager::root = "";
+
+// Implement full path handling for shaders and textures
+const char* ResourceManager::GetFullPath(const std::string& filename) {
+    char* buffer = new char[BUFFER_SIZE];
+    std::strcpy(buffer, (filename).c_str());
+    return buffer;
+}
+const char* ResourceManager::GetShaderPath(const std::string& filename) {
+    std::string path = (root.empty() ? "shaders/" : root + "/shaders/") + filename;
+    return GetFullPath(path);
+}
+const char* ResourceManager::GetTexturePath(const std::string& filename) {
+    std::string path = (root.empty() ? "textures/" : root + "/textures/") + filename;
+    return GetFullPath(path);
+}
 Shader ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, std::string name) {
     return LoadShader(vShaderFile, fShaderFile, nullptr, name);
 }
 Shader ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile, std::string name)
 {
+    if (!includes(vShaderFile, ":")) {
+        vShaderFile = GetShaderPath(vShaderFile);
+    }
+    if (!includes(fShaderFile, ":")) {
+        fShaderFile = GetShaderPath(fShaderFile);
+    }
     Shaders[name] = loadShaderFromFile(vShaderFile, fShaderFile, gShaderFile);
     return Shaders[name];
 }
@@ -47,6 +70,9 @@ Texture2D ResourceManager::LoadTexture2D(const char *file,  std::string name, bo
 {
     if(name.empty()) {
         name = file;
+    }
+    if (!includes(file, ":")) {
+        file = GetTexturePath(file);
     }
     Textures2D[name] = loadTexture2DFromFile(file, alpha, sWrap, tWrap, minFilter, magFilter);
     return Textures2D[name];

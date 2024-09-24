@@ -157,3 +157,7 @@ namespace util {
         return oss.str();
     }
 }
+// Function to check if a string contains a substring
+int includes(const char *string, const char *substring) {
+    return strstr(string, substring) != NULL;
+}

@@ -62,7 +62,7 @@ void Shader::SetFloat(const char *name, float value, bool useShader)
 void Shader::SetInteger(const char *name, int value, bool useShader)
 {
     if (useShader)
-        this->Use();
+        this->Use ();
     glUniform1i(glGetUniformLocation(this->ID, name), value);
     glCheckError(__FILE__, __LINE__);
 }

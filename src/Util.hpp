@@ -25,6 +25,8 @@ void glCheckError();
 
 void glCheckError(const char* file, int line);
 
+// Function to check if a string contains a substring
+int includes(const char *string, const char *substring);
 // Function to convert a map to a vector
 
 template <typename Key, typename Value>

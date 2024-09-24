@@ -18,7 +18,6 @@
 #include <map>
 
 #include "setup.h"
-#include "root.h"
 
 #include "vertex.h"
 #include "Camera.hpp"
@@ -38,6 +37,7 @@
 #include "arc.h"
 #include "math.h"
 #include "Game/init2d.h"
+#include "GameMode.h"
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -53,6 +53,8 @@ bool isPaused = false;
 double lastTime = 0.0;
 bool web = false;
 Log logger("", "game.log", Log::Mode::OVERWRITE);
+GameType gameType = GAME2D;
+char* gameTypeStr = "Default"; // Default game type string
 
 glm::vec3 cubePositions[] = {
     glm::vec3(0.0f, -4.0f, 0.0f),
@@ -366,20 +368,6 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     glm::mat4 apexTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Position apex
     draw(shader, rect, 1, meshes[5], apexTransform, textures, textures); // Draw apex
 
-    // Draw edges connecting the apex to the base vertices
-    for (int i = 0.0f; i < 32.0f; i ++) {
-        glm::mat4 edgeTransform = glm::mat4(1.0f); // Identity matrix for edge
-        glm::vec3 baseVertex = (i == 0) ? glm::vec3(-0.5f, 0.0f, -0.5f) :
-                                   (i == 1) ? glm::vec3(0.5f, 0.0f, -0.5f) :
-                                       glm::vec3(0.0f, 0.0f, 0.5f);
-
-        // Midpoint between the apex and the base vertex
-        glm::vec3 midpoint = (glm::vec3(0.0f, i, 0.0f));
-        edgeTransform = glm::translate(edgeTransform, midpoint);
-        edgeTransform = glm::scale(edgeTransform, glm::vec3(i,i,i));
-
-        draw(shader, rect, 1, meshes[5], edgeTransform, textures, textures); // Draw edge
-    }
     glBindVertexArray(0);
     canPrint = false;
 
@@ -460,18 +448,57 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
-int main()
-{
-    if(!web){
-        fs.root = std::string(logl_root);
-    } else {
-        fs.root = "";
+// Function to convert a string to lowercase
+void toLowerCase(char* str) {
+    for (int i = 0; str[i]; i++) {
+        str[i] = tolower(str[i]);
     }
-    logger.setDir(fs.root);
-    std::cout << fs.root << "\n"
-              << fs.file("src/main.cpp") << "\n";
-    std::cout << fs.shader("") << "\n"
-              << fs.root.empty() << "\n";
+}
+int main(int argc, char *argv[]) {
+    std::string root;
+    if(!web){
+        root = std::string(logl_root);
+    } else {
+        root = "";
+    }
+    ResourceManager::root = root;
+    logger.setDir(root);
+    if (argc > 1) {
+        toLowerCase(argv[1]);
+
+        // Check the first argument for game type
+        if (includes(argv[1], "2")) {
+            gameType = GAME2D;
+            gameTypeStr = "2D";
+        } else if (includes(argv[1], "3")) {
+            gameType = GAME3D;
+            gameTypeStr = "3D";
+        } else {
+            std::cout << "Unknown game type. Defaulting to 2D." << std::endl;
+        }
+    }
+    if (argc > 2) {
+        toLowerCase(argv[2]);
+        gameTypeStr = argv[2];
+    }
+
+    switch (gameType) {
+        case GAME2D:
+            game2d(argc, argv, gameTypeStr);
+            break;
+        case GAME3D:
+            game3d(argc, argv, gameTypeStr);
+            break;
+        default:
+            game2d(argc, argv, gameTypeStr); // Default to 2D
+            break;
+    }
+
+
+    return 0;
+}
+int game3d(int argc, char *argv[], char* type)
+{
     // Initialize GLFW
     // return vectortest();
     if (!glfwInit())
@@ -526,29 +553,30 @@ int main()
     }
 
 
-    Shader shader = ResourceManager::LoadShader(fs.shader("vertex.glsl") , fs.shader("fragment.glsl"), "main");
-    Shader light = ResourceManager::LoadShader(fs.shader("light/vertex.glsl"), fs.shader("light/fragment.glsl"), "light");
+    Shader shader = ResourceManager::LoadShader("vertex.glsl" , "fragment.glsl", "main");
+    Shader light = ResourceManager::LoadShader("light/vertex.glsl", "light/fragment.glsl", "light");
 
     std::cout << shader.ID << "\n";
     std::cout << light.ID << "\n";
     shader.Use();
 
-    ResourceManager::LoadTexture2D(fs.texture("bookshelf.jpg"), "bookshelf");
-    ResourceManager::LoadTexture2D(fs.texture("copper.png"));
-    ResourceManager::LoadTexture2D(fs.texture("yellowstone.jpg"));
-    ResourceManager::LoadTexture2D(fs.texture("dbricks.png"));
-    ResourceManager::LoadTexture2D(fs.texture("container.jpg"), "main");
-    ResourceManager::LoadTexture2D(fs.texture("rect.jpg"), "rect");
-    ResourceManager::LoadTexture2D(fs.texture("glowstone.jpg"), "light");
-    ResourceManager::LoadTexture2D(fs.texture("pumpkin.png"));
-    ResourceManager::LoadTexture2D(fs.texture("sky.png"), "sky");
-    ResourceManager::LoadTexture2D(fs.texture("maps/diffuse_container.png"), "diffuse");
-    ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-01-18-39-42_cf_m_face_00_Texture2.png"), "diffusex");
-    ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-18-18-28-39_cf_m_tang_DetailMask.png"), "diffusez");
-    ResourceManager::LoadTexture2D(fs.texture("maps/specular_container.png"), "speculars");
-    ResourceManager::LoadTexture2D(fs.texture("maps/_Export_2024-01-01-18-40-01_cf_m_face_00_NormalMask.png"), "specularf");
-    ResourceManager::LoadTexture2D(fs.texture("maps/WaterBottle_specularGlossiness.png"), "specular");
-    ResourceManager::LoadTexture2D(fs.texture("white.png"), "white");
+    ResourceManager::LoadTexture2D("awesomeface.png", "face");
+    ResourceManager::LoadTexture2D("bookshelf.jpg", "bookshelf");
+    ResourceManager::LoadTexture2D("copper.png");
+    ResourceManager::LoadTexture2D("yellowstone.jpg");
+    ResourceManager::LoadTexture2D("dbricks.png");
+    ResourceManager::LoadTexture2D("container.jpg", "main");
+    ResourceManager::LoadTexture2D("rect.jpg", "rect");
+    ResourceManager::LoadTexture2D("glowstone.jpg", "light");
+    ResourceManager::LoadTexture2D("pumpkin.png");
+    ResourceManager::LoadTexture2D("sky.png"), "sky";
+    ResourceManager::LoadTexture2D("maps/diffuse_container.png", "diffuse");
+    ResourceManager::LoadTexture2D("maps/_Export_2024-01-01-18-39-42_cf_m_face_00_Texture2.png", "diffusex");
+    ResourceManager::LoadTexture2D("maps/_Export_2024-01-18-18-28-39_cf_m_tang_DetailMask.png", "diffusez");
+    ResourceManager::LoadTexture2D("maps/specular_container.png", "speculars");
+    ResourceManager::LoadTexture2D("maps/_Export_2024-01-01-18-40-01_cf_m_face_00_NormalMask.png", "specularf");
+    ResourceManager::LoadTexture2D("maps/WaterBottle_specularGlossiness.png", "specular");
+    ResourceManager::LoadTexture2D("white.png", "white");
 
     // Set up VAO, VBO, and EBO
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
