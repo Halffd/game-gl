@@ -487,11 +487,11 @@ float theta = glfwGetTime();
     // Combine with the original cube matrix
     logger.log("cube", cube);
     glm::mat4 cube3 = cube * glm::mat4(
-           2, 1, 2, 0,
-        0, sin(theta)/2.2f, 1, 0,
-        0, 0, log(sin(theta))*1.5f, 0,
-        0, 0, 0, 1
-    );;
+        theta/cos(30), -sin(30), 0, 0,
+     -sin(30), theta*cos(30), 0, 0,
+     0, 0, 1, 0,
+     0, 0, 0, 1
+    );
     glm::mat4 cube2 = cube * mat; /* * glm::mat4(
         sin(theta), sin(theta), 0, 0,
         -cos(theta), cos(theta), 0, 0,
