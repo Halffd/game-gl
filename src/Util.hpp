@@ -169,4 +169,5 @@ private:
         return oss.str();
     }
 };
+extern Log logger;
 #endif  // util_h

@@ -16,7 +16,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <map>
-
 #include "setup.h"
 
 #include "vertex.h"
@@ -38,9 +37,10 @@
 #include "math.h"
 #include "Game/init2d.h"
 #include "GameMode.h"
+#include "Gui.h"
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
 // Global variables
@@ -53,8 +53,8 @@ bool isPaused = false;
 double lastTime = 0.0;
 bool web = false;
 Log logger("", "game.log", Log::Mode::OVERWRITE);
-GameType gameType = GAME2D;
-char* gameTypeStr = "Default"; // Default game type string
+GameType gameType = GAME3D;
+std::string gameTypeStr = "Default"; // Default game type string
 
 glm::vec3 cubePositions[] = {
     glm::vec3(0.0f, -4.0f, 0.0f),
@@ -70,15 +70,15 @@ glm::vec3 cubePositions[] = {
 // Vertex data for the trapezium
 std::vector<math::vec3> vertices = {
     // Front face
-    {-0.5f, 0.5f, 0.5f}, // Top left
-    {0.5f, 0.5f, 0.5f},  // Top right
-    {0.3f, -0.5f, 0.5f}, // Bottom right
+    {-0.5f, 0.5f, 0.5f},  // Top left
+    {0.5f, 0.5f, 0.5f},   // Top right
+    {0.3f, -0.5f, 0.5f},  // Bottom right
     {-0.3f, -0.5f, 0.5f}, // Bottom left
 
     // Back face
-    {-0.5f, 0.5f, -0.5f}, // Top left
-    {0.5f, 0.5f, -0.5f},  // Top right
-    {0.3f, -0.5f, -0.5f}, // Bottom right
+    {-0.5f, 0.5f, -0.5f},  // Top left
+    {0.5f, 0.5f, -0.5f},   // Top right
+    {0.3f, -0.5f, -0.5f},  // Bottom right
     {-0.3f, -0.5f, -0.5f}, // Bottom left
 };
 
@@ -119,8 +119,7 @@ std::vector<uint32_t> indices = {
 
     // Bottom face
     3, 2, 6,
-    3, 6, 7
-};
+    3, 6, 7};
 std::vector<math::vec3> normals = {
     // Front face
     {0.0f, 0.0f, 1.0f}, // Top left
@@ -138,8 +137,8 @@ std::vector<math::vec3> normals = {
 // Define the vertices, UVs, normals, and indices
 std::vector<math::vec3> verticest = {
     math::vec3(-0.5f, 0.0f, 0.0f), // A
-    math::vec3(0.5f, 0.0f, 0.0f), // B
-    math::vec3(0.0f, 0.5f, 0.0f)  // C
+    math::vec3(0.5f, 0.0f, 0.0f),  // B
+    math::vec3(0.0f, 0.5f, 0.0f)   // C
 };
 
 std::vector<math::vec2> uvst = {
@@ -168,7 +167,7 @@ Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 bool firstMouse = true;
 
 // timing
-float deltaTime = 0.0f;	// time between current frame and last frame
+float deltaTime = 0.0f; // time between current frame and last frame
 float lastFrame = 0.0f;
 
 float lastX = screenWidth / 2.0f, lastY = screenHeight / 2.0f;
@@ -177,14 +176,24 @@ glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
+    ImGuiIO& io = ImGui::GetIO();
+    if (!io.WantCaptureMouse) {
+        // Handle scroll input here if ImGui is not capturing it
+        camera.ProcessMouseScroll(static_cast<float>(yoffset));
+    } else {
+        // Pass the scroll event to ImGui
+        ImGui::GetIO().MouseWheel += (float)yoffset; // Adjust as needed for ImGui
+    }
 }
 // glfw: whenever the mouse moves, this callback is called
 // -------------------------------------------------------
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
 {
+    ImGuiIO& io = ImGui::GetIO();
+    if (!io.WantCaptureMouse) {
+        // Handle mouse input logic here
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
 
@@ -202,10 +211,16 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastY = ypos;
 
     camera.ProcessMouseMovement(xoffset, yoffset);
+    }
 }
 
 void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
 {
+    Gui::Start();
+    // Example ImGui window
+    ImGui::Begin("Hello, ImGui!");
+    ImGui::Text("This is an example window with larger fonts.");
+    ImGui::End();
     // Clear the color buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -242,7 +257,7 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     // glBindVertexArray(VAO);
     float t = glfwGetTime();
     float dark = clamp(t, cos, 0.9f, 1.0f);
-    //shader.SetFloat("darkness",  dark);
+    // shader.SetFloat("darkness",  dark);
     float radius = 0.8f;
     float angularSpeed = 0.4f;
 
@@ -258,13 +273,13 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     shader.SetFloat("light.quadratic", pow(2, pQuadratic));
 
     // Avoid undefined values for tan and sec:
-    //float clampedTanInput = glm::clamp(t, 0.0f, glm::pi<float>()); // Clamp to [0, π]
+    // float clampedTanInput = glm::clamp(t, 0.0f, glm::pi<float>()); // Clamp to [0, π]
     float co = clamp(t, tan, 10.0f, 40.f);
 
     shader.SetFloat("light.cutOff", glm::cos(glm::radians(co)));
     shader.SetFloat("light.outerCutOff", glm::cos(glm::radians(co + clamp(t, sin, 0.1f, 45.0f))));
     shader.SetVector3f("viewPos", camera.Position);
-    shader.SetVector3f("light.position",  camera.Position);
+    shader.SetVector3f("light.position", camera.Position);
     shader.SetVector3f("light.direction", camera.Front);
     glm::vec3 lightColor = glm::vec3(dark, dark, dark);
 
@@ -272,11 +287,10 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     light.Use();
     light.SetMatrix4("view", view);
     light.SetMatrix4("projection", projection);
-    light.SetVector3f("lightColor",  lightColor);
+    light.SetVector3f("lightColor", lightColor);
     glm::mat4 lightModel = transform(lightPos, 0.2f, 1.0f);
-    Texture2D* lightTex = new Texture2D[1] {
-        ResourceManager::GetTexture2D("light")
-    };
+    Texture2D *lightTex = new Texture2D[1]{
+        ResourceManager::GetTexture2D("light")};
     draw(light, lightTex, 1, meshes[3], lightModel);
 
     for (unsigned int i = 0; i < 10; i++)
@@ -302,18 +316,18 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         glm::mat4 model = transform(cubePositions[i],
                                     std::max(0.1f * ((float)i + 0.3f), 1.0f),
                                     rot);
-        //std::cout << model << i << "\n";
+        // std::cout << model << i << "\n";
         shader.SetMatrix4("model", model);
         int c = i % 2 != 0 ? i % 3 == 0 ? 4 : 0 : 2;
-        int t = i; //5 - (int)(i / 2);
+        int t = i; // 5 - (int)(i / 2);
         // Draw the mesh
         float r = std::max((std::sin(i * 0.5f) + 1.0f) * 0.5f, 0.1f);
         float g = std::max((std::cos(i * 0.7f) + 1.0f) * 0.5f, 0.1f);
         float b = std::max((std::sin(i * 0.9f) + 1.0f) * 0.5f, 0.1f);
-        //shader.SetVector3f("objectColor", r, g, b);
+        // shader.SetVector3f("objectColor", r, g, b);
         shader.SetFloat("mixColor", 0.0f);
         Texture2D *textures2 = // ResourceManager::GetTexture("diffuse");
-                ResourceManager::GetTexture2DByIndex(t);
+            ResourceManager::GetTexture2DByIndex(t);
         Texture2D *diff = ResourceManager::GetTexture("diffuse");
         Texture2D *spec = ResourceManager::GetTexture("specular");
         draw(shader, textures2, 1, meshes[c], model, diff, spec);
@@ -329,8 +343,8 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     Texture2D *textures = ResourceManager::GetTexture("white");
     Texture2D *rect = ResourceManager::GetTexture("rect");
 
-    //Texture2D *diff = ResourceManager::GetTexture("diffuse");
-    //Texture2D *spec = ResourceManager::GetTexture("specular");
+    // Texture2D *diff = ResourceManager::GetTexture("diffuse");
+    // Texture2D *spec = ResourceManager::GetTexture("specular");
     glm::mat4 cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
                                     glm::vec3(0.01f, 0.01f, 500.0f), 0.0f);
     shader.SetMatrix4("model", cartesian);
@@ -348,7 +362,7 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     Texture2D *texture = ResourceManager::GetTexture("sky");
     glm::vec3 pos = glm::vec3(4.0f, 0.0f, -3.0f);
     glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
-    glm::vec3 rot = glm::vec3(0.0f, 0.0f,st*45.0f);
+    glm::vec3 rot = glm::vec3(0.0f, 0.0f, st * 45.0f);
     glm::mat4 cube = transform(pos, scale, rot);
     // Render the object
     draw(shader, texture, 1, meshes[2], cube, textures, textures);
@@ -357,22 +371,21 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
         0.3f, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
-        5, 0, 0, 1
-    );
+        5, 0, 0, 1);
     draw(shader, rect, 1, meshes[5], tmat, textures, textures);
     // Draw the base triangle
-    glm::mat4 baseTransform = glm::mat4(1.0f); // Identity matrix for the base
+    glm::mat4 baseTransform = glm::mat4(1.0f);                           // Identity matrix for the base
     draw(shader, rect, 1, meshes[5], baseTransform, textures, textures); // Draw base triangle
 
     // Draw the apex
     glm::mat4 apexTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Position apex
-    draw(shader, rect, 1, meshes[5], apexTransform, textures, textures); // Draw apex
+    draw(shader, rect, 1, meshes[5], apexTransform, textures, textures);                    // Draw apex
 
     glBindVertexArray(0);
     canPrint = false;
 
     // Unbind the VAO
-
+    Gui::Render();
     // Swap buffers
     glfwSwapBuffers(window);
 }
@@ -380,124 +393,143 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
 void processInput(GLFWwindow *window)
 {
     glfwPollEvents();
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, 1);
-    static bool graveAccentPressed = false; // Flag to track if the key is pressed
 
-    if (!graveAccentPressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS)
+    ImGuiIO &io = ImGui::GetIO();
+    if (!io.WantCaptureKeyboard)
     {
-        // Key was just pressed
-        isPaused = !isPaused;
-        if (isPaused)
+        // Handle keyboard input logic here
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, 1);
+        static bool graveAccentPressed = false; // Flag to track if the key is pressed
+
+        if (!graveAccentPressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS)
         {
-            lastTime = glfwGetTime();
-            std::cout << "Program paused. " << lastTime << std::endl;
+            // Key was just pressed
+            isPaused = !isPaused;
+            if (isPaused)
+            {
+                lastTime = glfwGetTime();
+                std::cout << "Program paused. " << lastTime << std::endl;
+            }
+            else
+            {
+                std::cout << "Program resumed." << std::endl;
+            }
+            graveAccentPressed = true; // Set the flag
         }
-        else
+        else if (graveAccentPressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) != GLFW_PRESS)
         {
-            std::cout << "Program resumed." << std::endl;
+            // Key was just released
+            graveAccentPressed = false; // Reset the flag
         }
-        graveAccentPressed = true; // Set the flag
-    }
-    else if (graveAccentPressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) != GLFW_PRESS)
-    {
-        // Key was just released
-        graveAccentPressed = false; // Reset the flag
-    }
-    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
-    {
-        canPrint = true;
-    }
-    static bool isLineMode = false;         // Track the current polygon mode
-    static bool spaceKeyWasPressed = false; // Flag to track if space key was pressed
+        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+        {
+            canPrint = true;
+        }
+        static bool isLineMode = false;         // Track the current polygon mode
+        static bool spaceKeyWasPressed = false; // Flag to track if space key was pressed
 
-    static bool spacePressed;
-    bool spaceCurrentlyPressed = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+        static bool spacePressed;
+        bool spaceCurrentlyPressed = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
 
-    if (!spacePressed && spaceCurrentlyPressed)
-    {
-        // Space key was just pressed
-        spaceKeyWasPressed = true; // Set the flag
-        spacePressed = true;
-    }
-    else if (spacePressed && !spaceCurrentlyPressed)
-    {
-        // Space key was just released
-        spacePressed = false;
-    }
-    if (spaceKeyWasPressed)
-    {
-        // Toggle polygon mode only once after the space key is pressed
-        isLineMode = !isLineMode;
-        glPolygonMode(GL_FRONT_AND_BACK, isLineMode ? GL_LINE : GL_FILL);
-        spaceKeyWasPressed = false; // Reset the flag
-    }
+        if (!spacePressed && spaceCurrentlyPressed)
+        {
+            // Space key was just pressed
+            spaceKeyWasPressed = true; // Set the flag
+            spacePressed = true;
+        }
+        else if (spacePressed && !spaceCurrentlyPressed)
+        {
+            // Space key was just released
+            spacePressed = false;
+        }
+        if (spaceKeyWasPressed)
+        {
+            // Toggle polygon mode only once after the space key is pressed
+            isLineMode = !isLineMode;
+            glPolygonMode(GL_FRONT_AND_BACK, isLineMode ? GL_LINE : GL_FILL);
+            spaceKeyWasPressed = false; // Reset the flag
+        }
 
-    float currentFrame = glfwGetTime();
-    deltaTime = currentFrame - lastFrame;
-    lastFrame = currentFrame;
-    float cameraSpeed = 2.5f * deltaTime;
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        float cameraSpeed = 2.5f * deltaTime;
 
- if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            camera.ProcessKeyboard(FORWARD, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            camera.ProcessKeyboard(BACKWARD, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            camera.ProcessKeyboard(LEFT, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            camera.ProcessKeyboard(RIGHT, deltaTime);
+    }
 }
 
 // Function to convert a string to lowercase
-void toLowerCase(char* str) {
-    for (int i = 0; str[i]; i++) {
+void toLowerCase(char *str)
+{
+    for (int i = 0; str[i]; i++)
+    {
         str[i] = tolower(str[i]);
     }
 }
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     std::string root;
-    if(!web){
+    if (!web)
+    {
         root = std::string(logl_root);
-    } else {
+    }
+    else
+    {
         root = "";
     }
     ResourceManager::root = root;
     logger.setDir(root);
-    if (argc > 1) {
+    if (argc > 1)
+    {
         toLowerCase(argv[1]);
 
         // Check the first argument for game type
-        if (includes(argv[1], "2")) {
+        if (includes(argv[1], "2"))
+        {
             gameType = GAME2D;
             gameTypeStr = "2D";
-        } else if (includes(argv[1], "3")) {
+        }
+        else if (includes(argv[1], "3"))
+        {
             gameType = GAME3D;
             gameTypeStr = "3D";
-        } else {
+        }
+        else
+        {
             std::cout << "Unknown game type. Defaulting to 2D." << std::endl;
         }
     }
-    if (argc > 2) {
+    if (argc > 2)
+    {
         toLowerCase(argv[2]);
         gameTypeStr = argv[2];
     }
 
-    switch (gameType) {
-        case GAME2D:
-            game2d(argc, argv, gameTypeStr);
-            break;
-        case GAME3D:
-            game3d(argc, argv, gameTypeStr);
-            break;
-        default:
-            game2d(argc, argv, gameTypeStr); // Default to 2D
-            break;
+    switch (gameType)
+    {
+    case GAME2D:
+        game2d(argc, argv, gameTypeStr);
+        break;
+    case GAME3D:
+        game3d(argc, argv, gameTypeStr);
+        break;
+    default:
+        game2d(argc, argv, gameTypeStr); // Default to 2D
+        break;
     }
-
 
     return 0;
 }
-int game3d(int argc, char *argv[], char* type)
+int game3d(int argc, char *argv[], std::string type)
 {
     // Initialize GLFW
     // return vectortest();
@@ -511,9 +543,9 @@ int game3d(int argc, char *argv[], char* type)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    #ifdef __APPLE__
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    #endif
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
     // Create a GLFW window
     GLFWwindow *window = glfwCreateWindow(screenWidth, screenHeight, "OpenGL", nullptr, nullptr);
     if (!window)
@@ -551,9 +583,9 @@ int game3d(int argc, char *argv[], char* type)
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+    Gui::Init(window);
 
-
-    Shader shader = ResourceManager::LoadShader("vertex.glsl" , "fragment.glsl", "main");
+    Shader shader = ResourceManager::LoadShader("vertex.glsl", "fragment.glsl", "main");
     Shader light = ResourceManager::LoadShader("light/vertex.glsl", "light/fragment.glsl", "light");
 
     std::cout << shader.ID << "\n";
@@ -603,8 +635,7 @@ int game3d(int argc, char *argv[], char* type)
         &cube,
         &lightCube,
         &sphere,
-        &triang
-    };
+        &triang};
 
     // Set up transformations
     aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
@@ -632,7 +663,8 @@ int game3d(int argc, char *argv[], char* type)
             renderScene(window, meshes);
         }
     }
-
+    Gui::Clean();
+    glfwDestroyWindow(window);
     // Terminate GLFW
     glfwTerminate();
 

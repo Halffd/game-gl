@@ -16,7 +16,7 @@ enum GameType {
     GAME3D
 };
 
-int game2d(int argc, char *argv[], char* type);
-int game3d(int argc, char *argv[], char* type);
+int game2d(int argc, char *argv[], std::string type);
+int game3d(int argc, char *argv[], std::string type);
 
 #endif //GAMEMODE_H

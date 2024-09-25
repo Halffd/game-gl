@@ -7,6 +7,7 @@
 #include "../Util.hpp"
 #include "root.h"
 #include <iostream>
+#include "../Gui.h"
 
 SpriteRenderer  *Renderer;
 SpriteRenderer  *Renderer2;
@@ -73,12 +74,25 @@ void Game::Init()
 
 void Game::Render()
 {
+    Gui::Start();
     float middleX = (float) this->Width / 2.0f;
     float middleY = (float) this->Height / 2.0f;
     float arrowW = 60.0f;
     float arrowH = 90.0f;
+
+    glm::mat2 trans = {
+        glm::vec2(16.0f / 17.0f, 4.0f / 17.0f),
+         glm::vec2(4.0f / 17.0f, 1.0f / 17.0f)
+    };
+    glm::mat4 model = SpriteRenderer::Transform(glm::vec2(200.0f, 200.0f), glm::vec2(100.0f, 150.0f), 24.0f);
+    glm::mat4 transformtion = model * mat2To4(trans);
+    logger.log("Model", model);
+    logger.log("Trana", transformtion);
+    //transformtion *= glm::vec4(4.0f,0.0f,0.0f,2.0f);
     Renderer->DrawSprite(ResourceManager::GetTexture2D("face"),
-                         glm::vec2(200.0f, 200.0f), glm::vec2(300.0f, 400.0f), 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+                         model, glm::vec3(0.0f, 1.0f, 0.0f));
+    Renderer->DrawSprite(ResourceManager::GetTexture2D("face"),
+                         transformtion, glm::vec3(0.0f, 0.0f, 1.0f));
     Renderer->DrawSprite(ResourceManager::GetTexture2D("white"),
                          glm::vec2(middleX, 0.0f), glm::vec2(2.0f, (float) this->Height), 0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
     Renderer->DrawSprite(ResourceManager::GetTexture2D("white"),
@@ -87,6 +101,7 @@ void Game::Render()
                           glm::vec2(this->Width - arrowW / 2.0f, middleY - arrowW / 2.0f), glm::vec2(arrowW, arrowW), -90.0f, glm::vec3(1.0f, 0.8f, 1.0f));
     Renderer2->DrawSprite(ResourceManager::GetTexture2D("white"),
                           glm::vec2(middleX - arrowW / 2.0f, -30.0f), glm::vec2(arrowW, arrowW), -180.0f, glm::vec3(1.0f, 0.8f, 1.0f));
+    Gui::Render();
 }
 void Game::ProcessInput(float dt) {
 

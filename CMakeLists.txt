@@ -26,15 +26,30 @@ set_target_properties(glad PROPERTIES LINKER_LANGUAGE C)
 
 # Collect all source files
 file(GLOB_RECURSE source_files "src/*.cpp")
+# Gather all ImGui source files
+file(GLOB_RECURSE imgui_sources "imgui/imgui.cpp"
+        "imgui/imgui_demo.cpp"
+        "imgui/imgui_draw.cpp"
+        "imgui/imgui_tables.cpp"
+        "imgui/imgui_widgets.cpp"
+)
+file(GLOB_RECURSE imgui_backends 
+    "imgui/backends/imgui_impl_glfw.cpp"
+    "imgui/backends/imgui_impl_opengl3.cpp"
+    "imgu8i/misc/cpp/imgui_stdlib.cpp"
+)
 
 # Add executable
-add_executable(game ${source_files}
-        src/game)
+add_executable(game ${source_files} ${imgui_sources} ${imgui_backends})
+
 
 # Include directories
 include_directories(include)
 include_directories(include/mesh)
 include_directories(include_libs)
+include_directories(imgui)
+include_directories(imgui/backends)
+include_directories(imgui/misc/cpp)
 # Configure file for the root directory
 set(logl_root "${CMAKE_SOURCE_DIR}")
 configure_file(configuration/root_directory.h.in configuration/root_directory.h)

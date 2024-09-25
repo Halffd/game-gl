@@ -2,16 +2,18 @@
 // Created by halff on 12/09/2024.
 //
 #include "init2d.h"
+#include "../Gui.h"
+#include <setup.h>
 
 
 // Define the dimensions
-const unsigned SCREEN_WIDTH = 800; // Example value
-const unsigned int SCREEN_HEIGHT = 600; // Example value
+const unsigned SCREEN_WIDTH = WIDTH; // Example value
+const unsigned int SCREEN_HEIGHT = HEIGHT; // Example value
 
 // Define the Breakout variable
 Game Breakout(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-int game2d(int argc, char *argv[], char* type)
+int game2d(int argc, char *argv[], std::string type)
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -41,7 +43,7 @@ int game2d(int argc, char *argv[], char* type)
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+    Gui::Init(window);
     // initialize game
     // ---------------
     Breakout.Init();
@@ -80,21 +82,24 @@ int game2d(int argc, char *argv[], char* type)
     // delete all resources as loaded using the resource manager
     // ---------------------------------------------------------
     ResourceManager::Clear();
-
+    Gui::Clean();
     glfwTerminate();
     return 0;
 }
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-    // when a user presses the escape key, we set the WindowShouldClose property to true, closing the application
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-    if (key >= 0 && key < 1024)
-    {
-        if (action == GLFW_PRESS)
-            Breakout.Keys[key] = true;
-        else if (action == GLFW_RELEASE)
-            Breakout.Keys[key] = false;
+    ImGuiIO &io = ImGui::GetIO();
+    if (!io.WantCaptureKeyboard) {
+        // when a user presses the escape key, we set the WindowShouldClose property to true, closing the application
+        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, true);
+        if (key >= 0 && key < 1024)
+        {
+            if (action == GLFW_PRESS)
+                Breakout.Keys[key] = true;
+            else if (action == GLFW_RELEASE)
+                Breakout.Keys[key] = false;
+        }
     }
 }
 void framebufferSizeCallback(GLFWwindow *window, int width, int height)
