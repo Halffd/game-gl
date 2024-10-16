@@ -352,8 +352,6 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
 
     // Section for spot light controls
     static bool spotLightEnabled = true;
-    static glm::vec3 spotLightPosition = glm::vec3(-1.0f, 0.5f, 1.0f);
-    static glm::vec3 spotLightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
     static glm::vec3 spotLightAmbient = glm::vec3(0.25f, 0.24f, 0.34f);
     static glm::vec3 spotLightDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
     static glm::vec3 spotLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -363,8 +361,6 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
     if (ImGui::CollapsingHeader("Spot Light"))
     {
         ImGui::Checkbox("Enabled##SpotLight", &spotLightEnabled);
-        ImGui::SliderFloat3("Position##SpotLight", glm::value_ptr(spotLightPosition), -10.0f, 10.0f);
-        ImGui::SliderFloat3("Direction##SpotLight", glm::value_ptr(spotLightDirection), -1.0f, 1.0f);
         ImGui::ColorEdit3("Ambient##SpotLight", glm::value_ptr(spotLightAmbient));
         ImGui::ColorEdit3("Diffuse##SpotLight", glm::value_ptr(spotLightDiffuse));
         ImGui::ColorEdit3("Specular##SpotLight", glm::value_ptr(spotLightSpecular));
@@ -422,8 +418,6 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
             pointLightDiffuse = glm::vec3(1.0f, 0.7f, 0.3f);
             pointLightSpecular = glm::vec3(1.0f, 0.9f, 0.5f);
 
-            spotLightPosition = glm::vec3(1.0f, 2.0f, 0.0f);
-            spotLightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
             spotLightAmbient = glm::vec3(0.3f, 0.2f, 0.0f);
             spotLightDiffuse = glm::vec3(1.0f, 0.8f, 0.4f);
             spotLightSpecular = glm::vec3(1.0f, 0.9f, 0.6f);
@@ -440,8 +434,6 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
             pointLightDiffuse = glm::vec3(0.8f, 0.8f, 0.8f);
             pointLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
 
-            spotLightPosition = glm::vec3(-1.0f, 2.0f, 0.0f);
-            spotLightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
             spotLightAmbient = glm::vec3(0.1f, 0.1f, 0.1f);
             spotLightDiffuse = glm::vec3(0.5f, 0.5f, 0.5f);
             spotLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -458,8 +450,6 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
             pointLightDiffuse = glm::vec3(0.4f, 0.0f, 0.0f);
             pointLightSpecular = glm::vec3(0.8f, 0.0f, 0.0f);
 
-            spotLightPosition = glm::vec3(-2.0f, 2.0f, 1.0f);
-            spotLightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
             spotLightAmbient = glm::vec3(0.0f, 0.0f, 0.0f);
             spotLightDiffuse = glm::vec3(0.5f, 0.0f, 0.0f);
             spotLightSpecular = glm::vec3(1.0f, 0.0f, 0.0f);
@@ -477,8 +467,6 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
             pointLightDiffuse = glm::vec3(1.0f, 0.0f, 0.0f);
             pointLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
 
-            spotLightPosition = glm::vec3(-3.0f, 2.0f, 0.0f);
-            spotLightDirection = glm::vec3(0.0f, -1.0f, 0.0f);
             spotLightAmbient = glm::vec3(0.1f, 0.1f, 0.1f);
             spotLightDiffuse = glm::vec3(1.0f, 0.0f, 0.0f);
             spotLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -511,10 +499,10 @@ void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
 
     if (spotLightEnabled)
     {
-        shader.SetVector3f("spotLight.position", spotLightPosition);
-        o << "SpotLight Position: " << spotLightPosition.x << ", " << spotLightPosition.y << ", " << spotLightPosition.z << std::endl;
-        shader.SetVector3f("spotLight.direction", spotLightDirection);
-        o << "SpotLight Direction: " << spotLightDirection.x << ", " << spotLightDirection.y << ", " << spotLightDirection.z << std::endl;
+        shader.SetVector3f("spotLight.position", camera.Position);
+        o << "SpotLight Position: " << camera.Position.x << ", " << camera.Position.y << ", " << camera.Position.z << std::endl;
+        shader.SetVector3f("spotLight.direction", camera.Front);
+        o << "SpotLight Direction: " << camera.Front.x << ", " << camera.Front.y << ", " << camera.Front.z << std::endl;
         shader.SetVector3f("spotLight.ambient", spotLightAmbient);
         o << "SpotLight Ambient: " << spotLightAmbient.x << ", " << spotLightAmbient.y << ", " << spotLightAmbient.z << std::endl;
         shader.SetVector3f("spotLight.diffuse", spotLightDiffuse);
