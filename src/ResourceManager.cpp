@@ -112,6 +112,24 @@ Texture2D* ResourceManager::GetTexture2DByIndex(size_t index) {
 
     return &textureList[index]; // Safe because textureList persists
 }
+
+void ResourceManager::LoadAllTexturesFromDirectory() {
+    namespace fs = std::filesystem;
+
+    // Iterate over files in the directory
+    for (const auto &entry : fs::directory_iterator(ResourceManager::root + "/textures")) {
+        std::string path = entry.path().string();
+
+        // Filter image files based on extension (e.g., png, jpg, jpeg)
+        if (entry.path().extension() == ".png" || entry.path().extension() == ".jpg" || entry.path().extension() == ".jpeg") {
+            std::string filename = entry.path().stem().string(); // File name without extension
+
+            // Load texture and add to the map
+            ResourceManager::LoadTexture2D(path.c_str(), filename);
+            std::cout << "Loaded texture: " << filename << " from path: " << path << std::endl;
+        }
+    }
+}
 void ResourceManager::Clear()
 {
     for (auto iter : Shaders)

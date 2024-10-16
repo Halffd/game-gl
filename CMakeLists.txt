@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.28.1)
 # Rest of your CMakeLists.txt file
-
 project(game LANGUAGES C CXX)
 
 # find the required packages

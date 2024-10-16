@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 #include <glad/glad.h>
 
@@ -56,6 +57,7 @@ public:
     static const char* GetFullPath(const std::string& filename);
     static const char* GetShaderPath(const std::string& filename);
     static const char* GetTexturePath(const std::string& filename);
+    static void LoadAllTexturesFromDirectory();
 
 private:
     ResourceManager() { }
