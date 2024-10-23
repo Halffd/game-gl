@@ -40,9 +40,7 @@ file(GLOB_RECURSE imgui_backends
 
 # Add executable
 add_executable(game ${source_files} ${imgui_sources} ${imgui_backends})
-
-# Specify the path to Assimp
-set(ASSIMP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include_libs/assimp")
+message(STATUS "Include.")
 
 # Include directories
 include_directories(include)
@@ -58,6 +56,7 @@ include_directories(${CMAKE_BINARY_DIR}/configuration)
 
 # Define an array of libraries to link
 #set(LIBS glad "${CMAKE_SOURCE_DIR}/lib/glfw3.lib")
+message(STATUS "LIBS.")
 
 # Add the GLFW DLL as an imported library
 add_library(glfw3dll SHARED IMPORTED)
@@ -65,23 +64,32 @@ set_target_properties(glfw3dll PROPERTIES
         IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/libglfw3.a"
         IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
 )
-# Link against the Assimp library
-target_link_libraries(game PRIVATE "${ASSIMP_DIR}/lib/assimpd.lib")
-
-
-# Specify the path to Assimp
-set(ASSIMP_DIR "${CMAKE_SOURCE_DIR}/include_libs/assimp")
-
-# Link against the Assimp library
-target_link_libraries(game PRIVATE "${ASSIMP_DIR}/lib/assimpd.lib")
 
 # Ensure the DLL is available at runtime (for dynamic linking)
 #add_custom_command(TARGET game POST_BUILD
 #        COMMAND ${CMAKE_COMMAND} -E copy_if_different
 #        "${ASSIMP_DIR}/lib/assimpd.dll" $<TARGET_FILE_DIR:game>)
 
+# Specify the path to the Assimp library
+set(ASSIMP_DIR "${CMAKE_SOURCE_DIR}/lib")
+message(STATUS "Assimp ${ASSIMP_DIR}.")
+
+# Check if the file exists
+if(EXISTS ${ASSIMP_DIR})
+    message(STATUS "Dir ${ASSIMP_DIR} exists.")
+else()
+    message(WARNING "Dir ${ASSIMP_DIR} does not exist.")
+endif()
+set(asslib "${ASSIMP_DIR}/assimp.lib")
+# Check if the file exists
+if(EXISTS ${asslib})
+    message(STATUS "Dir ${asslib} exists.")
+else()
+    message(WARNING "Dir ${asslib} does not exist.")
+endif()
+
 # Define an array of libraries to link
-set(LIBS glad glfw3dll)
+set(LIBS glad glfw3dll ${asslib})
 
 # Link libraries
 target_link_libraries(game PRIVATE ${LIBS})

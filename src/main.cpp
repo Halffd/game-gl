@@ -40,8 +40,7 @@
 #include "Game/init2d.h"
 #include "GameMode.h"
 #include "Gui.h"
-#include <assimp/Logger.hpp>
-#include <assimp/Importer.hpp>
+#include "Model.h"
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
@@ -319,7 +318,7 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
     // Section for directional light controls
     static bool dirLightEnabled = true;
     static glm::vec3 dirLightAmbient = glm::vec3(0.1f, 0.1f, 0.1f);
-    static glm::vec3 dirLightDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+    static glm::vec3 dirLightDiffuse = glm::vec3(0.5f, 0.5f, 0.5f);
     static glm::vec3 dirLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
     static glm::vec3 dirLightDirection = glm::vec3(-1.0f, -1.0f, -0.5f);
 
@@ -336,7 +335,7 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
     static bool pointLightEnabled = true;
     static glm::vec3 pointLightPosition = glm::vec3(0.0f, 1.0f, 2.0f);
     static glm::vec3 pointLightAmbient = glm::vec3(0.2f, 0.2f, 0.2f);
-    static glm::vec3 pointLightDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+    static glm::vec3 pointLightDiffuse = glm::vec3(0.7f, 0.7f, 0.7f);
     static glm::vec3 pointLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
     static float pointLightConstant = 1.0f, pointLightLinear = 0.09f, pointLightQuadratic = 0.032f;
 
@@ -354,7 +353,7 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
 
     // Section for spot light controls
     static bool spotLightEnabled = true;
-    static glm::vec3 spotLightAmbient = glm::vec3(0.25f, 0.24f, 0.34f);
+    static glm::vec3 spotLightAmbient = glm::vec3(0.65f, 0.64f, 0.54f);
     static glm::vec3 spotLightDiffuse = glm::vec3(1.0f, 1.0f, 1.0f);
     static glm::vec3 spotLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
     static float spotLightInnerCutoff = 10.5f, spotLightOuterCutoff = 29.5f;
@@ -643,7 +642,7 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
 
     float st = sin(glfwGetTime());
     Texture2D *texture = ResourceManager::GetTexture("sky");
-    glm::vec3 pos = glm::vec3(4.0f, 0.0f, -3.0f);
+    glm::vec3 pos = glm::vec3(4.0f, -50.0f, -50.0f);
     glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
     glm::vec3 rot = glm::vec3(0.0f, 0.0f, st * 45.0f);
     glm::mat4 cube = transform(pos, scale, rot);
@@ -655,13 +654,15 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
         0, 1, 0, 0,
         0, 0, 1, 0,
         5, 0, 0, 1);
+    glm::translate(tmat, glm::vec3(0.0f, -220.0f, 700.0f));
     draw(shader, rect, 1, meshes[5], tmat, textures, textures);
     // Draw the base triangle
-    glm::mat4 baseTransform = glm::mat4(1.0f);                           // Identity matrix for the base
+    glm::mat4 baseTransform = glm::mat4(1.0f); 
+    glm::translate(baseTransform, glm::vec3(450.0f, -50.0f, 0.0f));
     draw(shader, rect, 1, meshes[5], baseTransform, textures, textures); // Draw base triangle
 
     // Draw the apex
-    glm::mat4 apexTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 0.0f)); // Position apex
+    glm::mat4 apexTransform = glm::translate(glm::mat4(1.0f), glm::vec3(40.0f, -100.0f, 0.0f)); // Position apex
     draw(shader, rect, 1, meshes[5], apexTransform, textures, textures);                    // Draw apex
 
     glBindVertexArray(0);
@@ -881,7 +882,8 @@ int game3d(int argc, char *argv[], std::string type)
     shader.Use();
 
     ResourceManager::LoadAllTexturesFromDirectory();
-
+    std::string modelPath = ResourceManager::GetModelPath("backpack/obj/backpack.obj"); //"backpack";
+    m3D::Model model(modelPath.data());
     // Set up VAO, VBO, and EBO
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
     float startAngleRad = 0.0f * DEG_TO_RAD;
@@ -907,7 +909,9 @@ int game3d(int argc, char *argv[], std::string type)
         &cube,
         &lightCube,
         &sphere,
-        &triang};
+        &triang,
+        &model
+    };
 
     // Set up transformations
     aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
