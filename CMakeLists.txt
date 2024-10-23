@@ -70,7 +70,7 @@ target_link_libraries(game PRIVATE "${ASSIMP_DIR}/lib/assimpd.lib")
 
 
 # Specify the path to Assimp
-set(ASSIMP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assimp")
+set(ASSIMP_DIR "${CMAKE_SOURCE_DIR}/include_libs/assimp")
 
 # Link against the Assimp library
 target_link_libraries(game PRIVATE "${ASSIMP_DIR}/lib/assimpd.lib")
