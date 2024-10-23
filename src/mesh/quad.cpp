@@ -18,7 +18,7 @@ namespace Engine
             { 1.0f, 1.0f, },
             { 1.0f, 0.0f, },
         };
-        Topology = TRIANGLE_STRIP;
+        Topology = VO::TRIANGLE_STRIP;
 
         Finalize();
     }
@@ -38,7 +38,7 @@ namespace Engine
             { 1.0f, 1.0f, },
             { 1.0f, 0.0f, },
         };
-        Topology = TRIANGLE_STRIP;
+        Topology = VO::TRIANGLE_STRIP;
 
         Finalize();
     }

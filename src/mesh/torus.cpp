@@ -91,7 +91,7 @@ namespace Engine
             }
         }
 
-        Topology = TRIANGLES;
+        Topology = VO::TRIANGLES;
         Finalize();
     }
 }

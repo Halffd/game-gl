@@ -43,7 +43,7 @@ namespace Engine
             oddRow = !oddRow;
         }
 
-        Topology = TRIANGLE_STRIP;
+        Topology = VO::TRIANGLE_STRIP;
         Engine::Mesh::Finalize();
     }
 }

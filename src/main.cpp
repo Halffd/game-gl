@@ -27,19 +27,21 @@
 #include "Util.hpp"
 #include "root_directory.h"
 
-#include "plane.h"
-#include "line_strip.h"
-#include "sphere.h"
-#include "cube.h"
-#include "circle.h"
-#include "quad.h"
-#include "torus.h"
-#include "ring.h"
-#include "arc.h"
+#include "mesh/plane.h"
+#include "mesh/line_strip.h"
+#include "mesh/sphere.h"
+#include "mesh/cube.h"
+#include "mesh/circle.h"
+#include "mesh/quad.h"
+#include "mesh/torus.h"
+#include "mesh/ring.h"
+#include "mesh/arc.h"
 #include "math.h"
 #include "Game/init2d.h"
 #include "GameMode.h"
 #include "Gui.h"
+#include <assimp/Logger.hpp>
+#include <assimp/Importer.hpp>
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
@@ -165,11 +167,11 @@ glm::vec3 pointLightPositions[] = {
     glm::vec3(-4.0f, 2.0f, -12.0f),
     glm::vec3(0.0f, 0.0f, -3.0f)};
 
-VAO vao;
+VO::VAO vao;
 
-VBO vbo;
+VO::VBO vbo;
 
-EBO ebo;
+VO::EBO ebo;
 
 bool input = true;
 
@@ -306,7 +308,7 @@ void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
         camera.ProcessMouseMovement(xoffset, yoffset);
     }
 }
-void renderScene(GLFWwindow *window, std::vector<VAO *> &meshes)
+void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
 {
     Gui::Start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -884,7 +886,7 @@ int game3d(int argc, char *argv[], std::string type)
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
     float startAngleRad = 0.0f * DEG_TO_RAD;
     float endAngleRad = 360.0f * DEG_TO_RAD;
-
+    
     // Cell::Cube mesh;
     Engine::Plane mesh(20, 20);
     // std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
@@ -899,7 +901,7 @@ int game3d(int argc, char *argv[], std::string type)
     shader.Use();
     Engine::Sphere sphere(30, 30);
 
-    std::vector<VAO *> meshes = {
+    std::vector<VO::VAO *> meshes = {
         &mesh,
         &trap,
         &cube,

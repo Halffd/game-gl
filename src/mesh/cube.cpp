@@ -1,4 +1,4 @@
-#include "cube.h"
+#include "mesh/cube.h"
 
 namespace Engine {
     // --------------------------------------------------------------------------------------------
@@ -197,7 +197,7 @@ namespace Engine {
             {0.0f, 1.0f, 1.0f},
         };
 
-        Topology = TRIANGLES;
+        Topology = VO::TRIANGLES;
         Finalize();
     }
 }

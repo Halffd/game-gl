@@ -19,7 +19,7 @@ namespace Engine
             UV.push_back({ (float)i * deltaX, 0.0f });
         }
 
-        Topology = TRIANGLE_STRIP;
+        Topology = VO::TRIANGLE_STRIP;
 
         Finalize();
     }

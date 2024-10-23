@@ -15,11 +15,11 @@
 #include <glm/gtx/quaternion.hpp> // Ensure this is included
 
 template<typename V>
-void draw(Shader &shader, V &vao, const glm::mat4 &transform, int vertices = -1, TOPOLOGY topology = NONE) {
+void draw(Shader &shader, V &vao, const glm::mat4 &transform, int vertices = -1, VO::TOPOLOGY topology = VO::NONE) {
     draw(shader, nullptr, 0, vao, transform, nullptr, nullptr, vertices, topology);
 }
 template<typename V>
-void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm::mat4 &transform, Texture2D* diffuse = nullptr, Texture2D* specular = nullptr, int vertices = -1, TOPOLOGY topology = NONE)
+void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm::mat4 &transform, Texture2D* diffuse = nullptr, Texture2D* specular = nullptr, int vertices = -1, VO::TOPOLOGY topology = VO::NONE)
 {
     shader.Use();
     shader.SetMatrix4("model", transform);
@@ -50,7 +50,7 @@ void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm:
         shader.SetInteger("material.specular", specular->ID);
     }
     int ind = vao->bind();
-    unsigned int drawTopology = (topology != NONE) ? topology : getPrimitive(vao->Topology);
+    unsigned int drawTopology = (topology != VO::NONE) ? topology : getPrimitive(vao->Topology);
         //std::cout << "Draw topology: " << drawTopology << std::endl;
         //std::cout << "Vertex count: " << (vertices > 0 ? vertices : vao.vertexCount) << std::endl;
     if (ind > 0)

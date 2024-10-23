@@ -50,7 +50,7 @@ namespace Engine
             }
         }
         
-        Topology = TRIANGLES; // Ensure correct topology for rendering
+        Topology = VO::TRIANGLES; // Ensure correct topology for rendering
         Finalize(); // Call finalize to set up the buffers
     }
 }

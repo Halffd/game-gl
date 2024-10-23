@@ -1,4 +1,4 @@
-#include "plane.h" 
+#include "mesh/plane.h" 
 
 namespace Engine
 {
@@ -41,7 +41,7 @@ namespace Engine
             oddRow = !oddRow;
         }
 
-        Topology = TRIANGLE_STRIP;
+        Topology = VO::TRIANGLE_STRIP;
         Finalize();
     }
 }

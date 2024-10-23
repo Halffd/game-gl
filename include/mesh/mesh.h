@@ -6,7 +6,7 @@
 #include <cstdint>
 
 #include "math/vector.h"
-#include "vertex.h"
+#include "../vertex.h"
 
 namespace Engine
 {
@@ -16,11 +16,11 @@ namespace Engine
       functionality for easily setting up the hardware configuration relevant for rendering.
 
     */
-    class Mesh : public VAO
+    class Mesh : public VO::VAO
     {
     public:
-        VBO m_VBO;
-        EBO m_EBO;
+        VO::VBO m_VBO;
+        VO::EBO m_EBO;
 
     public:
         std::vector<math::vec2> UV;

@@ -41,6 +41,8 @@ file(GLOB_RECURSE imgui_backends
 # Add executable
 add_executable(game ${source_files} ${imgui_sources} ${imgui_backends})
 
+# Specify the path to Assimp
+set(ASSIMP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include_libs/assimp")
 
 # Include directories
 include_directories(include)
@@ -63,6 +65,20 @@ set_target_properties(glfw3dll PROPERTIES
         IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/libglfw3.a"
         IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
 )
+# Link against the Assimp library
+target_link_libraries(game PRIVATE "${ASSIMP_DIR}/lib/assimpd.lib")
+
+
+# Specify the path to Assimp
+set(ASSIMP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assimp")
+
+# Link against the Assimp library
+target_link_libraries(game PRIVATE "${ASSIMP_DIR}/lib/assimpd.lib")
+
+# Ensure the DLL is available at runtime (for dynamic linking)
+#add_custom_command(TARGET game POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#        "${ASSIMP_DIR}/lib/assimpd.dll" $<TARGET_FILE_DIR:game>)
 
 # Define an array of libraries to link
 set(LIBS glad glfw3dll)

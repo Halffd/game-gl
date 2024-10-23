@@ -4,6 +4,8 @@
             "name": "windows-gcc-x64",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/assimp/include/**",
+                "${workspaceFolder}/include/**",
                 "S:/msys64/mingw64/**"
             ],
             "defines": [
