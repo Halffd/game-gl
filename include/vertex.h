@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <ostream>
 #include "math/vector.h"
-
+#include "../src/Shader.h"
 namespace VO {
     enum TOPOLOGY
     {
@@ -40,6 +40,16 @@ namespace VO {
 
     GLenum getPrimitive(TOPOLOGY topology);
 
+    class O
+    {
+    public:
+        O() : id(0) {}
+        virtual int bind() const = 0;   // Pure virtual function
+        virtual void unbind() const = 0; // Pure virtual function
+        virtual void Draw(Shader &shader) = 0; // Pure virtual function
+    protected:
+        unsigned int id; // Common ID for all buffer objects
+    };
     class VBO {
     public:
         VBO() = default;
@@ -62,12 +72,12 @@ namespace VO {
         template <typename T>
         void setupSubData(const std::vector<T> &vertices, GLintptr offset = 0);
         void unbind() const;
-
+        
     private:
         unsigned int id;
     };
 
-    class VAO {
+    class VAO : public O {
     public:
         TOPOLOGY Topology = TRIANGLES;
         std::vector<math::vec3> Positions;
@@ -82,16 +92,18 @@ namespace VO {
         VAO &operator=(const VAO &other) = delete;
         VAO &operator=(VAO &&other) noexcept;
 
-        int bind() const;
+        int bind() const override;
         bool exists() const;
         void setVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
         void set(GLuint index, GLint size, GLsizei stride, const void *pointer);
         void linkAttrib(const VBO &vbo, GLuint layout, GLuint components, GLenum type, GLsizei stride, void *offset, GLboolean normalize = GL_FALSE) const;
         void linkAttribFast(GLuint layout, GLuint components, GLenum type, GLsizei stride, void *offset, GLboolean normalize = GL_FALSE) const;
         void genVertexArray();
-        void unbind() const;
+        void unbind() const override;
         void SetPositions(std::vector<math::vec3> positions);
         void SetIndices(std::vector<unsigned int> indices);
+        void Draw(Shader &shader) override {} // Pure virtual function
+
     private:
         unsigned int id = 0;
     };

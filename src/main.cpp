@@ -665,6 +665,9 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
     glm::mat4 apexTransform = glm::translate(glm::mat4(1.0f), glm::vec3(40.0f, -100.0f, 0.0f)); // Position apex
     draw(shader, rect, 1, meshes[5], apexTransform, textures, textures);                    // Draw apex
 
+    glm::mat4 modelTransform = glm::mat4(1.0f); 
+    meshes[6]->Draw(shader);
+
     glBindVertexArray(0);
     canPrint = false;
 

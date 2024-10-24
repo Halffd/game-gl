@@ -11,10 +11,8 @@
 namespace Engine
 {
     /*
-
       Base Mesh class. A mesh in its simplest form is purely a list of vertices, with some added
       functionality for easily setting up the hardware configuration relevant for rendering.
-
     */
     class Mesh : public VO::VAO
     {

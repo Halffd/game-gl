@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.28.1)
 project(game LANGUAGES C CXX)
 
 # find the required packages
+
+# Find the zlib package
+find_package(ZLIB REQUIRED)
+
 # find_package(GLM REQUIRED)
 # message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
 # find_package(GLFW3 REQUIRED)
@@ -49,6 +53,9 @@ include_directories(include_libs)
 include_directories(imgui)
 include_directories(imgui/backends)
 include_directories(imgui/misc/cpp)
+target_include_directories(game PRIVATE ${ZLIB_INCLUDE_DIRS})
+
+message("ZLIB ${ZLIB_INCLUDE_DIRS}")
 # Configure file for the root directory
 set(logl_root "${CMAKE_SOURCE_DIR}")
 configure_file(configuration/root_directory.h.in configuration/root_directory.h)
@@ -71,7 +78,7 @@ set_target_properties(glfw3dll PROPERTIES
 #        "${ASSIMP_DIR}/lib/assimpd.dll" $<TARGET_FILE_DIR:game>)
 
 # Specify the path to the Assimp library
-set(ASSIMP_DIR "${CMAKE_SOURCE_DIR}/lib")
+set(ASSIMP_DIR "${CMAKE_SOURCE_DIR}/lib/assimp")
 message(STATUS "Assimp ${ASSIMP_DIR}.")
 
 # Check if the file exists
@@ -80,19 +87,24 @@ if(EXISTS ${ASSIMP_DIR})
 else()
     message(WARNING "Dir ${ASSIMP_DIR} does not exist.")
 endif()
-set(asslib "${ASSIMP_DIR}/assimp.lib")
+set(ASSIMP "${ASSIMP_DIR}/libassimp.a")
 # Check if the file exists
-if(EXISTS ${asslib})
-    message(STATUS "Dir ${asslib} exists.")
+if(EXISTS ${ASSIMP})
+    message(STATUS "Dir ${ASSIMP} exists.")
 else()
-    message(WARNING "Dir ${asslib} does not exist.")
+    message(WARNING "Dir ${ASSIMP} does not exist.")
 endif()
 
 # Define an array of libraries to link
-set(LIBS glad glfw3dll ${asslib})
+set(LIBS glad glfw3dll)
 
 # Link libraries
 target_link_libraries(game PRIVATE ${LIBS})
+
+# Link zlib to your target
+target_link_libraries(game PRIVATE ZLIB::ZLIB)
+
+target_link_libraries(game PRIVATE "${ASSIMP}")
 
 # Include directories for the game target
 target_include_directories(game PRIVATE ${INCLUDE})

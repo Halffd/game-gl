@@ -23,7 +23,7 @@ namespace m3D
         bool gammaCorrection;
 
         Model(const std::string &path, bool gamma = false); // Declaration
-        void Draw(Shader &shader); // Draw function
+        void Draw(Shader &shader) override; // Draw function
 
     private:
         void loadModel(const std::string &path); // Load model function
