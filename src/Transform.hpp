@@ -42,12 +42,12 @@ void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm:
     if(diffuse != nullptr) {
         glActiveTexture(GL_TEXTURE0 + diffuse->ID);
         diffuse->Bind();
-        shader.SetInteger("material.texture_diffuse[0]", diffuse->ID);
+        shader.SetInteger("material.diffuse", diffuse->ID);
     }
     if(specular != nullptr) {
         glActiveTexture(GL_TEXTURE0 + specular->ID);
         specular->Bind();
-        shader.SetInteger("material.texture_specular[0]", specular->ID);
+        shader.SetInteger("material.specular", specular->ID);
     }
     int ind = vao->bind();
     unsigned int drawTopology = (topology != VO::NONE) ? topology : getPrimitive(vao->Topology);

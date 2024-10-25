@@ -190,6 +190,7 @@ float lastFrame = 0.0f;
 
 float lastX = screenWidth / 2.0f, lastY = screenHeight / 2.0f;
 
+bool cartesian = false;
 static bool keyWasPressed[GLFW_KEY_LAST + 1]; // Array to track key press states
 
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
@@ -236,8 +237,9 @@ void ImGuiTextureSelector() {
 }
 // Initialize cube positions
 void initCubePositions() {
+    float lim = 35.0f;
     for (int i = 0; i < CUBES; ++i) {
-        cubePositions[i] = glm::linearRand(glm::vec3(-50.0f, -25.0f, -45.0f), glm::vec3(50.0f, 5.0f, 40.0f));
+        cubePositions[i] = glm::linearRand(glm::vec3(-lim, -lim, -lim), glm::vec3(lim, lim, lim));
     }
 }
 
@@ -622,25 +624,26 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
         logger.log("VIEW", view);
         logger.log("PROJECTION", projection);
     }
-    Texture2D *textures = ResourceManager::GetTexture("white");
-    Texture2D *rect = ResourceManager::GetTexture("rect");
+    if(cartesian){
+        Texture2D *textures = ResourceManager::GetTexture("white");
+        Texture2D *rect = ResourceManager::GetTexture("rect");
 
-    // Texture2D *diff = ResourceManager::GetTexture("diffuse");
-    // Texture2D *spec = ResourceManager::GetTexture("specular");
-    glm::mat4 cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
-                                    glm::vec3(0.01f, 0.01f, 500.0f), 0.0f);
-    shader.SetMatrix4("model", cartesian);
-    draw(shader, textures, 1, meshes[2], cartesian, textures, textures);
-    cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
-                          glm::vec3(0.01f, 500.0f, 0.01f), 0.0f);
-    shader.SetMatrix4("model", cartesian);
-    draw(shader, textures, 1, meshes[2], cartesian, textures, textures);
-    cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
-                          glm::vec3(500.0f, 0.01f, 0.01f), 0.0f);
-    shader.SetMatrix4("model", cartesian);
-    draw(shader, textures, 1, meshes[2], cartesian, textures, textures);
-
-    float st = sin(glfwGetTime());
+        // Texture2D *diff = ResourceManager::GetTexture("diffuse");
+        // Texture2D *spec = ResourceManager::GetTexture("specular");
+        glm::mat4 cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
+                                        glm::vec3(0.01f, 0.01f, 500.0f), 0.0f);
+        shader.SetMatrix4("model", cartesian);
+        draw(shader, textures, 1, meshes[2], cartesian, textures, textures);
+        cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
+                            glm::vec3(0.01f, 500.0f, 0.01f), 0.0f);
+        shader.SetMatrix4("model", cartesian);
+        draw(shader, textures, 1, meshes[2], cartesian, textures, textures);
+        cartesian = transform(glm::vec3(0.0f, 0.0f, 0.0f),
+                            glm::vec3(500.0f, 0.01f, 0.01f), 0.0f);
+        shader.SetMatrix4("model", cartesian);
+        draw(shader, textures, 1, meshes[2], cartesian, textures, textures);
+    }
+    /*float st = sin(glfwGetTime());
     Texture2D *texture = ResourceManager::GetTexture("sky");
     glm::vec3 pos = glm::vec3(4.0f, -50.0f, -50.0f);
     glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -649,7 +652,7 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
     // Render the object
     draw(shader, texture, 1, meshes[2], cube, textures, textures);
     glCheckError(__FILE__, __LINE__);
-    /*glm::mat4 tmat = glm::mat4(
+    glm::mat4 tmat = glm::mat4(
         0.3f, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
@@ -664,9 +667,14 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
     glm::mat4 apexTransform = glm::translate(glm::mat4(1.0f), glm::vec3(40.0f, -100.0f, 0.0f)); // Position apex
     draw(shader, rect, 1, meshes[5], apexTransform, textures, textures);                    // Draw apex
     */
-
+    Shader model = ResourceManager::GetShader("model");
+    model.Use();
     glm::mat4 modelTransform = glm::mat4(1.0f); 
-    meshes[6]->Draw(shader);
+    model.SetMatrix4("model", modelTransform);
+    model.SetMatrix4("view", view);
+    model.SetMatrix4("projection", projection);
+
+    meshes[6]->Draw(model);
 
     glBindVertexArray(0);
     canPrint = false;
@@ -879,6 +887,7 @@ int game3d(int argc, char *argv[], std::string type)
 
     Shader shader = ResourceManager::LoadShader("vertex.glsl", "fragment.glsl", "main");
     Shader light = ResourceManager::LoadShader("light/vertex.glsl", "light/fragment.glsl", "light");
+    Shader modelS = ResourceManager::LoadShader("model/vertex.glsl", "model/fragment.glsl", "model");
 
     std::cout << shader.ID << "\n";
     std::cout << light.ID << "\n";
@@ -886,7 +895,9 @@ int game3d(int argc, char *argv[], std::string type)
 
     ResourceManager::LoadAllTexturesFromDirectory();
     std::string modelPath = ResourceManager::GetModelPath("backpack/obj/backpack.obj"); //"backpack";
+    modelS.Use();
     m3D::Model model(modelPath.data());
+    shader.Use();
     // Set up VAO, VBO, and EBO
     const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
     float startAngleRad = 0.0f * DEG_TO_RAD;
