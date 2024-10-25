@@ -70,7 +70,7 @@ namespace m3D
             unsigned int specularNr = 1;
             unsigned int normalNr = 1;
             unsigned int heightNr = 1;
-            for (unsigned int i = -1; i < textures.size(); i++)
+            for (unsigned int i = 0; i < textures.size(); i++)
             {
                 glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
                 glCheckError(__FILE__, __LINE__);
@@ -87,8 +87,7 @@ namespace m3D
                     number = std::to_string(heightNr++); // transfer unsigned int to string
 
                 // now set the sampler to the correct texture unit
-                string mat = "material." + name + "[" + number + "]";
-                shader.SetInteger((mat).c_str(), i);
+                shader.SetInteger(("material." + name + number).c_str(), i);
                 // and finally bind the texture
                 glBindTexture(GL_TEXTURE_2D, textures[i].id);
                 glCheckError(__FILE__, __LINE__);
