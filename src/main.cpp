@@ -237,7 +237,7 @@ void ImGuiTextureSelector() {
 // Initialize cube positions
 void initCubePositions() {
     for (int i = 0; i < CUBES; ++i) {
-        cubePositions[i] = glm::linearRand(glm::vec3(-10.0f, -5.0f, -15.0f), glm::vec3(10.0f, 5.0f, 0.0f));
+        cubePositions[i] = glm::linearRand(glm::vec3(-50.0f, -25.0f, -45.0f), glm::vec3(50.0f, 5.0f, 40.0f));
     }
 }
 
@@ -649,7 +649,7 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
     // Render the object
     draw(shader, texture, 1, meshes[2], cube, textures, textures);
     glCheckError(__FILE__, __LINE__);
-    glm::mat4 tmat = glm::mat4(
+    /*glm::mat4 tmat = glm::mat4(
         0.3f, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
@@ -660,10 +660,10 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
     glm::mat4 baseTransform = glm::mat4(1.0f); 
     glm::translate(baseTransform, glm::vec3(450.0f, -50.0f, 0.0f));
     draw(shader, rect, 1, meshes[5], baseTransform, textures, textures); // Draw base triangle
-
     // Draw the apex
     glm::mat4 apexTransform = glm::translate(glm::mat4(1.0f), glm::vec3(40.0f, -100.0f, 0.0f)); // Position apex
     draw(shader, rect, 1, meshes[5], apexTransform, textures, textures);                    // Draw apex
+    */
 
     glm::mat4 modelTransform = glm::mat4(1.0f); 
     meshes[6]->Draw(shader);

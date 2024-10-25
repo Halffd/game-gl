@@ -4,8 +4,11 @@ project(game LANGUAGES C CXX)
 
 # find the required packages
 
-# Find the zlib package
-find_package(ZLIB REQUIRED)
+# Find Assimp
+find_package(assimp REQUIRED)
+
+# Find ZLIB
+#find_package(ZLIB REQUIRED)
 
 # find_package(GLM REQUIRED)
 # message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
@@ -20,7 +23,7 @@ find_package(ZLIB REQUIRED)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Set the output directory for binaries
+# Set the output directory for binaries 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 # Add the GLAD library (specifying LANGUAGE C explicitly)
@@ -53,17 +56,22 @@ include_directories(include_libs)
 include_directories(imgui)
 include_directories(imgui/backends)
 include_directories(imgui/misc/cpp)
-target_include_directories(game PRIVATE ${ZLIB_INCLUDE_DIRS})
+#include_directories(include_libs/zlib)
 
-message("ZLIB ${ZLIB_INCLUDE_DIRS}")
 # Configure file for the root directory
 set(logl_root "${CMAKE_SOURCE_DIR}")
 configure_file(configuration/root_directory.h.in configuration/root_directory.h)
 include_directories(${CMAKE_BINARY_DIR}/configuration)
+# Include directories
+include_directories(${ASSIMP_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
+
 
 # Define an array of libraries to link
 #set(LIBS glad "${CMAKE_SOURCE_DIR}/lib/glfw3.lib")
 message(STATUS "LIBS.")
+# Link libraries
+target_link_libraries(game PRIVATE ${ASSIMP_LIBRARIES})
+#target_link_libraries(game PRIVATE ZLIB::ZLIB)
 
 # Add the GLFW DLL as an imported library
 add_library(glfw3dll SHARED IMPORTED)
@@ -100,11 +108,6 @@ set(LIBS glad glfw3dll)
 
 # Link libraries
 target_link_libraries(game PRIVATE ${LIBS})
-
-# Link zlib to your target
-target_link_libraries(game PRIVATE ZLIB::ZLIB)
-
-target_link_libraries(game PRIVATE "${ASSIMP}")
 
 # Include directories for the game target
 target_include_directories(game PRIVATE ${INCLUDE})
