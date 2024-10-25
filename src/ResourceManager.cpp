@@ -23,7 +23,7 @@ const char* ResourceManager::GetFullPath(const std::string& filename) {
     return buffer;
 }
 const char* ResourceManager::GetModelPath(const std::string& filename) {
-    std::string path = (root.empty() ? "model/" : root + "/model/") + filename;
+    std::string path = (root.empty() ? "models/" : root + "/models/") + filename;
     return GetFullPath(path);
 }
 const char* ResourceManager::GetShaderPath(const std::string& filename) {
