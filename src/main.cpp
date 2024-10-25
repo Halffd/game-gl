@@ -60,8 +60,8 @@ GameType gameType = GAME3D;
 std::string gameTypeStr = "Default"; // Default game type string
 
 // Array to store 25 cube positions
-#define CUBES 10
-glm::vec3 cubePositions[CUBES];
+#define CUBES -1
+glm::vec3 cubePositions[CUBES+2];
 
 // Vertex data for the trapezium
 
@@ -245,6 +245,7 @@ void initCubePositions() {
 
 // Function to edit cube positions in ImGui
 void editCubePositions() {
+    if(CUBES < 0) return;
     ImGui::Begin("Cube Positions Editor");
 
     for (int i = 0; i < CUBES; ++i) {
@@ -605,7 +606,8 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
 
     shader.SetFloat("mixColor", 0.0f);
 
-    for (unsigned int i = 0; i < 10; i++) {
+    for (unsigned int i = 0; i < CUBES; i++) {
+        if(CUBES < 0){ break; }
         int c = i % 2 != 0 ? i % 3 == 0 ? 4 : 0 : 2;
         int t = i;
         float time2 = glfwGetTime();
@@ -669,10 +671,16 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
     */
     Shader model = ResourceManager::GetShader("model");
     model.Use();
-    glm::mat4 modelTransform = glm::mat4(1.0f); 
+    glm::mat4 modelTransform = transform(
+        modelPosition, modelScale / 100.0f, modelRotation
+    );
     model.SetMatrix4("model", modelTransform);
     model.SetMatrix4("view", view);
     model.SetMatrix4("projection", projection);
+    model.SetVector3f("lightPos", pointLightPositions[0]);
+    model.SetVector3f("viewPos", camera.Position);
+    model.SetVector3f("lightColor", lightColor);
+    model.SetFloat("shininess", materialShininess);
 
     meshes[6]->Draw(model);
 
@@ -894,7 +902,9 @@ int game3d(int argc, char *argv[], std::string type)
     shader.Use();
 
     ResourceManager::LoadAllTexturesFromDirectory();
-    std::string modelPath = ResourceManager::GetModelPath("backpack/obj/backpack.obj"); //"backpack";
+    //std::string modelPath = ResourceManager::GetModelPath("backpack/obj/backpack.obj"); //"backpack";
+    //std::string modelPath = ResourceManager::GetModelPath("triangle-prism.glb"); //"backpack";
+    std::string modelPath = ResourceManager::GetModelPath("n64/Toxic Can/7398.obj"); //"backpack";
     modelS.Use();
     m3D::Model model(modelPath.data());
     shader.Use();

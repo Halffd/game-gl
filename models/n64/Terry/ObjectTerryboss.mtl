@@ -1,0 +1,83 @@
+# Material file for ObjectTerryboss.obj
+
+newmtl imageList0000
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0202.png
+
+newmtl imageList0001
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0317.png
+
+newmtl imageList0003
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0315.png
+
+newmtl imageList0005
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0318.png
+
+newmtl imageList0000CullBoth
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0202.png
+
+newmtl imageList0001CullBoth
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0317.png
+
+newmtl imageList0002CullBoth
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0316.png
+
+newmtl imageList0003CullBoth
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0315.png
+
+newmtl imageList0004CullBoth
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0319.png
+

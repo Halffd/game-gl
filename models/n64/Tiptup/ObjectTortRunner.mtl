@@ -1,0 +1,100 @@
+# Material file for ObjectTortRunner.obj
+
+newmtl imageList0005
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd025B.png
+
+newmtl imageList0006
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd028B.png
+
+newmtl imageList0007
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd025F.png
+
+newmtl imageList0008
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0260.png
+
+newmtl imageList0009
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd025E.png
+
+newmtl imageList000A
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd0261.png
+
+newmtl imageList000B
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd022F.png
+
+newmtl imageList000C
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd01CD.png
+
+newmtl imageList000D
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd025D.png
+
+newmtl imageList000E
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+	map_Kd tempImgEd025C.png
+
+newmtl Untextured
+	Ns 0
+	d 1
+	illum 2
+	Kd 1.0 1.0 1.0
+	Ks 1.0 1.0 1.0
+	Ka 1.0 1.0 1.0
+
