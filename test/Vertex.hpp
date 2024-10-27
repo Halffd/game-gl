@@ -224,7 +224,7 @@ public:
         // Get the size of the vector
         size_t size = indices.size() * sizeof(uint32_t);
         #if DEBUG == 1
-        std::cout << size << "\n";
+        lo << size << "\n";
         #endif
         
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, arr, GL_STATIC_DRAW);

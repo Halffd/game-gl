@@ -55,7 +55,7 @@ bool canPrint = true;
 bool isPaused = false;
 double lastTime = 0.0;
 bool web = false;
-Log logger("", "game.log", Log::Mode::OVERWRITE);
+
 GameType gameType = GAME3D;
 std::string gameTypeStr = "Default"; // Default game type string
 
@@ -450,7 +450,7 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
             dirLightSpecular = glm::vec3(0.5f, 0.0f, 0.0f);
 
             pointLightPosition = glm::vec3(0.0f, 1.0f, 0.0f);
-            pointLightAmbient = glm::vec3(0.0f, 0.0f, 0.0f);
+            pointLightAmbient = glm::vec3(1.0f, 0.7f, 0.9f);
             pointLightDiffuse = glm::vec3(0.4f, 0.0f, 0.0f);
             pointLightSpecular = glm::vec3(0.8f, 0.0f, 0.0f);
 
@@ -562,6 +562,7 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
         Texture2D *lightTex = new Texture2D[1]{
             ResourceManager::GetTexture2D(selectedLightTexture)};
         draw(light, lightTex, 1, meshes[3], lightModel);
+        delete[] lightTex;
         logger.log("LIGHT-MODEL", lightModel);
         shader.Use();
 
@@ -620,7 +621,7 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
         Texture2D *diff = ResourceManager::GetTexture(selectedDiffuseTexture);
         Texture2D *spec = ResourceManager::GetTexture(selectedSpecularTexture);
         draw(shader, textures2, 1, meshes[c], model, diff, spec);
-
+        
         // Print transforms if needed
         logger.log("MODEL", model);
         logger.log("VIEW", view);
@@ -677,9 +678,13 @@ void renderScene(GLFWwindow *window, std::vector<VO::VAO *> &meshes)
     model.SetMatrix4("model", modelTransform);
     model.SetMatrix4("view", view);
     model.SetMatrix4("projection", projection);
-    model.SetVector3f("lightPos", pointLightPositions[0]);
+    model.SetVector3f("pointLightPos", pointLightPositions[0]);
     model.SetVector3f("viewPos", camera.Position);
-    model.SetVector3f("lightColor", lightColor);
+    model.SetVector3f("spotLightPos", camera.Position);
+    model.SetVector3f("pointLightColor", pointLightAmbient);
+    model.SetVector3f("spotLightColor", spotLightAmbient);
+    model.SetFloat("spotLightCutoff", spotLightInnerCutoff);
+    model.SetFloat("spotLightOuterCutoff", spotLightOuterCutoff);
     model.SetFloat("shininess", materialShininess);
 
     meshes[6]->Draw(model);
@@ -904,7 +909,8 @@ int game3d(int argc, char *argv[], std::string type)
     ResourceManager::LoadAllTexturesFromDirectory();
     //std::string modelPath = ResourceManager::GetModelPath("backpack/obj/backpack.obj"); //"backpack";
     //std::string modelPath = ResourceManager::GetModelPath("triangle-prism.glb"); //"backpack";
-    std::string modelPath = ResourceManager::GetModelPath("n64/Toxic Can/7398.obj"); //"backpack";
+    //std::string modelPath = ResourceManager::GetModelPath("n64/Toxic Can/7398.obj"); //"backpack";
+    std::string modelPath = ResourceManager::GetModelPath("n64/Starry Sky/sky.obj"); //"backpack";
     modelS.Use();
     m3D::Model model(modelPath.data());
     shader.Use();

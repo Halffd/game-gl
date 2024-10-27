@@ -31,7 +31,7 @@ void processInput(GLFWwindow *window)
     { // wasn't before, is now
         GLint i = 0;
         glGetIntegerv(GL_POLYGON_MODE, &i);
-        // std::cout << i << "\n";
+        // lo << i << "\n";
         glPolygonMode(GL_FRONT_AND_BACK, i == 6913 ? GL_FILL : GL_LINE);
         // Add a delay of 100 milliseconds
         glfwWaitEventsTimeout(0.1);
@@ -140,7 +140,7 @@ int main()
         float timeValue = glfwGetTime();
         float colorValue = (std::sin(timeValue) / 2.0f) + 0.5f;
         int vertexColorLocation = shader.get("uniformColor");
-        //std::cout << vertexColorLocation << "\n";
+        //lo << vertexColorLocation << "\n";
         std::vector<float> color = {colorValue, colorValue, colorValue, 1.0f};
         float mixFactor = 0.1f + (std::cos(timeValue) / 2.9f + 0.5f) * 0.85f;
         shader.setFloat("mixFactor", mixFactor);

@@ -130,7 +130,7 @@ void ResourceManager::LoadAllTexturesFromDirectory() {
 
             // Load texture and add to the map
             ResourceManager::LoadTexture2D(path.c_str(), filename);
-            std::cout << "Loaded texture: " << filename << " from path: " << path << std::endl;
+            logger << "Loaded texture: " << filename << " from path: " << path;
         }
     }
 }
@@ -171,7 +171,7 @@ Shader ResourceManager::loadShaderFromFile(const char *vShaderFile, const char *
     }
     catch (std::exception& e)
     {
-        std::cout << "ERROR::SHADER: Failed to read shader files" << std::endl;
+        logger << "ERROR::SHADER: Failed to read shader files";
     }
     const char *vShaderCode = vertexCode.c_str();
     const char *fShaderCode = fragmentCode.c_str();

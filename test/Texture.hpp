@@ -54,7 +54,7 @@ public:
         }
         else
         {
-            std::cout << "Unsupported texture target: " << textureTarget << std::endl;
+            lo << "Unsupported texture target: " << textureTarget << std::endl;
             return false;
         }
 
@@ -104,7 +104,7 @@ public:
                 glCheckError(__FILE__, __LINE__);
                 break;
             default:
-                std::cout << "Unsupported min filter: " << minFilter << std::endl;
+                lo << "Unsupported min filter: " << minFilter << std::endl;
                 break;
             }
 
@@ -116,7 +116,7 @@ public:
                 glCheckError(__FILE__, __LINE__);
                 break;
             default:
-                std::cout << "Unsupported mag filter: " << magFilter << std::endl;
+                lo << "Unsupported mag filter: " << magFilter << std::endl;
                 break;
             }
 
@@ -134,11 +134,11 @@ public:
                 format = GL_RGBA;
                 break;
             default:
-                std::cout << "Unsupported number of channels: " << nrChannels << std::endl;
+                lo << "Unsupported number of channels: " << nrChannels << std::endl;
                 stbi_image_free(data);
                 return false;
             }
-            std::cout << width << "x"<< height << "x" << depth << "  " << nrChannels << ' ' << format << std::endl;
+            lo << width << "x"<< height << "x" << depth << "  " << nrChannels << ' ' << format << std::endl;
             if (textureTarget == GL_TEXTURE_1D)
             {
                 glTexImage1D(textureTarget, 0, format, width, 0, format, GL_UNSIGNED_BYTE, data);
@@ -156,7 +156,7 @@ public:
             }
             else
             {
-                std::cout << "Unsupported texture target: " << textureTarget << std::endl;
+                lo << "Unsupported texture target: " << textureTarget << std::endl;
                 stbi_image_free(data);
                 return false;
             }
@@ -174,7 +174,7 @@ public:
         }
         else
         {
-            std::cout << "Failed to load texture: " << filePath << std::endl;
+            lo << "Failed to load texture: " << filePath << std::endl;
             return false;
         }
     }

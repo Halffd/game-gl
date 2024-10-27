@@ -51,8 +51,8 @@ void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm:
     }
     int ind = vao->bind();
     unsigned int drawTopology = (topology != VO::NONE) ? topology : getPrimitive(vao->Topology);
-        //std::cout << "Draw topology: " << drawTopology << std::endl;
-        //std::cout << "Vertex count: " << (vertices > 0 ? vertices : vao.vertexCount) << std::endl;
+        //lo << "Draw topology: " << drawTopology;
+        //lo << "Vertex count: " << (vertices > 0 ? vertices : vao.vertexCount);
     if (ind > 0)
     {
         glDrawElements(drawTopology, (vertices > 0 ? vertices : vao->vertexCount), GL_UNSIGNED_INT, 0);
@@ -148,7 +148,7 @@ std::ostream &operator<<(std::ostream &os, const glm::vec<L, T, P> &v)
 template <typename T, glm::precision P, glm::length_t C, glm::length_t R>
 std::ostream &operator<<(std::ostream &os, const glm::mat<C, R, T, P> &m)
 {
-    os << std::fixed << std::setprecision(2) << std::endl;
+    os << std::fixed << std::setprecision(2);
     for (glm::length_t i = 0; i < R; ++i)
     {
         os << "[";
@@ -158,7 +158,7 @@ std::ostream &operator<<(std::ostream &os, const glm::mat<C, R, T, P> &m)
             if (j < C - 1)
                 os << ", ";
         }
-        os << "]" << std::endl;
+        os << "]";
     }
     return os;
 }
@@ -210,12 +210,12 @@ void printTransform(const glm::mat4 &transform)
     eulerAngles = glm::degrees(eulerAngles);
 
     // Print position, scale, and rotation
-    std::cout << "Position: " << translation << std::endl;
-    std::cout << "Scale: " << scale << std::endl;
-    std::cout << "Rotation (Euler angles): " << eulerAngles << std::endl;
-    std::cout << "Rotation (quaternion): " << rotation << std::endl;
-    std::cout << "Perspective: " << perspective << std::endl;
-    std::cout << "Skew: " << skew << std::endl;
+    std::cout << "Position: " << translation << "\n";
+    std::cout << "Scale: " << scale << "\n";
+    std::cout << "Rotation (Euler angles): " << eulerAngles << "\n";
+    std::cout << "Rotation (quaternion): " << rotation << "\n";
+    std::cout << "Perspective: " << perspective << "\n";
+    std::cout << "Skew: " << skew << "\n";
 }
 
 #endif

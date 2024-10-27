@@ -73,7 +73,7 @@ int main()
     // Initialize GLFW
     printf("Start\n");
     std::filesystem::path currentPath = std::filesystem::current_path();
-    std::cout << "Current directory: " << currentPath << std::endl;
+    lo << "Current directory: " << currentPath << std::endl;
 
     if (!glfwInit())
     {
@@ -124,21 +124,21 @@ glDebugMessageCallback(debugCallback, nullptr);
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
+        lo << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
                   << infoLog << std::endl;
     }
 
     unsigned int fragmentShader;
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     //const char *fragmentShaderSource = readFile("fragment.glsl");
-    //std::cout << fragmentShaderSource << "\n";
+    //lo << fragmentShaderSource << "\n";
     //glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
+        lo << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
                   << infoLog << std::endl;
     }
 
@@ -152,7 +152,7 @@ glDebugMessageCallback(debugCallback, nullptr);
     if (!success)
     {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::PROGRAM::FAILED\n"
+        lo << "ERROR::PROGRAM::FAILED\n"
                   << infoLog << "\n";
     }
     glUseProgram(shaderProgram);

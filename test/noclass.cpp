@@ -28,7 +28,7 @@ void processInput(GLFWwindow *window)
     { // wasn't before, is now
         GLint i = 0;
         glGetIntegerv(GL_POLYGON_MODE, &i);
-        //std::cout << i << "\n";
+        //lo << i << "\n";
         glPolygonMode(GL_FRONT_AND_BACK, i == 6913 ? GL_FILL : GL_LINE);
         // Add a delay of 100 milliseconds
         glfwWaitEventsTimeout(0.1);
@@ -72,12 +72,12 @@ int main()
 
 int nrAttributes;
 glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
+lo << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
     // Create and compile the vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     const char *vertexShaderSource = readFile("vertex.glsl");
-    std::cout << vertexShaderSource << "\n";
+    lo << vertexShaderSource << "\n";
     glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
     glCompileShader(vertexShader);
 
@@ -97,7 +97,7 @@ std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << st
     // Create and compile the fragment shader
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     const char *fragmentShaderSource = readFile("fragment.glsl");
-    std::cout << fragmentShaderSource << "\n";
+    lo << fragmentShaderSource << "\n";
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
     glCompileShader(fragmentShader);
 
