@@ -58,6 +58,13 @@ include_directories(imgui/backends)
 include_directories(imgui/misc/cpp)
 #include_directories(include_libs/zlib)
 
+target_compile_options(game PRIVATE
+        -Wall        # Enable all warnings
+        -Wextra      # Enable extra warnings
+        -Wpedantic   # Enable strict ISO C/C++ compliance
+        #-Werror     # Treat warnings as errors
+)
+
 # Configure file for the root directory
 set(logl_root "${CMAKE_SOURCE_DIR}")
 configure_file(configuration/root_directory.h.in configuration/root_directory.h)
