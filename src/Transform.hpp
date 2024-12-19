@@ -2,7 +2,7 @@
 #define TRANSFORM_H
 
 #include <glad/glad.h>
-#include "shader.h"
+#include "Shader.h"
 #include "Texture2D.h"
 #include "Util.hpp"
 #include <glm/glm.hpp>

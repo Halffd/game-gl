@@ -7,6 +7,17 @@
 
 #define BUFFER_SIZE 1024
 
+
+inline void safe_strcpy(char* dest, size_t dest_size, const char* src) {
+#if defined(_MSC_VER) // Microsoft Visual C++
+    strcpy_s(dest, dest_size, src);
+#elif defined(__STDC_LIB_EXT1__) // C11 with bounds checking
+    strcpy_s(dest, dest_size, src);
+#else // POSIX systems (Linux, macOS, etc.)
+    strncpy(dest, src, dest_size - 1);
+    dest[dest_size - 1] = '\0'; // Ensure null termination
+#endif
+}
 struct Path {
     std::string root;
 
@@ -29,7 +40,7 @@ struct Path {
         char* buffer = new char[BUFFER_SIZE];
 
         // Copy the content of fullPath to buffer
-        strcpy_s(buffer, BUFFER_SIZE, fullPath.c_str());
+        safe_strcpy(buffer, BUFFER_SIZE, fullPath.c_str());
 
         // Return the pointer to buffer
         return buffer;

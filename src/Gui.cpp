@@ -10,13 +10,14 @@ void Gui::Init(GLFWwindow *window){
 
     // Set ImGui configuration flags for docking
     ImGuiIO &io = ImGui::GetIO();
+    #ifdef WINDOWS
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Enable docking
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable multi-window support
-
+    io.ConfigDebugHighlightIdConflicts = true;
+    #endif
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-    io.ConfigDebugHighlightIdConflicts = true;
     // Setup ImGui style
     ImGui::StyleColorsDark();
 
@@ -42,6 +43,7 @@ void Gui::Render() {
     // Rendering
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    #ifdef WINDOWS
     ImGuiIO &io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -49,6 +51,7 @@ void Gui::Render() {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
+    #endif
 }
 void Gui::Clean() {
     // Cleanup

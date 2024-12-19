@@ -37,10 +37,10 @@
 #include "mesh/ring.h"
 #include "mesh/arc.h"
 #include "math.h"
-#include "Game/init2d.h"
+#include "game/init2d.h"
 #include "GameMode.h"
 #include "Gui.h"
-#include "Model.h"
+#include "model.h"
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);

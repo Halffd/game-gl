@@ -1,9 +1,9 @@
 #ifndef GUI_H
 #define GUI_H
-#include "imgui.h"              // ImGui core header
-#include "backends/imgui_impl_glfw.h"    // ImGui GLFW implementation
-#include "backends/imgui_impl_opengl3.h" // ImGui OpenGL3 implementation
-#include "glad/glad.h"
+#include <imgui/imgui.h>              // ImGui core header
+#include <imgui/backends/imgui_impl_glfw.h>    // ImGui GLFW implementation
+#include <imgui/backends/imgui_impl_opengl3.h> // ImGui OpenGL3 implementation
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 class Gui {

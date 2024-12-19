@@ -1,121 +1,131 @@
 cmake_minimum_required(VERSION 3.28.1)
-# Rest of your CMakeLists.txt file
-project(game LANGUAGES C CXX)
+project(game 
+    VERSION 1.0
+    DESCRIPTION "OpenGL Game Engine"
+    LANGUAGES C CXX
+)
 
-# find the required packages
-
-# Find Assimp
-find_package(assimp REQUIRED)
-
-# Find ZLIB
-#find_package(ZLIB REQUIRED)
-
-# find_package(GLM REQUIRED)
-# message(STATUS "GLM included at ${GLM_INCLUDE_DIR}")
-# find_package(GLFW3 REQUIRED)
-# message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
-# find_package(ASSIMP REQUIRED)
-# message(STATUS "Found ASSIMP in ${ASSIMP_INCLUDE_DIR}")
-# Set the C and C++ compilers explicitly
-#set(CMAKE_C_COMPILER "gcc")
-#set(CMAKE_CXX_COMPILER "g++")
-# Set the C++ standard
+# Global settings
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-# Set the output directory for binaries 
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-# Add the GLAD library (specifying LANGUAGE C explicitly)
+# Source files
+file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.c")
+
+# GLAD
 add_library(glad STATIC src/glad.c)
 set_target_properties(glad PROPERTIES LINKER_LANGUAGE C)
 
-# Collect all source files
-file(GLOB_RECURSE source_files "src/*.cpp")
-# Gather all ImGui source files
-file(GLOB_RECURSE imgui_sources "imgui/imgui.cpp"
-        "imgui/imgui_demo.cpp"
-        "imgui/imgui_draw.cpp"
-        "imgui/imgui_tables.cpp"
-        "imgui/imgui_widgets.cpp"
-)
-file(GLOB_RECURSE imgui_backends 
-    "imgui/backends/imgui_impl_glfw.cpp"
-    "imgui/backends/imgui_impl_opengl3.cpp"
-    "imgu8i/misc/cpp/imgui_stdlib.cpp"
-)
+# Main executable
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-# Add executable
-add_executable(game ${source_files} ${imgui_sources} ${imgui_backends})
-message(STATUS "Include.")
+if(WIN32)
+    # Windows: Use local files
+    set(LIB_DIR "${CMAKE_SOURCE_DIR}/lib")
+    set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
+    
+    # Check required directories
+    foreach(REQUIRED_DIR IN ITEMS ${LIB_DIR} ${INCLUDE_DIR})
+        if(NOT EXISTS ${REQUIRED_DIR})
+            message(FATAL_ERROR "Required directory not found: ${REQUIRED_DIR}")
+        endif()
+    endforeach()
 
-# Include directories
+    # ImGui (local)
+    set(IMGUI_FILES
+        imgui/imgui.cpp
+        imgui/imgui_demo.cpp
+        imgui/imgui_draw.cpp
+        imgui/imgui_tables.cpp
+        imgui/imgui_widgets.cpp
+        imgui/backends/imgui_impl_glfw.cpp
+        imgui/backends/imgui_impl_opengl3.cpp
+        imgui/misc/cpp/imgui_stdlib.cpp
+    )
+    target_sources(${PROJECT_NAME} PRIVATE ${IMGUI_FILES})
+    
+    # GLFW (local)
+    add_library(glfw SHARED IMPORTED)
+    set_target_properties(glfw PROPERTIES
+        IMPORTED_IMPLIB "${LIB_DIR}/libglfw3.a"
+        IMPORTED_LOCATION "${LIB_DIR}/glfw3.dll"
+    )
+
+    # Assimp (local)
+    add_library(assimp SHARED IMPORTED)
+    set_target_properties(assimp PROPERTIES
+        IMPORTED_IMPLIB "${LIB_DIR}/assimp/libassimp.a"
+        IMPORTED_LOCATION "${LIB_DIR}/assimp/assimp.dll"
+    )
+
+    # Copy DLLs to output directory
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${LIB_DIR}/glfw3.dll"
+        "${LIB_DIR}/assimp/assimp.dll"
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    )
+
+    # Windows include directories
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        ${INCLUDE_DIR}
+        ${INCLUDE_DIR}/mesh
+        ${CMAKE_SOURCE_DIR}/imgui
+        ${CMAKE_SOURCE_DIR}/imgui/backends
+        ${CMAKE_SOURCE_DIR}/imgui/misc/cpp
+    )
+
+    # Windows linking
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        glad
+        glfw
+        assimp
+    )
+
+else()
+    # Linux: Use system packages
+    find_package(PkgConfig REQUIRED)
+    cmake_policy(SET CMP0072 NEW)
+    find_package(OpenGL REQUIRED)
+    
+    # Required system packages
+    pkg_check_modules(GLFW REQUIRED glfw3)
+    pkg_check_modules(ASSIMP REQUIRED assimp)
+    
+    # Linux include directories
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        ${GLFW_INCLUDE_DIRS}
+        ${ASSIMP_INCLUDE_DIRS}
+        "/usr/include/imgui"
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/include/mesh
+    )
+
+    # Linux linking
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        glad
+        ${GLFW_LIBRARIES}
+        ${ASSIMP_LIBRARIES}
+        imgui
+        OpenGL::GL
+    )
+endif()
+
 include_directories(include)
 include_directories(include/mesh)
 include_directories(include_libs)
-include_directories(imgui)
-include_directories(imgui/backends)
-include_directories(imgui/misc/cpp)
-#include_directories(include_libs/zlib)
 
-target_compile_options(game PRIVATE
-        -Wall        # Enable all warnings
-        -Wextra      # Enable extra warnings
-        -Wpedantic   # Enable strict ISO C/C++ compliance
-        #-Werror     # Treat warnings as errors
-)
-
-# Configure file for the root directory
-set(logl_root "${CMAKE_SOURCE_DIR}")
-configure_file(configuration/root_directory.h.in configuration/root_directory.h)
-include_directories(${CMAKE_BINARY_DIR}/configuration)
-# Include directories
-include_directories(${ASSIMP_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
-
-
-# Define an array of libraries to link
-#set(LIBS glad "${CMAKE_SOURCE_DIR}/lib/glfw3.lib")
-message(STATUS "LIBS.")
-# Link libraries
-target_link_libraries(game PRIVATE ${ASSIMP_LIBRARIES})
-#target_link_libraries(game PRIVATE ZLIB::ZLIB)
-
-# Add the GLFW DLL as an imported library
-add_library(glfw3dll SHARED IMPORTED)
-set_target_properties(glfw3dll PROPERTIES
-        IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/libglfw3.a"
-        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
-)
-
-# Ensure the DLL is available at runtime (for dynamic linking)
-#add_custom_command(TARGET game POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#        "${ASSIMP_DIR}/lib/assimpd.dll" $<TARGET_FILE_DIR:game>)
-
-# Specify the path to the Assimp library
-set(ASSIMP_DIR "${CMAKE_SOURCE_DIR}/lib/assimp")
-message(STATUS "Assimp ${ASSIMP_DIR}.")
-
-# Check if the file exists
-if(EXISTS ${ASSIMP_DIR})
-    message(STATUS "Dir ${ASSIMP_DIR} exists.")
+# Common compiler warnings
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4)
 else()
-    message(WARNING "Dir ${ASSIMP_DIR} does not exist.")
-endif()
-set(ASSIMP "${ASSIMP_DIR}/libassimp.a")
-# Check if the file exists
-if(EXISTS ${ASSIMP})
-    message(STATUS "Dir ${ASSIMP} exists.")
-else()
-    message(WARNING "Dir ${ASSIMP} does not exist.")
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-# Define an array of libraries to link
-set(LIBS glad glfw3dll)
-
-# Link libraries
-target_link_libraries(game PRIVATE ${LIBS})
-
-# Include directories for the game target
-target_include_directories(game PRIVATE ${INCLUDE})
-
+# Configure root directory
+configure_file(
+    ${CMAKE_SOURCE_DIR}/configuration/root_directory.h.in 
+    ${CMAKE_BINARY_DIR}/configuration/root_directory.h
+)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/configuration)
