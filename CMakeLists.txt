@@ -20,6 +20,19 @@ set_target_properties(glad PROPERTIES LINKER_LANGUAGE C)
 # Main executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
+# ImGui (local)
+set(IMGUI_FILES
+    include_libs/imgui/imgui.cpp
+    include_libs/imgui/imgui_demo.cpp
+    include_libs/imgui/imgui_draw.cpp
+    include_libs/imgui/imgui_tables.cpp
+    include_libs/imgui/imgui_widgets.cpp
+    include_libs/imgui/backends/imgui_impl_glfw.cpp
+    include_libs/imgui/backends/imgui_impl_opengl3.cpp
+    include_libs/imgui/misc/cpp/imgui_stdlib.cpp
+)
+target_sources(${PROJECT_NAME} PRIVATE ${IMGUI_FILES})
+
 if(WIN32)
     # Windows: Use local files
     set(LIB_DIR "${CMAKE_SOURCE_DIR}/lib")
@@ -31,19 +44,6 @@ if(WIN32)
             message(FATAL_ERROR "Required directory not found: ${REQUIRED_DIR}")
         endif()
     endforeach()
-
-    # ImGui (local)
-    set(IMGUI_FILES
-        imgui/imgui.cpp
-        imgui/imgui_demo.cpp
-        imgui/imgui_draw.cpp
-        imgui/imgui_tables.cpp
-        imgui/imgui_widgets.cpp
-        imgui/backends/imgui_impl_glfw.cpp
-        imgui/backends/imgui_impl_opengl3.cpp
-        imgui/misc/cpp/imgui_stdlib.cpp
-    )
-    target_sources(${PROJECT_NAME} PRIVATE ${IMGUI_FILES})
     
     # GLFW (local)
     add_library(glfw SHARED IMPORTED)
@@ -88,6 +88,7 @@ else()
     find_package(PkgConfig REQUIRED)
     cmake_policy(SET CMP0072 NEW)
     find_package(OpenGL REQUIRED)
+    find_package(imgui REQUIRED)
     
     # Required system packages
     pkg_check_modules(GLFW REQUIRED glfw3)
@@ -97,7 +98,11 @@ else()
     target_include_directories(${PROJECT_NAME} PRIVATE
         ${GLFW_INCLUDE_DIRS}
         ${ASSIMP_INCLUDE_DIRS}
-        "/usr/include/imgui"
+        ${CMAKE_SOURCE_DIR}/include_libs      
+        ${CMAKE_SOURCE_DIR}/include_libs/imgui
+        ${CMAKE_SOURCE_DIR}/imgui/backends
+        ${CMAKE_SOURCE_DIR}/imgui/misc/cpp
+#        "/usr/include/imgui"
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/include/mesh
     )
