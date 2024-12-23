@@ -1,6 +1,7 @@
 // gamemode.h
 #ifndef GAMEMODE_H
 #define GAMEMODE_H
+#include <string>
 
 enum GameType {
     ACTION,        // Action games
@@ -13,7 +14,9 @@ enum GameType {
     MULTIPLAYER,   // Multiplayer games
     VN,            // Visual Novel games
     GAME2D,
-    GAME3D
+    GAME3D,
+    TEST,
+    PLANE
 };
 
 int game2d(int argc, char *argv[], std::string type);

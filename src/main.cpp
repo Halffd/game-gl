@@ -56,7 +56,7 @@ bool isPaused = false;
 double lastTime = 0.0;
 bool web = false;
 
-GameType gameType = GAME3D;
+GameType gameType = GAME2D;
 std::string gameTypeStr = "Default"; // Default game type string
 
 // Array to store 25 cube positions

@@ -1,10 +1,6 @@
-//
-// Created by halff on 01/08/2024.
-//
-
 #ifndef GAME_H
 #define GAME_H
-
+#include "Level.h"
 
 // Represents the current state of the game
 enum GameState {
@@ -16,6 +12,9 @@ enum GameState {
 class Game
 {
 public:
+    std::vector<GameLevel> Levels;
+    unsigned int           Level;
+
     // game state
     GameState    State;
     bool         Keys[1024];
