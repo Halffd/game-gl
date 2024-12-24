@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 #include "Level.h"
+#include "BallObject.h"
 
 // Represents the current state of the game
 enum GameState {
@@ -30,6 +31,7 @@ public:
     void Render();
     void Collision();
     bool CheckCollision(GameObject &one, GameObject &two);
+    bool CheckCollision(BallObject &one, GameObject &two);
 };
 
 

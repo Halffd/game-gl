@@ -8,7 +8,38 @@
 #include <cmath>
 #include <vector>
 #include <stdexcept>
+#include <limits>
 
+bool nearlyEqual(float a, float b, float epsilon = std::numeric_limits<float>::epsilon()) {
+    // Handle NaN cases
+    if (std::isnan(a) || std::isnan(b)) {
+        return false; // If either is NaN, they are not nearly equal
+    }
+
+    // Handle exact equality first
+    if (a == b) {
+        return true; // Handles infinities and identical values
+    }
+
+    // Calculate absolute values and difference
+    float absA = std::fabs(a);
+    float absB = std::fabs(b);
+    float diff = std::fabs(a - b);
+
+    // Handle cases where a or b is zero, or both are very small
+    if (absA < epsilon && absB < epsilon) {
+        // Both numbers are very close to zero
+        return diff < epsilon; // Use absolute difference
+    }
+
+    // Use a relative error for general cases
+    float minAbsSum = absA + absB;
+    if (minAbsSum == 0.0f) {
+        return diff < epsilon; // Handle the case where both are zero
+    }
+
+    return diff / minAbsSum < epsilon;
+}
 // Logarithm of any base
 template<typename T>
 T logBase(T x, T base) {
