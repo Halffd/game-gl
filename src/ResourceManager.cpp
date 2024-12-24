@@ -1,6 +1,7 @@
 #include "ResourceManager.h"
 
 #include <iostream>
+#include <iterator>
 #include <sstream>
 #include <fstream>
 
@@ -32,6 +33,11 @@ const char* ResourceManager::GetShaderPath(const std::string& filename) {
 }
 const char* ResourceManager::GetTexturePath(const std::string& filename) {
     std::string path = (root.empty() ? "textures/" : root + "/textures/") + filename;
+    return GetFullPath(path);
+}
+
+const char* ResourceManager::GetPath(const std::string& filename) {
+    std::string path = root + "/" + filename;
     return GetFullPath(path);
 }
 Shader ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, std::string name) {
@@ -84,6 +90,9 @@ Texture2D ResourceManager::LoadTexture2D(const char *file,  std::string name, bo
 
 Texture2D ResourceManager::GetTexture2D(std::string name)
 {
+    if(Textures2D.find(name) == Textures2D.end()){
+        LoadTexture2D(name.c_str(), "");
+    }
     return Textures2D[name];
 }
 Texture2D* ResourceManager::GetTexture(std::string name) {
@@ -209,7 +218,10 @@ Texture2D ResourceManager::loadTexture2DFromFile(const char *file, bool alpha, G
     unsigned char* data = stbi_load(file, &width, &height, &nrChannels, 0);
     if (!data) {
         std::cerr << "Failed to load texture: " << file << std::endl;
+        texture.status = -1;
         return texture;
+    } else {
+        texture.status = 1;
     }
 
     texture.Wrap_S = sWrap;

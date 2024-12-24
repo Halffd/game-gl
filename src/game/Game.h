@@ -28,6 +28,8 @@ public:
     void ProcessInput(float dt);
     void Update(float dt);
     void Render();
+    void Collision();
+    bool CheckCollision(GameObject &one, GameObject &two);
 };
 
 

@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 
 void GameLevel::Load(const char *file, unsigned int levelWidth, unsigned int levelHeight)
@@ -10,9 +11,10 @@ void GameLevel::Load(const char *file, unsigned int levelWidth, unsigned int lev
     this->Bricks.clear();
     // load from file
     unsigned int tileCode;
+    const char* path = ResourceManager::GetPath(std::string(file));
     GameLevel level;
     std::string line;
-    std::ifstream fstream(file);
+    std::ifstream fstream(path);
     std::vector<std::vector<unsigned int>> tileData;
     if (fstream)
     {
@@ -60,7 +62,7 @@ void GameLevel::init(std::vector<std::vector<unsigned int>> tileData, unsigned i
             {
                 glm::vec2 pos(unit_width * x, unit_height * y);
                 glm::vec2 size(unit_width, unit_height);
-                GameObject obj(pos, size, ResourceManager::GetTexture2D("copper"), glm::vec3(0.8f, 0.8f, 0.7f));
+                GameObject obj(pos, size, ResourceManager::GetTexture2D("block_solid"), glm::vec3(0.8f, 0.8f, 0.7f));
                 obj.IsSolid = true;
                 this->Bricks.push_back(obj);
             }
@@ -78,7 +80,7 @@ void GameLevel::init(std::vector<std::vector<unsigned int>> tileData, unsigned i
 
                 glm::vec2 pos(unit_width * x, unit_height * y);
                 glm::vec2 size(unit_width, unit_height);
-                this->Bricks.push_back(GameObject(pos, size, ResourceManager::GetTexture2D("dbrick"), color));
+                this->Bricks.push_back(GameObject(pos, size, ResourceManager::GetTexture2D("bookshelf"), color));
             }
         }
     }

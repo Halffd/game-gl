@@ -8,6 +8,7 @@ class Texture2D
 public:
     unsigned int ID;
     unsigned int Width, Height;
+    int status;
     GLenum Internal_Format;
     GLenum Image_Format;
     GLenum Wrap_S;

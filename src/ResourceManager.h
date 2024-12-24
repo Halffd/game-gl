@@ -55,6 +55,7 @@ public:
 
     // File path handling
     static const char* GetFullPath(const std::string& filename);
+    static const char* GetPath(const std::string& filename);
     static const char* GetModelPath(const std::string& filename);
     static const char* GetShaderPath(const std::string& filename);
     static const char* GetTexturePath(const std::string& filename);
