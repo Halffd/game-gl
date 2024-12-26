@@ -29,6 +29,10 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.c")
 
 # GLAD
 add_library(glad STATIC src/glad.c)
+target_include_directories(glad PRIVATE 
+    ${CMAKE_SOURCE_DIR}/include_libs
+    ${CMAKE_SOURCE_DIR}/include_libs/GL
+)
 set_target_properties(glad PROPERTIES LINKER_LANGUAGE C)
 
 # Main executable
@@ -67,34 +71,50 @@ if(WIN32)
         IMPORTED_LOCATION "${LIB_DIR}/glfw3.dll"
     )
 
-    # Assimp (local)
-    add_library(assimp SHARED IMPORTED)
-    set_target_properties(assimp PROPERTIES
-        IMPORTED_IMPLIB "${LIB_DIR}/assimp/libassimp.a"
-        #IMPORTED_LOCATION "${LIB_DIR}/assimp/assimp.dll"
-    )
-
-include_directories(${ASSIMP_INCLUDE_DIRS})
-    # Copy DLLs to output directory
-    add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${LIB_DIR}/glfw3.dll"
-        #"${LIB_DIR}/assimp/assimp.dll"
-        $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
-    )
-
     # Windows include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
         ${INCLUDE_DIR}
         ${INCLUDE_DIR}/mesh
-        ${CMAKE_SOURCE_DIR}/include_libs/windows
-        ${CMAKE_SOURCE_DIR}/include_libs/windows/assimp
+        ${CMAKE_SOURCE_DIR}/include_libs
+        ${CMAKE_SOURCE_DIR}/include_libs/GL
+        ${CMAKE_SOURCE_DIR}/include_libs/windows  # Local Assimp headers
+        ${CMAKE_SOURCE_DIR}/include_libs/windows/assimp  # Local Assimp headers
         ${CMAKE_SOURCE_DIR}/include_libs/imgui
         ${CMAKE_SOURCE_DIR}/include_libs/imgui/backends
         ${CMAKE_SOURCE_DIR}/include_libs/imgui/misc/cpp
     )
 
-    # Windows linking
+    # Copy DLLs to output directory
+    add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${LIB_DIR}/glfw3.dll"
+        $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
+    )
+    # Set up Assimp paths
+    set(ASSIMP_DLL "${CMAKE_SOURCE_DIR}/lib/assimp/bin64/assimp.dll")
+    set(ASSIMP_LIB "${CMAKE_SOURCE_DIR}/lib/assimp/lib64/assimp.lib")
+
+    # Verify files exist
+    if(NOT EXISTS ${ASSIMP_DLL})
+        message(FATAL_ERROR "Assimp DLL not found at: ${ASSIMP_DLL}")
+    endif()
+    if(NOT EXISTS ${ASSIMP_LIB})
+        message(FATAL_ERROR "Assimp library not found at: ${ASSIMP_LIB}")
+    endif()
+
+    # Set up Assimp as imported library
+    add_library(assimp SHARED IMPORTED)
+    set_target_properties(assimp PROPERTIES
+        IMPORTED_LOCATION "${ASSIMP_DLL}"
+        IMPORTED_IMPLIB "${ASSIMP_LIB}"
+    )
+
+    # Copy DLL to output directory
+    add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${ASSIMP_DLL}"
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    )
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
         glfw
@@ -105,36 +125,28 @@ else()
     find_package(PkgConfig REQUIRED)
     cmake_policy(SET CMP0072 NEW)
     find_package(OpenGL REQUIRED)
-
-    # Find the GLFW package
     find_package(glfw3 REQUIRED)
-
-    # Find the Assimp package
     find_package(assimp REQUIRED)
-    #find_package(imgui REQUIRED)
-
-    # Required system packages
-    pkg_check_modules(GLFW REQUIRED glfw3)
-    pkg_check_modules(ASSIMP REQUIRED assimp)
 
     # Linux include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
+        ${OPENGL_INCLUDE_DIR}
         ${GLFW_INCLUDE_DIRS}
         ${ASSIMP_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/include_libs      
-        ${CMAKE_SOURCE_DIR}/include_libs/imgui
-        ${CMAKE_SOURCE_DIR}/imgui/backends
-        ${CMAKE_SOURCE_DIR}/imgui/misc/cpp
         ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/include/mesh
+        ${CMAKE_SOURCE_DIR}/include_libs
+        ${CMAKE_SOURCE_DIR}/include_libs/GL
+        ${CMAKE_SOURCE_DIR}/include_libs/imgui
+        ${CMAKE_SOURCE_DIR}/include_libs/imgui/backends
+        ${CMAKE_SOURCE_DIR}/include_libs/imgui/misc/cpp
     )
 
-    # Linux linking
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
-        ${GLFW_LIBRARIES}
+        glfw
+        ${OPENGL_LIBRARIES}
         ${ASSIMP_LIBRARIES}
-        #imgui
-        OpenGL::GL
     )
 endif()
 
@@ -153,8 +165,3 @@ configure_file(
     ${CMAKE_BINARY_DIR}/configuration/root_directory.h
 )
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${CMAKE_BINARY_DIR}/configuration)
-
-# Include directories
-include_directories(include)
-include_directories(include/mesh)
-include_directories(include_libs)
