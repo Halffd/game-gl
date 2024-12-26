@@ -485,21 +485,18 @@ CMakeFiles/game.dir/src/main.cpp.obj: \
  /home/half/repos/game-gl/src/model.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/Importer.hpp \
  /home/half/repos/game-gl/include_libs/windows/assimp/types.h \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/memory.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/defs.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/vector3.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/./Compiler/pushpack1.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/./Compiler/poppack1.h \
+ /home/half/repos/game-gl/include_libs/windows/assimp/config.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/vector2.h \
+ /home/half/repos/game-gl/include_libs/windows/assimp/vector3.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/color4.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/matrix3x3.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/matrix4x4.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/quaternion.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/vector2.inl \
- /home/half/repos/game-gl/include_libs/windows/assimp/vector3.inl \
- /home/half/repos/game-gl/include_libs/windows/assimp/color4.inl \
- /home/half/repos/game-gl/include_libs/windows/assimp/quaternion.inl \
- /home/half/repos/game-gl/include_libs/windows/assimp/matrix3x3.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/vector2.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/vector3.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/color4.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/matrix3x3.inl \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/algorithm \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_algo.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/algorithmfwd.h \
@@ -508,15 +505,19 @@ CMakeFiles/game.dir/src/main.cpp.obj: \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_tempbuf.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/pstl/glue_algorithm_defs.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/pstl/execution_defs.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/matrix4x4.inl \
- /home/half/repos/game-gl/include_libs/windows/assimp/config.h \
+ /home/all/repos/game-gl/include_libs/windows/assimp/matrix4x4.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/MathFunctions.h \
+ /home/all/repos/game-gl/include_libs/windows/assimp/quaternion.inl \
  /home/half/repos/game-gl/include_libs/windows/assimp/scene.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/texture.h \
+ /home/all/repos/game-gl/include_libs/windows/assimp/Compiler/pushpack1.h \
+ /home/all/repos/game-gl/include_libs/windows/assimp/Compiler/poppack1.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/mesh.h \
+ /home/half/repos/game-gl/include_libs/windows/assimp/aabb.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/light.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/camera.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/material.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/material.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/material.inl \
  /home/half/repos/game-gl/include_libs/windows/assimp/anim.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/metadata.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/postprocess.h \

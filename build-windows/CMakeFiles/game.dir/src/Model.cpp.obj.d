@@ -107,9 +107,14 @@ CMakeFiles/game.dir/src/Model.cpp.obj: \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/vector.tcc \
  /home/half/repos/game-gl/include_libs/windows/assimp/Importer.hpp \
  /home/half/repos/game-gl/include_libs/windows/assimp/types.h \
+ /usr/lib/gcc/x86_64-w64-mingw32/14.1.1/include/stdint.h \
+ /usr/x86_64-w64-mingw32/sys-root/mingw/include/stdint.h \
+ /usr/x86_64-w64-mingw32/sys-root/mingw/include/string.h \
+ /usr/x86_64-w64-mingw32/sys-root/mingw/include/sec_api/string_s.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/sys/types.h \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/memory.h \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/math.h \
+ /home/half/repos/game-gl/include_libs/windows/assimp/defs.h \
+ /home/half/repos/game-gl/include_libs/windows/assimp/config.h \
+ /home/half/repos/game-gl/include_libs/windows/assimp/vector2.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/cmath \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/math.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/specfun.h \
@@ -126,23 +131,16 @@ CMakeFiles/game.dir/src/Model.cpp.obj: \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/tr1/poly_hermite.tcc \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/tr1/poly_laguerre.tcc \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/tr1/riemann_zeta.tcc \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/string.h \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/sec_api/string_s.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/defs.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/vector3.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/./Compiler/pushpack1.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/./Compiler/poppack1.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/vector2.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/color4.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/matrix3x3.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/matrix4x4.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/quaternion.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/cstring \
- /home/half/repos/game-gl/include_libs/windows/assimp/vector2.inl \
- /home/half/repos/game-gl/include_libs/windows/assimp/vector3.inl \
- /home/half/repos/game-gl/include_libs/windows/assimp/color4.inl \
- /home/half/repos/game-gl/include_libs/windows/assimp/quaternion.inl \
- /home/half/repos/game-gl/include_libs/windows/assimp/matrix3x3.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/vector2.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/vector3.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/color4.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/matrix3x3.inl \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/algorithm \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_algo.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/algorithmfwd.h \
@@ -151,20 +149,26 @@ CMakeFiles/game.dir/src/Model.cpp.obj: \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/stl_tempbuf.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/pstl/glue_algorithm_defs.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/pstl/execution_defs.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/matrix4x4.inl \
- /home/half/repos/game-gl/include_libs/windows/assimp/config.h \
+ /home/all/repos/game-gl/include_libs/windows/assimp/matrix4x4.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/MathFunctions.h \
+ /home/all/repos/game-gl/include_libs/windows/assimp/quaternion.inl \
+ /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/exception \
+ /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/exception_ptr.h \
+ /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/cxxabi_init_exception.h \
+ /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/typeinfo \
+ /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/nested_exception.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/scene.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/texture.h \
+ /home/all/repos/game-gl/include_libs/windows/assimp/Compiler/pushpack1.h \
+ /home/all/repos/game-gl/include_libs/windows/assimp/Compiler/poppack1.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/mesh.h \
+ /home/half/repos/game-gl/include_libs/windows/assimp/aabb.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/light.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/camera.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/material.h \
- /home/half/repos/game-gl/include_libs/windows/assimp/material.inl \
+ /home/all/repos/game-gl/include_libs/windows/assimp/material.inl \
  /home/half/repos/game-gl/include_libs/windows/assimp/anim.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/metadata.h \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/assert.h \
- /usr/lib/gcc/x86_64-w64-mingw32/14.1.1/include/stdint.h \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/stdint.h \
  /home/half/repos/game-gl/include_libs/windows/assimp/postprocess.h \
  /home/half/repos/game-gl/src/Mesh.hpp \
  /home/half/repos/game-gl/include_libs/glad/glad.h \
@@ -173,6 +177,7 @@ CMakeFiles/game.dir/src/Model.cpp.obj: \
  /home/half/repos/game-gl/include_libs/glm/detail/_fixes.hpp \
  /home/half/repos/game-gl/include_libs/glm/detail/setup.hpp \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/cassert \
+ /usr/x86_64-w64-mingw32/sys-root/mingw/include/assert.h \
  /home/half/repos/game-gl/include_libs/glm/detail/../simd/platform.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/cstdint \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/climits \
@@ -371,11 +376,6 @@ CMakeFiles/game.dir/src/Model.cpp.obj: \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/iostream \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/ostream \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/ios \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/exception \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/exception_ptr.h \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/cxxabi_init_exception.h \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/typeinfo \
- /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/nested_exception.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/bits/ios_base.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/ext/atomicity.h \
  /usr/x86_64-w64-mingw32/sys-root/mingw/include/c++/x86_64-w64-mingw32/bits/gthr.h \

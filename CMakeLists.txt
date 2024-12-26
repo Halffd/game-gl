@@ -91,30 +91,19 @@ if(WIN32)
         $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
     )
     # Set up Assimp paths
-    set(ASSIMP_DLL "${CMAKE_SOURCE_DIR}/lib/assimp/bin64/assimp.dll")
-    set(ASSIMP_LIB "${CMAKE_SOURCE_DIR}/lib/assimp/lib64/assimp.lib")
+    set(ASSIMP "${CMAKE_SOURCE_DIR}/lib/libassimp.dll.a")
 
     # Verify files exist
-    if(NOT EXISTS ${ASSIMP_DLL})
-        message(FATAL_ERROR "Assimp DLL not found at: ${ASSIMP_DLL}")
-    endif()
-    if(NOT EXISTS ${ASSIMP_LIB})
+    if(NOT EXISTS ${ASSIMP})
         message(FATAL_ERROR "Assimp library not found at: ${ASSIMP_LIB}")
     endif()
 
     # Set up Assimp as imported library
-    add_library(assimp SHARED IMPORTED)
+    add_library(assimp STATIC IMPORTED)
     set_target_properties(assimp PROPERTIES
-        IMPORTED_LOCATION "${ASSIMP_DLL}"
-        IMPORTED_IMPLIB "${ASSIMP_LIB}"
+        IMPORTED_LOCATION "${ASSIMP}"
     )
 
-    # Copy DLL to output directory
-    add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${ASSIMP_DLL}"
-            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-    )
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
         glfw
