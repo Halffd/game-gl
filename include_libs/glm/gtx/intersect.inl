@@ -13,10 +13,13 @@ namespace glm
 		typename genType::value_type d = glm::dot(dir, planeNormal);
 		typename genType::value_type Epsilon = std::numeric_limits<typename genType::value_type>::epsilon();
 
-		if(d < -Epsilon)
+		if(glm::abs(d) > Epsilon)  // if dir and planeNormal are not perpendicular
 		{
-			intersectionDistance = glm::dot(planeOrig - orig, planeNormal) / d;
-			return true;
+			typename genType::value_type const tmp_intersectionDistance = 	glm::dot(planeOrig - orig, planeNormal) / d;
+			if (tmp_intersectionDistance > static_cast<typename genType::value_type>(0)) { // allow only intersections
+				intersectionDistance = tmp_intersectionDistance;
+				return true;
+			}
 		}
 
 		return false;
@@ -117,13 +120,13 @@ namespace glm
 		if (position.y < typename genType::value_type(0) || position.y > typename genType::value_type(1))
 			return false;
 
-		genType Cotangent = cross(Tengant, edge1);
+		genType Cotengant = cross(Tengant, edge1);
 
-		position.z = dot(dir, Cotangent) * inv_det;
+		position.z = dot(dir, Cotengant) * inv_det;
 		if (position.z < typename genType::value_type(0) || position.y + position.z > typename genType::value_type(1))
 			return false;
 
-		position.x = dot(edge2, Cotangent) * inv_det;
+		position.x = dot(edge2, Cotengant) * inv_det;
 
 		return true;
 	}
@@ -132,7 +135,7 @@ namespace glm
 	GLM_FUNC_QUALIFIER bool intersectRaySphere
 	(
 		genType const& rayStarting, genType const& rayNormalizedDirection,
-		genType const& sphereCenter, const typename genType::value_type sphereRadiusSquared,
+		genType const& sphereCenter, const typename genType::value_type sphereRadiusSquered,
 		typename genType::value_type & intersectionDistance
 	)
 	{
@@ -140,11 +143,11 @@ namespace glm
 		genType diff = sphereCenter - rayStarting;
 		typename genType::value_type t0 = dot(diff, rayNormalizedDirection);
 		typename genType::value_type dSquared = dot(diff, diff) - t0 * t0;
-		if( dSquared > sphereRadiusSquared )
+		if( dSquared > sphereRadiusSquered )
 		{
 			return false;
 		}
-		typename genType::value_type t1 = sqrt( sphereRadiusSquared - dSquared );
+		typename genType::value_type t1 = sqrt( sphereRadiusSquered - dSquared );
 		intersectionDistance = t0 > t1 + Epsilon ? t0 - t1 : t0 + t1;
 		return intersectionDistance > Epsilon;
 	}

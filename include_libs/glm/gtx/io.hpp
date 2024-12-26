@@ -23,12 +23,12 @@
 #include "../glm.hpp"
 #include "../gtx/quaternion.hpp"
 
-#ifndef GLM_ENABLE_EXPERIMENTAL
-#	error "GLM: GLM_GTX_io is an experimental extension and may change in the future. Use #define GLM_ENABLE_EXPERIMENTAL before including it, if you really want to use it."
-#endif
-
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
-# pragma message("GLM: GLM_GTX_io extension included")
+#	ifndef GLM_ENABLE_EXPERIMENTAL
+#		pragma message("GLM: GLM_GTX_io is an experimental extension and may change in the future. Use #define GLM_ENABLE_EXPERIMENTAL before including it, if you really want to use it.")
+#	else
+#		pragma message("GLM: GLM_GTX_io extension included")
+#	endif
 #endif
 
 #include <iosfwd>  // std::basic_ostream<> (fwd)
@@ -129,11 +129,11 @@ namespace glm
 		};
 
 		template<typename CTy>
-		struct delimiter
+		struct delimeter
 		{
 			CTy value[3];
 
-			GLM_FUNC_DECL explicit delimiter(CTy /* left */, CTy /* right */, CTy /* separator */ = ',');
+			GLM_FUNC_DECL explicit delimeter(CTy /* left */, CTy /* right */, CTy /* separator */ = ',');
 		};
 
 		struct order
@@ -150,14 +150,14 @@ namespace glm
 		template<typename FTy, typename CTy, typename CTr>
 		std::basic_ios<CTy,CTr>& formatted(std::basic_ios<CTy,CTr>&);
 		template<typename FTy, typename CTy, typename CTr>
-		std::basic_ios<CTy,CTr>& unformatted(std::basic_ios<CTy,CTr>&);
+		std::basic_ios<CTy,CTr>& unformattet(std::basic_ios<CTy,CTr>&);
 
 		template<typename CTy, typename CTr>
 		std::basic_ostream<CTy, CTr>& operator<<(std::basic_ostream<CTy, CTr>&, precision const&);
 		template<typename CTy, typename CTr>
 		std::basic_ostream<CTy, CTr>& operator<<(std::basic_ostream<CTy, CTr>&, width const&);
 		template<typename CTy, typename CTr>
-		std::basic_ostream<CTy, CTr>& operator<<(std::basic_ostream<CTy, CTr>&, delimiter<CTy> const&);
+		std::basic_ostream<CTy, CTr>& operator<<(std::basic_ostream<CTy, CTr>&, delimeter<CTy> const&);
 		template<typename CTy, typename CTr>
 		std::basic_ostream<CTy, CTr>& operator<<(std::basic_ostream<CTy, CTr>&, order const&);
 	}//namespace io

@@ -2,7 +2,7 @@
 /// @file glm/gtx/associated_min_max.hpp
 ///
 /// @see core (dependence)
-/// @see gtx_extended_min_max (dependence)
+/// @see gtx_extented_min_max (dependence)
 ///
 /// @defgroup gtx_associated_min_max GLM_GTX_associated_min_max
 /// @ingroup gtx
@@ -16,12 +16,12 @@
 // Dependency:
 #include "../glm.hpp"
 
-#ifndef GLM_ENABLE_EXPERIMENTAL
-#	error "GLM: GTX_associated_min_max is an experimental extension and may change in the future. Use #define GLM_ENABLE_EXPERIMENTAL before including it, if you really want to use it."
-#endif
-
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
-#	pragma message("GLM: GLM_GTX_associated_min_max extension included")
+#	ifndef GLM_ENABLE_EXPERIMENTAL
+#		pragma message("GLM: GLM_GTX_associated_min_max is an experimental extension and may change in the future. Use #define GLM_ENABLE_EXPERIMENTAL before including it, if you really want to use it.")
+#	else
+#		pragma message("GLM: GLM_GTX_associated_min_max extension included")
+#	endif
 #endif
 
 namespace glm

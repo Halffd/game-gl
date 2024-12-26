@@ -1,0 +1,2 @@
+/usr/bin/x86_64-w64-mingw32-ar qc libglad.a CMakeFiles/glad.dir/src/glad.c.obj
+/usr/bin/x86_64-w64-mingw32-ranlib libglad.a

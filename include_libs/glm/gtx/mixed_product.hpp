@@ -3,7 +3,7 @@
 ///
 /// @see core (dependence)
 ///
-/// @defgroup gtx_mixed_product GLM_GTX_mixed_product
+/// @defgroup gtx_mixed_product GLM_GTX_mixed_producte
 /// @ingroup gtx
 ///
 /// Include <glm/gtx/mixed_product.hpp> to use the features of this extension.
@@ -15,12 +15,12 @@
 // Dependency:
 #include "../glm.hpp"
 
-#ifndef GLM_ENABLE_EXPERIMENTAL
-#	error "GLM: GLM_GTX_mixed_product is an experimental extension and may change in the future. Use #define GLM_ENABLE_EXPERIMENTAL before including it, if you really want to use it."
-#endif
-
 #if GLM_MESSAGES == GLM_ENABLE && !defined(GLM_EXT_INCLUDED)
-#	pragma message("GLM: GLM_GTX_mixed_product extension included")
+#	ifndef GLM_ENABLE_EXPERIMENTAL
+#		pragma message("GLM: GLM_GTX_mixed_product is an experimental extension and may change in the future. Use #define GLM_ENABLE_EXPERIMENTAL before including it, if you really want to use it.")
+#	else
+#		pragma message("GLM: GLM_GTX_mixed_product extension included")
+#	endif
 #endif
 
 namespace glm

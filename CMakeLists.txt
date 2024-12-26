@@ -71,7 +71,7 @@ if(WIN32)
     add_library(assimp SHARED IMPORTED)
     set_target_properties(assimp PROPERTIES
         IMPORTED_IMPLIB "${LIB_DIR}/assimp/libassimp.a"
-        IMPORTED_LOCATION "${LIB_DIR}/assimp/assimp.dll"
+        #IMPORTED_LOCATION "${LIB_DIR}/assimp/assimp.dll"
     )
 
 include_directories(${ASSIMP_INCLUDE_DIRS})
@@ -87,6 +87,8 @@ include_directories(${ASSIMP_INCLUDE_DIRS})
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
         ${INCLUDE_DIR}
         ${INCLUDE_DIR}/mesh
+        ${CMAKE_SOURCE_DIR}/include_libs/windows
+        ${CMAKE_SOURCE_DIR}/include_libs/windows/assimp
         ${CMAKE_SOURCE_DIR}/include_libs/imgui
         ${CMAKE_SOURCE_DIR}/include_libs/imgui/backends
         ${CMAKE_SOURCE_DIR}/include_libs/imgui/misc/cpp

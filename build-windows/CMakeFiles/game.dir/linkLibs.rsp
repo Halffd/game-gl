@@ -1,0 +1,1 @@
+ libglad.a "/home/half/repos/game-gl/lib/libglfw3.a" "/home/half/repos/game-gl/lib/assimp/libassimp.a" -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 
