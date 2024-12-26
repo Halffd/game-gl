@@ -103,7 +103,13 @@ else()
     find_package(PkgConfig REQUIRED)
     cmake_policy(SET CMP0072 NEW)
     find_package(OpenGL REQUIRED)
-    find_package(imgui REQUIRED)
+
+    # Find the GLFW package
+    find_package(glfw3 REQUIRED)
+
+    # Find the Assimp package
+    find_package(assimp REQUIRED)
+    #find_package(imgui REQUIRED)
 
     # Required system packages
     pkg_check_modules(GLFW REQUIRED glfw3)
@@ -118,7 +124,6 @@ else()
         ${CMAKE_SOURCE_DIR}/imgui/backends
         ${CMAKE_SOURCE_DIR}/imgui/misc/cpp
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/include/mesh
     )
 
     # Linux linking
@@ -126,7 +131,7 @@ else()
         glad
         ${GLFW_LIBRARIES}
         ${ASSIMP_LIBRARIES}
-        imgui
+        #imgui
         OpenGL::GL
     )
 endif()
