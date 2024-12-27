@@ -65,17 +65,13 @@ if(WIN32)
         endif()
     endforeach()
     
-    # GLFW (local)
-    add_library(glfw SHARED IMPORTED)
-    set_target_properties(glfw PROPERTIES
-        IMPORTED_IMPLIB "${LIB_DIR}/libglfw3.a"
-        IMPORTED_LOCATION "${LIB_DIR}/glfw3.dll"
-    )
+    find_package(glfw3 REQUIRED)
 
     # Windows include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
         ${INCLUDE_DIR}
         ${INCLUDE_DIR}/mesh
+        ${GLFW_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include_libs
         ${CMAKE_SOURCE_DIR}/include_libs/GL
         ${CMAKE_SOURCE_DIR}/include_libs/windows  # Local Assimp headers
@@ -85,12 +81,6 @@ if(WIN32)
         ${CMAKE_SOURCE_DIR}/include_libs/imgui/misc/cpp
     )
 
-    # Copy DLLs to output directory
-    add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${LIB_DIR}/glfw3.dll"
-        $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>
-    )
     # Set up Assimp paths
     set(ASSIMP "${CMAKE_SOURCE_DIR}/lib/libassimp.dll.a")
 

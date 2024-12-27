@@ -2,6 +2,8 @@
 #define GAME_H
 #include "Level.h"
 #include "BallObject.h"
+#include <glm/glm.hpp>
+#include <tuple>
 
 // Represents the current state of the game
 enum GameState {
@@ -13,6 +15,13 @@ enum GameState {
 class Game
 {
 public:
+    enum Direction {
+        UP,
+        RIGHT,
+        DOWN,
+        LEFT
+    };    
+    typedef std::tuple<bool, Direction, glm::vec2> Collision;    
     std::vector<GameLevel> Levels;
     unsigned int           Level;
 
@@ -29,9 +38,13 @@ public:
     void ProcessInput(float dt);
     void Update(float dt);
     void Render();
-    void Collision();
+    void ResetPlayer();
+    void ResetLevel();
+    Direction VectorDirection(glm::vec2 target);
+    void Collisions();
     bool CheckCollision(GameObject &one, GameObject &two);
-    bool CheckCollision(BallObject &one, GameObject &two);
+    Collision CheckCollision(BallObject &one, GameObject &two);
+    
 };
 
 
