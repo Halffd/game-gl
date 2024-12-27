@@ -56,7 +56,8 @@ if(WIN32)
     # Windows: Use local files
     set(LIB_DIR "${CMAKE_SOURCE_DIR}/lib")
     set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
-
+	add_link_options(-static -static-libgcc -static-libstdc++)
+	
     # Check required directories
     foreach(REQUIRED_DIR IN ITEMS ${LIB_DIR} ${INCLUDE_DIR})
         if(NOT EXISTS ${REQUIRED_DIR})
@@ -111,6 +112,7 @@ if(WIN32)
     )
 else()
     # Linux: Use system packages
+    
     find_package(PkgConfig REQUIRED)
     cmake_policy(SET CMP0072 NEW)
     find_package(OpenGL REQUIRED)

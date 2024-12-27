@@ -19,7 +19,7 @@
 #include <glm/gtc/random.hpp> // for glm::linearRand
 
 #include "setup.h"
-
+#include "types.h"
 #include "vertex.h"
 #include "Camera.hpp"
 #include "ResourceManager.h"
@@ -826,7 +826,7 @@ int main(int argc, char *argv[])
         toLowerCase(argv[2]);
         gameTypeStr = argv[2];
     }
-
+    
     switch (gameType)
     {
     case GAME2D:
