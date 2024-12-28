@@ -15,10 +15,6 @@ enum GameState {
 
 class Game
 {
-    b2Vec2 gravity;
-    b2World world;
-    b2Body* groundBody;
-    b2Body* dynamicBody;
 public:
     enum Direction {
         UP,
@@ -50,6 +46,14 @@ public:
     bool CheckCollision(GameObject &one, GameObject &two);
     Collision CheckCollision(BallObject &one, GameObject &two);
     
+private:
+    double lastTime;
+    int frameCount;
+    float fps;
+    b2Vec2 gravity;
+    b2World world;
+    b2Body* groundBody;
+    b2Body* dynamicBody;
 };
 
 

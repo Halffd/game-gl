@@ -11,6 +11,9 @@
 #include <iostream>
 #include "../Gui.h"
 #include "../GameMode.h"
+#include <irrKlang.h>
+
+using namespace irrklang;
 
 GameType mode = GAME2D;
 SpriteRenderer  *Renderer;
@@ -29,24 +32,31 @@ const float BALL_RADIUS = 12.5f;
 
 BallObject     *Ball; 
 
-Game::Game(unsigned int width, unsigned int height)
+// Game.cpp
+Game::Game(unsigned int width, unsigned int height) 
+    : State(GAME_ACTIVE), 
+      Keys(), 
+      Width(width), 
+      Height(height),
+      world(b2Vec2(0.0f, -10.0f))  // Initialize world with gravity vector
 {
-    this->Width = width;
-    this->Height = height;
-
+    // Create ground body
     b2BodyDef groundBodyDef;
     groundBodyDef.position.Set(0.0f, -10.0f);
     groundBody = world.CreateBody(&groundBodyDef);
 
+    // Setup ground box
     b2PolygonShape groundBox;
     groundBox.SetAsBox(50.0f, 10.0f);
     groundBody->CreateFixture(&groundBox, 0.0f);
 
+    // Create dynamic body
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
     bodyDef.position.Set(0.0f, 4.0f);
     dynamicBody = world.CreateBody(&bodyDef);
 
+    // Setup dynamic box
     b2PolygonShape dynamicBox;
     dynamicBox.SetAsBox(1.0f, 1.0f);
     b2FixtureDef fixtureDef;
@@ -55,12 +65,17 @@ Game::Game(unsigned int width, unsigned int height)
     fixtureDef.friction = 0.3f;
     dynamicBody->CreateFixture(&fixtureDef);
 }
+
 Game::~Game() {
     delete Renderer;
     delete Renderer2;
 }
 void Game::Init()
 {
+    // Timing variables
+    lastTime = glfwGetTime();
+    frameCount = 0;
+    fps = 0.0f;
     // load shaders
     ResourceManager::LoadShader("sprite/vertex.glsl", "sprite/fragment.glsl", nullptr, "sprite");
     // configure shaders
@@ -138,11 +153,50 @@ void Game::Init()
     this->Levels.push_back(three);
     this->Levels.push_back(four);
     this->Level = 0;
+    ISoundEngine* engine = createIrrKlangDevice();
+    if (!engine) {
+        // Error handling if the engine could not be created
+        return;
+    }
+
+    // Play a 440 Hz beep
+    engine->play2D((ResourceManager::root + "/audio/beep440.wav").c_str()); // Play the sound in a non-blocking way
+
+    // Keep the application running to allow the sound to play
+    // You can use a simple loop or sleep for a short duration
+//    engine->play2D("audio/beep440.wav", false); // Play the sound in a non-blocking way
+    //while (engine->getSoundCount() > 0) {
+        // Wait until the sound is finished playing
+    //}
+
+    // Clean up
+    //engine->drop(); // Delete the sound engine
 }
 
 void Game::Render()
 {
     Gui::Start();
+ // Calculate FPS
+    double currentTime = glfwGetTime();
+    frameCount++;
+    if (currentTime - lastTime >= 1.0) { // Update every second
+        fps = frameCount / (currentTime - lastTime);
+        frameCount = 0;
+        lastTime = currentTime;
+    }
+
+     // Display FPS text at the top left
+    ImGui::SetNextWindowBgAlpha(0.0f); // Make background transparent
+    ImGui::Begin("FPS Window", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    ImGui::SetCursorPos(ImVec2(10, 10)); // Position the text
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f)); // Yellow color
+    //ImGui::PushFont(io.Fonts->Fonts[0]); // Use the default font
+    ImGui::Text("FPS: %.1f", fps);
+    //ImGui::PopFont();
+
+    ImGui::PopStyleColor();
+    ImGui::End();
+    
     if(mode == PLANE){
         float middleX = (float) this->Width / 2.0f;
         float middleY = (float) this->Height / 2.0f;

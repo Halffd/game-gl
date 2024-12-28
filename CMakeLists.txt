@@ -51,11 +51,10 @@ set(IMGUI_FILES
 )
 target_sources(${EXECUTABLE_NAME} PRIVATE ${IMGUI_FILES})
 find_package(glfw3 REQUIRED)
-find_package(box2d REQUIRED)
 target_include_directories(${EXECUTABLE_NAME} PRIVATE
     ${GLFW_INCLUDE_DIRS}
-    ${BOX2D_INCLUDE_DIRS}
 )
+
 # Platform-specific settings
 if(WIN32)
     # Windows: Use local files
@@ -102,6 +101,22 @@ if(WIN32)
         glad
         assimp
     )
+    set(BOX2D_LIB "${CMAKE_SOURCE_DIR}/lib/libbox2d.a") # Adjust based on your structure
+
+    set(IRRKLANG_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/lib/irrKlang/include") # Adjust the path if needed
+    set(IRRKLANG_LIB_DIR "${CMAKE_SOURCE_DIR}/lib/irrKlang/lib/Winx64-visualStudio") # Adjust based on your structure
+    set(IRRKLANG_LIB "${IRRKLANG_LIB_DIR}/irrKlang.lib") # Static or dynamic library based on your choice
+
+    # Check if the required files exist
+    if(NOT EXISTS ${IRRKLANG_LIB})
+        message(FATAL_ERROR "irrKlang library not found at: ${IRRKLANG_LIB}")
+    endif()
+
+    # Include irrKlang directories
+    target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRKLANG_INCLUDE_DIR})
+    
+    # Link irrKlang
+    target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${IRRKLANG_LIB} ${BOX2D_LIB})
 else()
     # Linux: Use system packages
     
@@ -110,9 +125,11 @@ else()
     find_package(OpenGL REQUIRED)
     find_package(assimp REQUIRED)
 
+    find_package(box2d REQUIRED)
     # Linux include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
         ${OPENGL_INCLUDE_DIR}
+        ${BOX2D_INCLUDE_DIRS}
         ${GLFW_INCLUDE_DIRS}
         ${ASSIMP_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include
@@ -124,15 +141,31 @@ else()
         ${CMAKE_SOURCE_DIR}/include_libs/imgui/misc/cpp
     )
 
+    # Linux specific settings for irrKlang
+    set(IRRKLANG_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/lib/irrKlang/include") # Adjust the path if needed
+    set(IRRKLANG_LIB_DIR "${CMAKE_SOURCE_DIR}/lib/irrKlang/bin/linux-gcc-64") # Adjust based on your structure
+    set(IRRKLANG_LIB "${IRRKLANG_LIB_DIR}/libIrrKlang.so") # Dynamic library for Linux
+
+    # Check if the required files exist
+    if(NOT EXISTS ${IRRKLANG_LIB})
+        message(FATAL_ERROR "irrKlang library not found at: ${IRRKLANG_LIB}")
+    endif()
+
+    # Include irrKlang directories
+    target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRKLANG_INCLUDE_DIR})
+
+    # Link irrKlang
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
         ${OPENGL_LIBRARIES}
         ${ASSIMP_LIBRARIES}
+        ${IRRKLANG_LIB}
     )
 endif()
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE
     glfw
     assimp
+    box2d
 )
 # Common compiler warnings
 if(ENABLE_WARNINGS)

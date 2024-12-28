@@ -21,6 +21,9 @@ void Gui::Init(GLFWwindow *window){
     // Setup ImGui style
     ImGui::StyleColorsDark();
 
+    // Scale the entire GUI (default is 1.0f)
+    io.FontGlobalScale = 2.0f; // Scale text and UI elements by 2x
+
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130"); // Adjust according to your OpenGL version
