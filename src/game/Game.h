@@ -1,7 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 #include "Level.h"
-#include "BallObject.h"
+#include "CircleObject.h"
 #include <glm/glm.hpp>
 #include <tuple>
 #include "irrKlang/irrKlang.h"
@@ -16,14 +16,7 @@ enum GameState {
 class Game
 {
 public:
-    enum Direction {
-        UP,
-        RIGHT,
-        DOWN,
-        LEFT
-    };    
-    typedef std::tuple<bool, Direction, glm::vec2> Collision;    
-    std::vector<GameLevel> Levels;
+    std::vector<Level> Levels;
     unsigned int           Level;
 
     // game state
@@ -43,10 +36,6 @@ public:
     void Render();
     void ResetPlayer();
     void ResetLevel();
-    Direction VectorDirection(glm::vec2 target);
-    void Collisions();
-    bool CheckCollision(GameObject &one, GameObject &two);
-    Collision CheckCollision(BallObject &one, GameObject &two);
     
 private:
     double lastTime;

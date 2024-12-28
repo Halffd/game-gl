@@ -5,14 +5,14 @@
 #include <iostream>
 
 
-void GameLevel::Load(const char *file, unsigned int levelWidth, unsigned int levelHeight)
+void Level::Load(const char *file, unsigned int levelWidth, unsigned int levelHeight)
 {
     // clear old data
     this->Bricks.clear();
     // load from file
     unsigned int tileCode;
     const char* path = ResourceManager::GetPath(std::string(file));
-    GameLevel level;
+    Level level;
     std::string line;
     std::ifstream fstream(path);
     std::vector<std::vector<unsigned int>> tileData;
@@ -31,14 +31,14 @@ void GameLevel::Load(const char *file, unsigned int levelWidth, unsigned int lev
     }
 }
 
-void GameLevel::Draw(SpriteRenderer &renderer)
+void Level::Draw(SpriteRenderer &renderer)
 {
     for (GameObject &tile : this->Bricks)
         if (!tile.Destroyed)
             tile.Draw(renderer);
 }
 
-bool GameLevel::IsCompleted()
+bool Level::IsCompleted()
 {
     for (GameObject &tile : this->Bricks)
         if (!tile.IsSolid && !tile.Destroyed)
@@ -46,7 +46,7 @@ bool GameLevel::IsCompleted()
     return true;
 }
 
-void GameLevel::init(std::vector<std::vector<unsigned int>> tileData, unsigned int levelWidth, unsigned int levelHeight)
+void Level::init(std::vector<std::vector<unsigned int>> tileData, unsigned int levelWidth, unsigned int levelHeight)
 {
     // calculate dimensions
     unsigned int height = tileData.size();

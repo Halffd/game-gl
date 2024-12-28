@@ -4,8 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
-#include "../Texture2D.h"
-#include "SpriteRenderer.h"
+#include "render/SpriteRenderer.h"
 
 
 // Container object for holding all state relevant for a single

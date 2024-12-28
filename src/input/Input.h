@@ -1,0 +1,77 @@
+#include "game/Game.h"
+
+bool cursorEnabled = true;
+
+bool toggleKey(int key, bool &toggleState)
+{
+    bool keyCurrentlyPressed = glfwGetKey(glfwGetCurrentContext(), key) == GLFW_PRESS;
+
+    if (!keyWasPressed[key] && keyCurrentlyPressed)
+    {
+        // Key was just pressed
+        toggleState = !toggleState; // Toggle the state
+        keyWasPressed[key] = true;  // Set the flag for this key
+        return true;                // Indicate that the state was toggled
+    }
+    else if (keyWasPressed[key] && !keyCurrentlyPressed)
+    {
+        // Key was just released
+        keyWasPressed[key] = false; // Reset the flag for this key
+    }
+
+    return false; // Indicate that the state was not toggled
+}
+void toggleCursor(GLFWwindow *window)
+{
+    static bool alt = cursorEnabled;
+    if (toggleKey(GLFW_KEY_LEFT_ALT, alt))
+    {
+        cursorEnabled = !cursorEnabled; // Toggle the cursor state
+        glfwSetInputMode(window, GLFW_CURSOR, cursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+    }
+}
+void lineMode(){
+    static bool isLineMode = false; // Track the current polygon mode
+
+    static bool spacePressed = false;
+    if (toggleKey(GLFW_KEY_SPACE, spacePressed))
+    {
+        // Toggle polygon mode only once after the space key is pressed
+        isLineMode = !isLineMode;
+        glPolygonMode(GL_FRONT_AND_BACK, isLineMode ? GL_LINE : GL_FILL);
+    }
+}
+void debugToggle(GLFWwindow *window){
+    static bool debugToggled = debug;
+    if (toggleKey(window, debugToggled))
+    {
+        debug = !debug;
+    }
+}
+void pauseKey(GLFWwindow *window){
+    static bool graveAccentPressed = false; // Flag to track if the key is pressed
+    if (!graveAccentPressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS)
+    {
+        // Key was just pressed
+        isPaused = !isPaused;
+        if (isPaused)
+        {
+            lastTime = glfwGetTime();
+            std::cout << "Program paused. " << lastTime << std::endl;
+        }
+        else
+        {
+            std::cout << "Program resumed." << std::endl;
+        }
+        graveAccentPressed = true; // Set the flag
+    }
+    else if (graveAccentPressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) != GLFW_PRESS)
+    {
+        // Key was just released
+        graveAccentPressed = false; // Reset the flag
+    }
+}
+void exitKey(GLFWwindow *window){
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, 1);
+}

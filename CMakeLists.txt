@@ -51,6 +51,15 @@ set(IMGUI_FILES
 )
 target_sources(${EXECUTABLE_NAME} PRIVATE ${IMGUI_FILES})
 
+target_include_directories(${EXECUTABLE_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include_libs
+    ${CMAKE_SOURCE_DIR}/include_libs/GL
+    ${CMAKE_SOURCE_DIR}/include_libs/imgui
+    ${CMAKE_SOURCE_DIR}/include_libs/imgui/backends
+    ${CMAKE_SOURCE_DIR}/include_libs/imgui/misc/cpp
+    ${CMAKE_SOURCE_DIR}/src
+)
 # Platform-specific settings
 if(WIN32)
     # Windows: Use local files
@@ -67,47 +76,16 @@ if(WIN32)
 
     # Windows include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
-        ${INCLUDE_DIR}
-        ${INCLUDE_DIR}/mesh
-        ${CMAKE_SOURCE_DIR}/include_libs
-        ${CMAKE_SOURCE_DIR}/include_libs/GL
-        ${CMAKE_SOURCE_DIR}/include_libs/windows  # Local Assimp headers
-        ${CMAKE_SOURCE_DIR}/include_libs/windows/assimp  # Local Assimp headers
-        ${CMAKE_SOURCE_DIR}/include_libs/imgui
-        ${CMAKE_SOURCE_DIR}/include_libs/imgui/backends
-        ${CMAKE_SOURCE_DIR}/include_libs/imgui/misc/cpp
+        ${CMAKE_SOURCE_DIR}/include_libs/windows
     )
     add_library(glfw SHARED IMPORTED)
     set_target_properties(glfw PROPERTIES
             IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/glfw3.lib"
             IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
     )
-    if(MSVC)
-
-    # Set up Assimp as imported library
-    add_library(assimp STATIC IMPORTED)
-        set_target_properties(assimp PROPERTIES
-            IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/assimp/msvc/assimp-vc143-mt.lib"
-        )
-    else()
-    # Set up Assimp paths
-    set(ASSIMP_LIB "${CMAKE_SOURCE_DIR}/lib/libassimp.dll.a")
-
-    # Verify files exist
-    if(NOT EXISTS ${ASSIMP_LIB})
-        message(FATAL_ERROR "Assimp library not found at: ${ASSIMP_LIB}")
-    endif()
-
-    # Set up Assimp as imported library
-    add_library(assimp STATIC IMPORTED)
-    set_target_properties(assimp PROPERTIES
-        IMPORTED_LOCATION "${ASSIMP_LIB}"
-    )
-    endif()
-
+    
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
-        assimp
         glfw
     )
 
@@ -136,29 +114,20 @@ if(WIN32)
     add_custom_command(TARGET game POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_SOURCE_DIR}/lib/glfw3.dll" $<TARGET_FILE_DIR:game>)
-
-    add_custom_command(TARGET game POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/lib/assimp/msvc/assimp-vc143-mt.dll" $<TARGET_FILE_DIR:game>)
 else()
     # Linux: Use system packages
     
     find_package(PkgConfig REQUIRED)
     cmake_policy(SET CMP0072 NEW)
     find_package(OpenGL REQUIRED)
-    find_package(assimp REQUIRED)
-    find_package(Freetype REQUIRED)
+    #find_package(Freetype REQUIRED)
     find_package(glfw3 REQUIRED)
 
     # Linux include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
         ${OPENGL_INCLUDE_DIR}
         ${GLFW_INCLUDE_DIRS}
-        ${FREETYPE_INCLUDE_DIRS}
-        ${ASSIMP_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/include/mesh
-        ${CMAKE_SOURCE_DIR}/include_libs
+        #${FREETYPE_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include_libs/GL
         ${CMAKE_SOURCE_DIR}/include_libs/imgui
         ${CMAKE_SOURCE_DIR}/include_libs/imgui/backends
@@ -183,8 +152,7 @@ else()
         glad
         glfw
         ${OPENGL_LIBRARIES}
-        ${FREETYPE_LIBRARIES}
-        ${ASSIMP_LIBRARIES}
+        #${FREETYPE_LIBRARIES}
         ${IRRKLANG_LIB}
     )
 endif()
@@ -197,14 +165,6 @@ if(ENABLE_WARNINGS)
         target_compile_options(${EXECUTABLE_NAME} PRIVATE -Wall -Wextra -Wpedantic)
     endif()
 endif()
-
-# Configure root directory
-configure_file(
-    ${CMAKE_SOURCE_DIR}/configuration/root_directory.h.in 
-    ${CMAKE_BINARY_DIR}/configuration/root_directory.h
-)
-target_include_directories(${EXECUTABLE_NAME} PRIVATE ${CMAKE_BINARY_DIR}/configuration)
-
 
 # Define the directories to copy
 set(DIRECTORIES_TO_COPY

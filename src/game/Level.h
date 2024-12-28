@@ -1,15 +1,15 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 #include "GameObject.h"
-#include "../ResourceManager.h"
+#include "asset/ResourceManager.h"
 
-class GameLevel
+class Level
 {
 public:
     // level state
     std::vector<GameObject> Bricks;
     // constructor
-    GameLevel() { }
+    Level() { }
     // loads level from file
     void Load(const char *file, unsigned int levelWidth, unsigned int levelHeight);
     // render level
