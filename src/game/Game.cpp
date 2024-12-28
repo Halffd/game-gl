@@ -3,7 +3,7 @@
 
 #include "Game.h"
 #include "asset/ResourceManager.h"
-#include "SpriteRenderer.h"
+#include "render/SpriteRenderer.h"
 #include "GameObject.h"
 #include "CircleObject.h"
 #include "util/Util.h"
@@ -40,7 +40,6 @@ Game::Game(unsigned int width, unsigned int height)
 }
 Game::~Game() {
     delete Renderer;
-    delete Renderer2;
 }
 void Game::Init()
 {

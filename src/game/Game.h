@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <tuple>
 #include "irrKlang/irrKlang.h"
+#include <memory>
 
 // Represents the current state of the game
 enum GameState {
