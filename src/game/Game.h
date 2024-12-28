@@ -25,7 +25,12 @@ public:
     bool         Keys[1024];
     unsigned int Width, Height;
 
-    irrklang::ISoundEngine* audio;
+    std::unique_ptr<SpriteRenderer> Renderer = nullptr;
+    std::unique_ptr<GameObject> Player = nullptr;
+    std::unique_ptr<Collider> Collision = nullptr;
+    std::unique_ptr<ParticleGenerator> Particles = nullptr;
+    std::unique_ptr<irrklang::ISoundEngine> audio = nullptr;
+
     // constructor/destructor
     Game(unsigned int width, unsigned int height);
     ~Game();

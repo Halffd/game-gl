@@ -15,31 +15,27 @@
 #include "effects/Particle.h"
 #include "Collider.h"
 
-SpriteRenderer  *Renderer;
-// SpriteRenderer  *Renderer2;
 // Initial size of the player paddle
 const glm::vec2 PLAYER_SIZE(200.0f, 40.0f);
 // Initial velocity of the player paddle
 const float PLAYER_VELOCITY(500.0f);
-
-GameObject      *Player;
 
 // Initial velocity of the Ball
 const glm::vec2 INITIAL_BALL_VELOCITY(100.0f, -350.0f);
 // Radius of the ball object
 const float BALL_RADIUS = 25.0f;
 
-ParticleGenerator   *Particles; 
-
 Game::Game(unsigned int width, unsigned int height) 
     : State(GAME_ACTIVE), 
-      Width(width), 
-      Height(height)
+    Width(width), 
+    Height(height)
 {
-
+    Renderer = std::make_unique<SpriteRenderer>();
+    Collision = std::make_unique<Collider>();
+    audio = std::unique_ptr<irrklang::ISoundEngine>(irrklang::createIrrKlangDevice());
 }
 Game::~Game() {
-    delete Renderer;
+
 }
 void Game::Init()
 {
@@ -70,18 +66,6 @@ void Game::Init()
         1.0f, 1.0f, 1.0f, 1.0f,
         1.0f, 0.0f, 1.0f, 0.0f
     };
-    // Define triangle vertices
-    const std::vector<float> verticesTriangle = {
-        // pos        // tex
-        0.5f,  0.5f,  0.5f, 1.0f,  // Top vertex
-        0.0f,  0.0f,  0.0f, 0.0f,  // Bottom left vertex
-        1.0f, 0.0f,  1.0f, 0.0f   // Bottom right vertex
-    };
-
-    // Create SpriteRenderers
-    Renderer = new SpriteRenderer(ResourceManager::GetShader("sprite"), vertices);
-    // Renderer2 = new SpriteRenderer(ResourceManager::GetShader("sprite"), verticesTriangle);
-
     // load textures
     ResourceManager::LoadTexture2D("awesomeface.png", "face");
     ResourceManager::LoadTexture2D("bookshelf.jpg", "bookshelf");
@@ -106,7 +90,7 @@ void Game::Init()
     ResourceManager::LoadTexture2D("bg/wallhaven-qz7okl.png", "bg1");
     ResourceManager::LoadTexture2D("glasspaddle2_1.png", "paddle");
     ResourceManager::LoadTexture2D("particle.png",  "particle"); 
-    Particles = new ParticleGenerator(
+    Particles = std::make_unique<ParticleGenerator>(
         ResourceManager::GetShader("particle"), 
         ResourceManager::GetTexture2D("particle"), 
         500
@@ -116,7 +100,10 @@ void Game::Init()
         this->Width / 2.0f - PLAYER_SIZE.x / 2.0f, 
         this->Height - PLAYER_SIZE.y
     );
-    Player = new GameObject(playerPos, PLAYER_SIZE, ResourceManager::GetTexture2D("paddle"));
+    Player = std::make_unique<GameObject>(
+        playerPos, PLAYER_SIZE, 
+        ResourceManager::GetTexture2D("paddle")
+    );
 
     // load levels
     Level one; 
@@ -132,12 +119,7 @@ void Game::Init()
     this->Levels.push_back(three);
     this->Levels.push_back(four);
     this->Level = 0;
-    audio = irrklang::createIrrKlangDevice();
-    if (!audio) {
-        // Error handling if the engine could not be created
-        return;
-    }
-
+    
     // Play a 440 Hz beep
     audio->play2D((ResourceManager::root + "/audio/breakout.wav").c_str(), true); // Play the sound in a non-blocking way
 
