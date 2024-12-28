@@ -11,10 +11,8 @@
 #include <iostream>
 #include "../Gui.h"
 #include "../GameMode.h"
-#include <irrKlang.h>
-
-using namespace irrklang;
-
+#include "Particle.h"
+#include "irrKlang/irrKlang.h"
 GameType mode = GAME2D;
 SpriteRenderer  *Renderer;
 SpriteRenderer  *Renderer2;
@@ -31,38 +29,14 @@ const glm::vec2 INITIAL_BALL_VELOCITY(100.0f, -350.0f);
 const float BALL_RADIUS = 12.5f;
 
 BallObject     *Ball; 
+ParticleGenerator   *Particles; 
 
 Game::Game(unsigned int width, unsigned int height) 
     : State(GAME_ACTIVE), 
-      Keys(), 
       Width(width), 
-      Height(height),
-      world(b2Vec2(0.0f, -10.0f))  // Initialize world with gravity vector
+      Height(height)
 {
-    // Create ground body
-    b2BodyDef groundBodyDef;
-    groundBodyDef.position.Set(0.0f, 0.0f); // Set to 0,0 for ground level
-    groundBody = world.CreateBody(&groundBodyDef);
 
-    // Setup ground box
-    b2PolygonShape groundBox;
-    groundBox.SetAsBox(50.0f, 10.0f); // Width and height for ground
-    groundBody->CreateFixture(&groundBox, 0.0f);
-
-    // Create dynamic body
-    b2BodyDef bodyDef;
-    bodyDef.type = b2_dynamicBody;
-    bodyDef.position.Set(0.0f, 4.0f);
-    dynamicBody = world.CreateBody(&bodyDef);
-
-    // Setup dynamic box
-    b2PolygonShape dynamicBox;
-    dynamicBox.SetAsBox(1.0f, 1.0f);
-    b2FixtureDef fixtureDef;
-    fixtureDef.shape = &dynamicBox;
-    fixtureDef.density = 1.0f;
-    fixtureDef.friction = 0.3f;
-    dynamicBody->CreateFixture(&fixtureDef);
 }
 Game::~Game() {
     delete Renderer;
@@ -76,6 +50,8 @@ void Game::Init()
     fps = 0.0f;
     // load shaders
     ResourceManager::LoadShader("sprite/vertex.glsl", "sprite/fragment.glsl", nullptr, "sprite");
+    ResourceManager::LoadShader("particle.vs", "particle.fs", nullptr, "particle");
+
     // configure shaders
     glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(this->Width),
         static_cast<float>(this->Height), 0.0f, -1.0f, 1.0f);
@@ -127,6 +103,13 @@ void Game::Init()
     ResourceManager::LoadTexture2D("bg/wallhaven-1p6dj9.jpg", "mountain");
     ResourceManager::LoadTexture2D("bg/wallhaven-qz7okl.png", "bg1");
     ResourceManager::LoadTexture2D("glasspaddle2_1.png", "paddle");
+    ResourceManager::LoadTexture2D("particle.png",  "particle"); 
+    Particles = new ParticleGenerator(
+        ResourceManager::GetShader("particle"), 
+        ResourceManager::GetTexture2D("particle"), 
+        500
+    );
+    
     glm::vec2 playerPos = glm::vec2(
         this->Width / 2.0f - PLAYER_SIZE.x / 2.0f, 
         this->Height - PLAYER_SIZE.y
@@ -151,7 +134,7 @@ void Game::Init()
     this->Levels.push_back(three);
     this->Levels.push_back(four);
     this->Level = 0;
-    ISoundEngine* engine = createIrrKlangDevice();
+    irrklang::ISoundEngine* engine = irrklang::createIrrKlangDevice();
     if (!engine) {
         // Error handling if the engine could not be created
         return;
@@ -232,6 +215,8 @@ void Game::Render()
             // draw level
             this->Levels[this->Level].Draw(*Renderer);
             Player->Draw(*Renderer);  
+            // draw particles	
+            Particles->Draw();
             Ball->Draw(*Renderer);
         }
     }
@@ -269,6 +254,8 @@ void Game::Update(float dt) {
     // Implementation here
     Ball->Move(dt, this->Width);
 
+    // update particles
+    Particles->Update(dt, *Ball, 2, glm::vec2(Ball->Radius / 2.0f));
     this->Collisions();
 
     if (Ball->Position.y >= this->Height) // did ball reach bottom edge?
@@ -276,29 +263,7 @@ void Game::Update(float dt) {
         this->ResetLevel();
         this->ResetPlayer();
     }
-    
-    // Update the physics world
-    float timeStep = 1.0f / 60.0f;
-    int32 velocityIterations = 6;
-    int32 positionIterations = 2;
-    
-    world.Step(timeStep, velocityIterations, positionIterations);
 
-    // Update ball position after physics step
-    b2Vec2 position = dynamicBody->GetPosition();
-    Ball->Position = glm::vec2(position.x, position.y); // Sync Ball position with Box2D
-
-    // Handle Ball movement
-    Ball->Move(dt, this->Width);
-
-    // Handle collisions
-    this->Collisions();
-
-    // Reset level if ball falls off screen
-    if (Ball->Position.y >= this->Height) {
-        this->ResetLevel();
-        this->ResetPlayer();
-    }
 }
 
 

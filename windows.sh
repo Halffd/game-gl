@@ -1,5 +1,6 @@
 mkdir -p ./win
 cd win
 cmake clean .
-cmake ..
-cmake --build . > log.txt && ../bin/game.exe
+rm log.txt
+cmake .. > log.txt
+cmake --build . >> log.txt && ../bin/game.exe

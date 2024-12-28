@@ -4,7 +4,6 @@
 #include "BallObject.h"
 #include <glm/glm.hpp>
 #include <tuple>
-#include <box2d/box2d.h>
 
 // Represents the current state of the game
 enum GameState {
@@ -50,10 +49,6 @@ private:
     double lastTime;
     int frameCount;
     float fps;
-    b2Vec2 gravity;
-    b2World world;
-    b2Body* groundBody;
-    b2Body* dynamicBody;
 };
 
 

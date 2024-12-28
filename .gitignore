@@ -9,3 +9,8 @@ b
 .cache
 build-windows
 win
+assimp/build
+assimp/build-windows
+assimp/win
+imgui/build
+imgui/build-windows
