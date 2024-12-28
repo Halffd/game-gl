@@ -50,7 +50,12 @@ set(IMGUI_FILES
     include_libs/imgui/misc/cpp/imgui_stdlib.cpp
 )
 target_sources(${EXECUTABLE_NAME} PRIVATE ${IMGUI_FILES})
-
+find_package(glfw3 REQUIRED)
+find_package(box2d REQUIRED)
+target_include_directories(${EXECUTABLE_NAME} PRIVATE
+    ${GLFW_INCLUDE_DIRS}
+    ${BOX2D_INCLUDE_DIRS}
+)
 # Platform-specific settings
 if(WIN32)
     # Windows: Use local files
@@ -65,8 +70,6 @@ if(WIN32)
         endif()
     endforeach()
     
-    find_package(glfw3 REQUIRED)
-
     # Windows include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
         ${INCLUDE_DIR}
@@ -97,7 +100,6 @@ if(WIN32)
 
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
-        glfw
         assimp
     )
 else()
@@ -106,7 +108,6 @@ else()
     find_package(PkgConfig REQUIRED)
     cmake_policy(SET CMP0072 NEW)
     find_package(OpenGL REQUIRED)
-    find_package(glfw3 REQUIRED)
     find_package(assimp REQUIRED)
 
     # Linux include directories
@@ -125,12 +126,14 @@ else()
 
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
-        glfw
         ${OPENGL_LIBRARIES}
         ${ASSIMP_LIBRARIES}
     )
 endif()
-
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE
+    glfw
+    assimp
+)
 # Common compiler warnings
 if(ENABLE_WARNINGS)
     if(MSVC)

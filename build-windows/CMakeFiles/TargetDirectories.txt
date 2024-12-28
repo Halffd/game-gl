@@ -1,4 +1,0 @@
-/home/half/repos/game-gl/build-windows/CMakeFiles/glad.dir
-/home/half/repos/game-gl/build-windows/CMakeFiles/game.dir
-/home/half/repos/game-gl/build-windows/CMakeFiles/edit_cache.dir
-/home/half/repos/game-gl/build-windows/CMakeFiles/rebuild_cache.dir

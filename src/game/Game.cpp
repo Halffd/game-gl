@@ -26,13 +26,34 @@ GameObject      *Player;
 const glm::vec2 INITIAL_BALL_VELOCITY(100.0f, -350.0f);
 // Radius of the ball object
 const float BALL_RADIUS = 12.5f;
-  
+
 BallObject     *Ball; 
 
 Game::Game(unsigned int width, unsigned int height)
 {
     this->Width = width;
     this->Height = height;
+
+    b2BodyDef groundBodyDef;
+    groundBodyDef.position.Set(0.0f, -10.0f);
+    groundBody = world.CreateBody(&groundBodyDef);
+
+    b2PolygonShape groundBox;
+    groundBox.SetAsBox(50.0f, 10.0f);
+    groundBody->CreateFixture(&groundBox, 0.0f);
+
+    b2BodyDef bodyDef;
+    bodyDef.type = b2_dynamicBody;
+    bodyDef.position.Set(0.0f, 4.0f);
+    dynamicBody = world.CreateBody(&bodyDef);
+
+    b2PolygonShape dynamicBox;
+    dynamicBox.SetAsBox(1.0f, 1.0f);
+    b2FixtureDef fixtureDef;
+    fixtureDef.shape = &dynamicBox;
+    fixtureDef.density = 1.0f;
+    fixtureDef.friction = 0.3f;
+    dynamicBody->CreateFixture(&fixtureDef);
 }
 Game::~Game() {
     delete Renderer;
@@ -203,6 +224,16 @@ void Game::Update(float dt) {
         this->ResetLevel();
         this->ResetPlayer();
     }
+    
+    float timeStep = 1.0f / 60.0f;
+    int32 velocityIterations = 6;
+    int32 positionIterations = 2;
+    
+    world.Step(timeStep, velocityIterations, positionIterations);
+    
+    b2Vec2 position = dynamicBody->GetPosition();
+    float angle = dynamicBody->GetAngle();
+    printf("%4.2f %4.2f %4.2f\n", position.x, position.y, angle);
 }
 
 
