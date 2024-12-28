@@ -32,7 +32,6 @@ const float BALL_RADIUS = 12.5f;
 
 BallObject     *Ball; 
 
-// Game.cpp
 Game::Game(unsigned int width, unsigned int height) 
     : State(GAME_ACTIVE), 
       Keys(), 
@@ -42,12 +41,12 @@ Game::Game(unsigned int width, unsigned int height)
 {
     // Create ground body
     b2BodyDef groundBodyDef;
-    groundBodyDef.position.Set(0.0f, -10.0f);
+    groundBodyDef.position.Set(0.0f, 0.0f); // Set to 0,0 for ground level
     groundBody = world.CreateBody(&groundBodyDef);
 
     // Setup ground box
     b2PolygonShape groundBox;
-    groundBox.SetAsBox(50.0f, 10.0f);
+    groundBox.SetAsBox(50.0f, 10.0f); // Width and height for ground
     groundBody->CreateFixture(&groundBox, 0.0f);
 
     // Create dynamic body
@@ -65,7 +64,6 @@ Game::Game(unsigned int width, unsigned int height)
     fixtureDef.friction = 0.3f;
     dynamicBody->CreateFixture(&fixtureDef);
 }
-
 Game::~Game() {
     delete Renderer;
     delete Renderer2;
@@ -279,15 +277,28 @@ void Game::Update(float dt) {
         this->ResetPlayer();
     }
     
+    // Update the physics world
     float timeStep = 1.0f / 60.0f;
     int32 velocityIterations = 6;
     int32 positionIterations = 2;
     
     world.Step(timeStep, velocityIterations, positionIterations);
-    
+
+    // Update ball position after physics step
     b2Vec2 position = dynamicBody->GetPosition();
-    float angle = dynamicBody->GetAngle();
-    printf("%4.2f %4.2f %4.2f\n", position.x, position.y, angle);
+    Ball->Position = glm::vec2(position.x, position.y); // Sync Ball position with Box2D
+
+    // Handle Ball movement
+    Ball->Move(dt, this->Width);
+
+    // Handle collisions
+    this->Collisions();
+
+    // Reset level if ball falls off screen
+    if (Ball->Position.y >= this->Height) {
+        this->ResetLevel();
+        this->ResetPlayer();
+    }
 }
 
 
