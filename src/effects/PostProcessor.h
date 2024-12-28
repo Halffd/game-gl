@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
-#include "SpriteRenderer.h"
+#include "render/SpriteRenderer.h"
 
 // PostProcessor hosts all PostProcessing effects for the Breakout
 // Game. It renders the game on a textured quad after which one can

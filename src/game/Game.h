@@ -1,5 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
+#include "setup.h"
 #include "Level.h"
 #include "CircleObject.h"
 #include <glm/glm.hpp>
