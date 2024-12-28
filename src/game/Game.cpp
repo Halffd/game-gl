@@ -12,7 +12,6 @@
 #include "../Gui.h"
 #include "../GameMode.h"
 #include "Particle.h"
-#include "irrKlang/irrKlang.h"
 GameType mode = GAME2D;
 SpriteRenderer  *Renderer;
 SpriteRenderer  *Renderer2;
@@ -26,7 +25,7 @@ GameObject      *Player;
 // Initial velocity of the Ball
 const glm::vec2 INITIAL_BALL_VELOCITY(100.0f, -350.0f);
 // Radius of the ball object
-const float BALL_RADIUS = 12.5f;
+const float BALL_RADIUS = 25.0f;
 
 BallObject     *Ball; 
 ParticleGenerator   *Particles; 
@@ -57,6 +56,9 @@ void Game::Init()
         static_cast<float>(this->Height), 0.0f, -1.0f, 1.0f);
     ResourceManager::GetShader("sprite").Use().SetInteger("image", 0);
     ResourceManager::GetShader("sprite").SetMatrix4("projection", projection);
+
+    ResourceManager::GetShader("particle").Use().SetMatrix4("projection", projection);
+
     // set render-specific controls
     const std::vector<float>  vertices = {
         // pos      // tex
@@ -134,14 +136,14 @@ void Game::Init()
     this->Levels.push_back(three);
     this->Levels.push_back(four);
     this->Level = 0;
-    irrklang::ISoundEngine* engine = irrklang::createIrrKlangDevice();
-    if (!engine) {
+    audio = irrklang::createIrrKlangDevice();
+    if (!audio) {
         // Error handling if the engine could not be created
         return;
     }
 
     // Play a 440 Hz beep
-    engine->play2D((ResourceManager::root + "/audio/beep440.wav").c_str()); // Play the sound in a non-blocking way
+    audio->play2D((ResourceManager::root + "/audio/breakout.wav").c_str(), true); // Play the sound in a non-blocking way
 
     // Keep the application running to allow the sound to play
     // You can use a simple loop or sleep for a short duration
@@ -254,8 +256,6 @@ void Game::Update(float dt) {
     // Implementation here
     Ball->Move(dt, this->Width);
 
-    // update particles
-    Particles->Update(dt, *Ball, 2, glm::vec2(Ball->Radius / 2.0f));
     this->Collisions();
 
     if (Ball->Position.y >= this->Height) // did ball reach bottom edge?
@@ -263,6 +263,8 @@ void Game::Update(float dt) {
         this->ResetLevel();
         this->ResetPlayer();
     }
+    // update particles
+    Particles->Update(dt, *Ball, 4, glm::vec2(Ball->Radius / 2.0f));
 
 }
 
@@ -349,8 +351,12 @@ void Game::Collisions()
             if (std::get<0>(collision)) // if collision is true
             {
                 // destroy block if not solid
-                if (!box.IsSolid)
+                if (!box.IsSolid){
                     box.Destroyed = true;
+                    audio->play2D((ResourceManager::root + "/audio/solid.wav").c_str());
+                } else {
+                    audio->play2D((ResourceManager::root + "/audio/bleep.wav").c_str());
+                }
                 // collision resolution
                 Direction dir = std::get<1>(collision);
                 glm::vec2 diff_vector = std::get<2>(collision);

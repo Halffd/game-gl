@@ -6,6 +6,15 @@
 #include <vector>
 #include <filesystem>
 
+#ifdef _WIN32
+#include <windows.h>
+#include <libloaderapi.h>
+#elif defined(__linux__) || defined(__APPLE__)
+#include <unistd.h>
+#include <limits.h>
+#include <stdlib.h>
+#endif
+
 #include <glad/glad.h>
 
 #include "Texture1D.h"
@@ -60,6 +69,9 @@ public:
     static const char* GetShaderPath(const std::string& filename);
     static const char* GetTexturePath(const std::string& filename);
     static void LoadAllTexturesFromDirectory();
+    static std::string getExecutablePath();
+    static std::string getExecutableName();
+    static std::string getExecutableDir();
 
 private:
     ResourceManager() { }

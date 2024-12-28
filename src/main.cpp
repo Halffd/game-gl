@@ -799,6 +799,8 @@ int main(int argc, char *argv[])
     {
         root = "";
     }
+    root = ResourceManager::getExecutableDir(); 
+    cout << root << " / " << __FILE__ << endl;
     ResourceManager::root = root;
     logger.setDir(root);
     if (argc > 1)

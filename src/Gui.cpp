@@ -3,8 +3,22 @@
 //
 
 #include "Gui.h"
+
 void Gui::Init(GLFWwindow *window){
     // Setup ImGui context with docking and multi-window support
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft))
+    {
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+        return;
+    }
+
+    FT_Face face;
+    if (FT_New_Face(ft, "fonts/arial.ttf", 0, &face))
+    {
+        std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;  
+        //return;
+    }
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 

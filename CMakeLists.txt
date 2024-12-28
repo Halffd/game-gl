@@ -147,12 +147,14 @@ else()
     cmake_policy(SET CMP0072 NEW)
     find_package(OpenGL REQUIRED)
     find_package(assimp REQUIRED)
+    find_package(Freetype REQUIRED)
     find_package(glfw3 REQUIRED)
 
     # Linux include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
         ${OPENGL_INCLUDE_DIR}
         ${GLFW_INCLUDE_DIRS}
+        ${FREETYPE_INCLUDE_DIRS}
         ${ASSIMP_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/include/mesh
@@ -181,6 +183,7 @@ else()
         glad
         glfw
         ${OPENGL_LIBRARIES}
+        ${FREETYPE_LIBRARIES}
         ${ASSIMP_LIBRARIES}
         ${IRRKLANG_LIB}
     )
@@ -201,3 +204,21 @@ configure_file(
     ${CMAKE_BINARY_DIR}/configuration/root_directory.h
 )
 target_include_directories(${EXECUTABLE_NAME} PRIVATE ${CMAKE_BINARY_DIR}/configuration)
+
+
+# Define the directories to copy
+set(DIRECTORIES_TO_COPY
+    textures
+    levels
+    shaders
+    audio
+)
+
+# Create the bin directory if it doesn't exist
+set(BIN_DIR ${CMAKE_SOURCE_DIR}/bin)
+file(MAKE_DIRECTORY ${BIN_DIR})
+
+# Copy the directories to the bin directory
+foreach(DIR ${DIRECTORIES_TO_COPY})
+    file(COPY ${CMAKE_SOURCE_DIR}/${DIR} DESTINATION ${BIN_DIR})
+endforeach()

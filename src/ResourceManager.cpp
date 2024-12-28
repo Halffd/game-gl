@@ -262,3 +262,38 @@ Texture3D ResourceManager::loadTexture3DFromFile(const char *file, bool alpha,
     stbi_image_free(data);
     return texture;
 }
+
+std::string ResourceManager::getExecutablePath() {
+#ifdef _WIN32
+    char path[MAX_PATH];
+    GetModuleFileNameA(NULL, path, MAX_PATH);
+    return std::string(path);
+#elif defined(__linux__) || defined(__APPLE__)
+    char path[PATH_MAX];
+    ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
+    if (count == -1) {
+        return "Error retrieving path";
+    }
+    return std::string(path, count);
+#else
+    return "Unsupported platform";
+#endif
+}
+
+std::string ResourceManager::getExecutableName() {
+    std::string fullPath = getExecutablePath();
+    size_t lastSlash = fullPath.find_last_of("/\\");
+    return fullPath.substr(lastSlash + 1);
+}
+std::string ResourceManager::getExecutableDir() {
+    std::string fullPath = getExecutablePath();
+    size_t lastSlash = fullPath.find_last_of("/\\");
+    
+    // Ensure lastSlash is valid before using it in substr
+    if (lastSlash != std::string::npos) {
+        return fullPath.substr(0, lastSlash + 1); // Include the last slash
+    }
+    
+    // Return an empty string or handle the error if no slash was found
+    return ""; 
+}

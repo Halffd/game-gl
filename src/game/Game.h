@@ -4,6 +4,7 @@
 #include "BallObject.h"
 #include <glm/glm.hpp>
 #include <tuple>
+#include "irrKlang/irrKlang.h"
 
 // Represents the current state of the game
 enum GameState {
@@ -29,6 +30,8 @@ public:
     GameState    State;
     bool         Keys[1024];
     unsigned int Width, Height;
+
+    irrklang::ISoundEngine* audio;
     // constructor/destructor
     Game(unsigned int width, unsigned int height);
     ~Game();
