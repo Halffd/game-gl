@@ -7,7 +7,7 @@ const unsigned int SCREEN_HEIGHT = HEIGHT; // Example value
 GameMode gameMode = MENU;
 std::string gameTypeStr = "MainMenu"; // Default game type string
 bool debug = true;
-bool isPaused = false;
+Log o;
 Game NeuroJam(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 int main(int argc, char *argv[])
@@ -25,12 +25,12 @@ int main(int argc, char *argv[])
     std::string root;
     root = ResourceManager::getExecutableDir(); 
     if(argc > 2 && debug){
-        root = argv[2]
+        root = argv[2];
     }
-    o << root << " / " << __FILE__ << endl;
     ResourceManager::root = root;
     
-    logger.setDir(root);
+    o.setDir(root);
+    o << root << " / " << __FILE__ << "\n";
     
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

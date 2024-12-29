@@ -1,6 +1,3 @@
-//
-// Created by halff on 20/09/2024.
-//
 
 #ifndef MATH_H
 #define MATH_H
@@ -135,7 +132,7 @@ T arctanh(T x) {
 float clamp(float value, float min, float max) {
     return std::min(std::max(value, min), max);
 }
-float lerp(float a, float b, float f)
+float lerpF(float a, float b, float f)
 {
     return a + f * (b - a);
 }

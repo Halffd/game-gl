@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include "render/Shader.h"
 #include "asset/Texture2D.h"
-#include "util/Util.hpp"
+#include "util/Util.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <type_traits>

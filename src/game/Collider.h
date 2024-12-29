@@ -31,7 +31,7 @@ public:
      * @param player Reference to the player object
      * @param deltaTime Time elapsed since last frame
      */
-    void Update(std::shared_ptr<Player> player, float deltaTime);
+    void Update(std::unique_ptr<Player>& player, float deltaTime);
     
     /**
      * @brief Sets the current level's objects for collision checking
@@ -60,7 +60,7 @@ private:
      * @param player Player object to check collisions for
      * @param oldPosition Player's position before movement
      */
-    void HandleCollisions(std::shared_ptr<Player> player, const glm::vec2& oldPosition);
+    void HandleCollisions(std::unique_ptr<Player>& player, const glm::vec2& oldPosition);
 
     /**
      * @brief Checks for AABB collision between two objects
@@ -84,7 +84,7 @@ private:
      * @param wall Wall object collided with
      * @param oldPosition Player's position before collision
      */
-    void ResolveCollision(std::shared_ptr<Player> player, 
+    void ResolveCollision(std::unique_ptr<Player>& player, 
                          const GameObject& wall,
                          const glm::vec2& oldPosition);
 
@@ -93,7 +93,7 @@ private:
      * @param player Player attempting interaction
      * @param object Object being interacted with
      */
-    void HandleInteraction(std::shared_ptr<Player> player, 
+    void HandleInteraction(std::unique_ptr<Player>& player, 
                           const GameObject& object);
 };
 

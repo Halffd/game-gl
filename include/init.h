@@ -4,13 +4,13 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include "Game.h"
-#include "../Util.hpp"
-#include "../ResourceManager.h"
-#include "../GameMode.h"
-#include "Gui.h"
+#include "game/Game.h"
+#include "util/Util.h"
+#include "asset/ResourceManager.h"
+#include "gamemode.h"
+#include "ui/Gui.h"
 #include "setup.h"
-
+#include "util/Log.h"
 
 // The Width of the screen
 extern const unsigned int SCREEN_WIDTH;

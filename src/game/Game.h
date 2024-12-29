@@ -1,8 +1,11 @@
 #ifndef GAME_H
 #define GAME_H
 #include "setup.h"
-#include "Level.h"
+#include "Area.h"
 #include "CircleObject.h"
+#include "Collider.h"
+#include "Area.h"
+#include "effects/Particle.h"
 #include <glm/glm.hpp>
 #include <tuple>
 #include "irrKlang/irrKlang.h"
@@ -12,14 +15,13 @@
 enum GameState {
     GAME_ACTIVE,
     GAME_MENU,
+    GAME_PAUSED,
     GAME_WIN
 };
 
-class Game
-{
+class Game {
 public:
-    std::vector<Level> Levels;
-    unsigned int level;
+    std::shared_ptr<Area> currentArea;
 
     // game state
     GameState    State;
@@ -27,11 +29,13 @@ public:
     unsigned int Width, Height;
 
     std::unique_ptr<SpriteRenderer> Renderer = nullptr;
-    std::unique_ptr<GameObject> Player = nullptr;
+    std::unique_ptr<Player> player = nullptr;
     std::unique_ptr<Collider> Collision = nullptr;
+    std::shared_ptr<DialogueSystem> Dialogue = nullptr;
     std::unique_ptr<ParticleGenerator> Particles = nullptr;
     std::unique_ptr<irrklang::ISoundEngine> audio = nullptr;
-
+    unsigned int area; 
+    
     // constructor/destructor
     Game(unsigned int width, unsigned int height);
     ~Game();

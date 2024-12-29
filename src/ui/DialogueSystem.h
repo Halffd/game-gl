@@ -36,3 +36,4 @@ private:
     void RenderDialogueWindow();
     void UpdateTextReveal(float dt);
 };
+#endif

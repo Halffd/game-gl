@@ -71,6 +71,6 @@ private:
 };
 
 // Declare a global logger instance
-extern Log logger;
+extern Log o;
 
 #endif // LOG_H

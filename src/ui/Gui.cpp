@@ -1,7 +1,3 @@
-//
-// Created by halff on 25/09/2024.
-//
-
 #include "Gui.h"
 
 void Gui::Init(GLFWwindow *window){

@@ -46,3 +46,4 @@ private:
     void UpdateAnimation(float dt);
     void UpdateSpriteFrame();
 };
+#endif

@@ -131,17 +131,16 @@ Texture3D ResourceManager::GetTexture3D(std::string name)
 {
     return Textures3D[name];
 }
-// Implementation of GetTexture2DByIndex
-Texture2D *ResourceManager::GetTexture2DByIndex(size_t index)
+std::shared_ptr<Texture2D> ResourceManager::GetTexture2DByIndex(size_t index)
 {
-    static std::vector<Texture2D> textureList = ConvertMapToList(Textures2D);
+    static std::vector<std::shared_ptr<Texture2D>> textureList = ConvertMapToList(Textures2D);
 
     if (index >= textureList.size())
     {
         throw std::out_of_range("Index out of range");
     }
 
-    return &textureList[index]; // Safe because textureList persists
+    return textureList[index]; // Return the shared_ptr directly
 }
 
 void ResourceManager::LoadAllTexturesFromDirectory()
@@ -160,7 +159,7 @@ void ResourceManager::LoadAllTexturesFromDirectory()
 
             // Load texture and add to the map
             ResourceManager::LoadTexture2D(path.c_str(), filename);
-            logger << "Loaded texture: " << filename << " from path: " << path;
+            o << "Loaded texture: " << filename << " from path: " << path;
         }
     }
 }
@@ -212,7 +211,7 @@ Shader ResourceManager::loadShaderFromFile(const char *vShaderFile, const char *
     }
     catch (std::exception &e)
     {
-        logger << "ERROR::SHADER: Failed to read shader files";
+        o << "ERROR::SHADER: Failed to read shader files";
     }
     const char *vShaderCode = vertexCode.c_str();
     const char *fShaderCode = fragmentCode.c_str();

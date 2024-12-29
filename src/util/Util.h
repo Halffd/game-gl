@@ -22,8 +22,6 @@ void glCheckError(const char* file, int line);
 // Function to check if a string contains a substring
 int includes(const char *string, const char *substring);
 // Function to convert a map to a vector
-
-// Template function
 template <typename Key, typename Value>
 std::vector<Value> ConvertMapToList(const std::map<Key, Value>& inputMap) {
     std::vector<Value> valueList;
@@ -32,7 +30,7 @@ std::vector<Value> ConvertMapToList(const std::map<Key, Value>& inputMap) {
     for (const auto& pair : inputMap) {
         if constexpr (std::is_same_v<Value, std::shared_ptr<Texture2D>>) {
             if (pair.second) {
-                valueList.push_back(pair.second); // Dereference and copy the Texture2D
+                valueList.push_back(pair.second); // Copy the shared_ptr
             }
         } else {
             valueList.push_back(pair.second);
@@ -41,6 +39,7 @@ std::vector<Value> ConvertMapToList(const std::map<Key, Value>& inputMap) {
 
     return valueList;
 }
+
 // Function to convert a char to lowercase
 void lower(char *str)
 {

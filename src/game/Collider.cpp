@@ -12,7 +12,7 @@ Collider::Collider(std::shared_ptr<DialogueSystem> dialogueSystem)
     }
 }
 
-void Collider::Update(std::shared_ptr<Player> player, float deltaTime) {
+void Collider::Update(std::unique_ptr<Player>& player, float deltaTime) {
     if (!player) {
         return;
     }
@@ -40,7 +40,7 @@ void Collider::SetLevelObjects(
     levelInteractables = std::move(interactables);
 }
 
-void Collider::HandleCollisions(std::shared_ptr<Player> player, const glm::vec2& oldPosition) {
+void Collider::HandleCollisions(std::unique_ptr<Player>& player, const glm::vec2& oldPosition) {
     // Check collisions with walls
     for (const auto& wall : levelWalls) {
         if (wall && !wall->Destroyed && CheckCollision(*player, *wall)) {
@@ -75,7 +75,7 @@ bool Collider::CheckInteractionRange(const GameObject& player, const GameObject&
 }
 
 void Collider::ResolveCollision(
-    std::shared_ptr<Player> player,
+    std::unique_ptr<Player>& player,
     const GameObject& wall,
     const glm::vec2& oldPosition
 ) {
@@ -110,7 +110,7 @@ void Collider::ResolveCollision(
     }
 }
 
-void Collider::HandleInteraction(std::shared_ptr<Player> player, const GameObject& object) {
+void Collider::HandleInteraction(std::unique_ptr<Player>& player, const GameObject& object) {
     // Only handle interaction if cooldown is ready and interaction key is pressed
     if (interactionCooldown <= 0.0f && glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_E)) {
         // Get facing direction as vector

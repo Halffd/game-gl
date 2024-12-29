@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 
-#include "Util.hpp"
+#include "Util.h"
 
 void glCheckError(const char *file, int line)
 {
