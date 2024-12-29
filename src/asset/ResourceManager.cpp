@@ -36,7 +36,7 @@ const char *ResourceManager::GetShaderPath(const std::string &filename)
 }
 const char *ResourceManager::GetTexturePath(const std::string &filename)
 {
-    std::string path = (root.empty() ? "textures/" : root + "/textures/") + filename;
+    std::string path = (root + "textures/") + filename;
     return GetFullPath(path);
 }
 
@@ -96,7 +96,9 @@ Texture2D ResourceManager::LoadTexture2D(const char *file, std::string name, boo
     }
     auto ptr = std::make_shared<Texture2D>(loadTexture2DFromFile(file, alpha, sWrap, tWrap, minFilter, magFilter));
     Textures2D[file] = ptr;
-    Textures2D[name] = ptr;
+    if(file != name){
+        Textures2D[name] = ptr;
+    }
     return *ptr;
 }
 

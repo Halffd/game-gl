@@ -12,41 +12,52 @@ TilemapManager::TilemapManager(const std::string& texturePath, unsigned int tile
 void TilemapManager::LoadTilemap(const std::vector<std::vector<unsigned int>>& tileData, unsigned int levelWidth, unsigned int levelHeight) {
     tiles.clear();
 
-    float tileWidth = static_cast<float>(levelWidth) / tileData[0].size();
-    float tileHeight = static_cast<float>(levelHeight) / tileData.size();
+    // Calculate individual tile dimensions in world space
+    float tileWorldWidth = static_cast<float>(texture->Width);
+    float tileWorldHeight = static_cast<float>(texture->Height);
 
-    float texWidth = 1.0f / tilesAcross;
-    float texHeight = 1.0f / tilesDown;
+    // Calculate UV dimensions for a single tile in texture space
+    float tileUVWidth = 1.0f / static_cast<float>(tilesAcross);
+    float tileUVHeight = 1.0f / static_cast<float>(tilesDown);
 
-    for (unsigned int y = 0; y < tileData.size(); ++y) {
-        for (unsigned int x = 0; x < tileData[y].size(); ++x) {
-            unsigned int tileIndex = tileData[y][x];
+    for (unsigned int row = 0; row < tileData.size(); ++row) {
+        for (unsigned int col = 0; col < tileData[row].size(); ++col) {
+            unsigned int tileIndex = tileData[row][col];
+
             if (tileIndex == 0) continue; // Skip empty tiles
 
-            unsigned int texX = (tileIndex - 1) % tilesAcross;
-            unsigned int texY = (tileIndex - 1) / tilesAcross;
+            // Calculate texture coordinates (UV offset)
+            unsigned int texCol = (tileIndex - 1) % tilesAcross;
+            unsigned int texRow = (tileIndex - 1) / tilesAcross;
+
+            glm::vec2 tilePosition(col * tileWorldWidth, row * tileWorldHeight);
+            glm::vec2 tileSize(tileWorldWidth, tileWorldHeight);
+            glm::vec2 textureOffset(texCol * tileUVWidth, texRow * tileUVHeight);
+            glm::vec2 textureSize(tileUVWidth, tileUVHeight);
 
             Tile tile;
-            tile.Position = glm::vec2(x * tileWidth, y * tileHeight);
-            tile.Size = glm::vec2(tileWidth, tileHeight);
-            tile.TextureOffset = glm::vec2(texX * texWidth, texY * texHeight);
-            tile.TextureSize = glm::vec2(texWidth, texHeight);
-            tile.IsSolid = tileIndex == 1; // Mark solid tiles (customize as needed)
+            tile.Position = tilePosition;
+            tile.Size = tileSize;
+            tile.TileID = tileIndex; 
+            tile.TextureOffset = textureOffset;
+            tile.TextureSize = textureSize;
+            tile.IsSolid = (tileIndex == 1); // Mark solid tiles (customize as needed)
 
             tiles.push_back(tile);
         }
     }
 }
+
 void TilemapManager::Draw(SpriteRenderer& renderer) {
     for (const Tile& tile : tiles) {
         renderer.DrawSprite(
-            *texture, // Dereference the shared_ptr to get the Texture2D object
-            tile.Position,
-            tile.Size,
-            0.0f,
-            glm::vec3(1.0f), // Default color
-            tile.TextureOffset,
-            tile.TextureSize
+            *texture,                  // Texture to use
+            tile.Position,             // Position in world space
+            tile.Size,                 // Size of the tile
+            0.0f,                      // No rotation
+            glm::vec3(1.0f),           // Default color (white)
+            tile.TextureOffset,        // Texture UV offset
+            tile.TextureSize           // Texture UV size
         );
     }
 }

@@ -23,6 +23,7 @@ public:
         glm::vec2 Size;           ///< The size of the tile in the world.
         glm::vec2 TextureOffset;  ///< Texture UV offset.
         glm::vec2 TextureSize;    ///< Size of the texture region.
+        unsigned int TileID;
         bool IsSolid;             ///< Indicates if the tile is solid.
     };
 

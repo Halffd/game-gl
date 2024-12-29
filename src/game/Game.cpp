@@ -18,7 +18,7 @@
 #include "asset/TilemapManager.h"
 
 // Initial size of the player paddle
-const glm::vec2 PLAYER_SIZE(200.0f, 40.0f);
+const glm::vec2 PLAYER_SIZE(300.0f, 300.0f);
 // Initial velocity of the player paddle
 const float PLAYER_VELOCITY(500.0f);
 bool gameOver = false;
@@ -91,8 +91,8 @@ void Game::Init()
     );
 
     // Initialize the area manager
-    currentArea = std::make_shared<Area>(GAME);
-    currentArea->LoadTilemap("levels/main.lvl", this->Width, this->Height);
+    currentArea = std::make_shared<Area>(400, 600);
+    currentArea->LoadTilemap("levels/main.lvl", "tiles.png", 7, 7);
 
     audio->play2D((ResourceManager::root + "/audio/breakout.wav").c_str(), true);
 }
@@ -126,11 +126,34 @@ void Game::Render()
         player->Draw(*Renderer);
         Particles->Draw();
     } else if (State == GAME_PAUSED) {
-        Gui::Start();
         ImGui::Begin("Pause Menu");
         ImGui::Text("Game Paused");
         if (ImGui::Button("Resume")) State = GAME_ACTIVE;
-        if (ImGui::Button("Quit")) State = GAME_MENU;
+        if (ImGui::Button("Main Menu")) State = GAME_MENU;
+        if (ImGui::Button("Exit Game")) exit(0);
+        ImGui::End();
+    } else if (State == GAME_MENU){
+        ImGui::Begin("Main Menu");
+        ImGui::Text("Welcome to the Game!");
+        if (ImGui::Button("Start Game")) {
+            std::cout << "Game Start Selected" << std::endl;
+            State = GAME_ACTIVE;
+        }
+        if (ImGui::Button("Credits")) {
+            std::cout << "Credits Selected" << std::endl;
+            State = GAME_CREDITS;
+        }
+        if (ImGui::Button("Exit Game")) {
+            std::cout << "Quit" << std::endl;
+            exit(0);
+        }
+        ImGui::End();
+    } else if (State == GAME_CREDITS) {
+        ImGui::Begin("Credits");
+        ImGui::Text("Created by Half");
+        if (ImGui::Button("Back to Menu")) {
+            std::cout << "Returning to Menu" << std::endl;
+        }
         ImGui::End();
     }
 
@@ -184,5 +207,5 @@ void Game::ResetPlayer()
     player->Position = glm::vec2(this->Width / 2.0f - PLAYER_SIZE.x / 2.0f, this->Height - PLAYER_SIZE.y);
 }
 void Game::ResetLevel(){
-    currentArea->LoadTilemap("levels/main.lvl", this->Width, this->Height);
+    
 }

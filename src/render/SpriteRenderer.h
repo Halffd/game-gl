@@ -27,13 +27,13 @@ public:
                     glm::vec2 size = glm::vec2(10.0f, 10.0f), 
                     float rotate = 0.0f, 
                     glm::vec3 color = glm::vec3(1.0f), 
-                    glm::vec2 uv = glm::vec2(0.0f, 0.0f), 
+                    glm::vec2 textureOffset = glm::vec2(0.0f, 0.0f), 
                     glm::vec2 textureSize = glm::vec2(1.0f, 1.0f));
     void DrawSprite(const Texture2D& texture, 
                     glm::mat4 model, 
                     glm::vec3 color = glm::vec3(1.0f), 
-                    glm::vec2 uv = glm::vec2(0.0f, 0.0f), 
-                    glm::vec2 textureSize = glm::vec2(1.0f, 1.0f));
+                    glm::vec2 textureOffset = glm::vec2(0.0f, 0.0f), 
+                    glm::vec2 textureSize = glm::vec2(9.0f, 1.0f));
     static glm::mat4 Transform(glm::vec2 position, glm::vec2 size, float rotate);
 
     void Bind();

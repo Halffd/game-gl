@@ -12,11 +12,13 @@
 
 class Area {
 public:
+    unsigned int Width;
+    unsigned int Height;
     // Constructor
-    Area(GameMode mode);
+    Area(unsigned int levelWidth, unsigned int levelHeight);
 
     // Loads an area from a tilemap file (only applicable for GAME mode)
-    void LoadTilemap(const char* file, unsigned int areaWidth, unsigned int areaHeight);
+    void LoadTilemap(const char* file, const char* texturePath, unsigned int tileWidth, unsigned int tileHeight);
 
     // Renders the area or UI based on the mode
     void Draw(SpriteRenderer& renderer);
@@ -32,12 +34,8 @@ public:
 
 private:
     // Initializes the area from tile data
-    void init(const std::vector<std::vector<unsigned int>>& tileData, unsigned int areaWidth, unsigned int areaHeight);
-
-    GameMode currentMode;                           // Current mode of the game
+    std::vector<std::vector<unsigned int>> readTileData(const std::string& filename);
     std::shared_ptr<TilemapManager> tilemapManager; // Tilemap manager for handling static tiles in GAME mode
-    std::shared_ptr<Gui> guiManager;                // GUI manager for handling non-tilemap modes
-    std::vector<GameObject> interactiveTiles;       // Interactive or dynamic objects in the area
 };
 
 #endif // AREA_H

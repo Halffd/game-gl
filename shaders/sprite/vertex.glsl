@@ -2,21 +2,16 @@
 layout (location = 0) in vec4 vertex; // <vec2 position, vec2 texCoords>
 
 out vec2 TexCoords;
-out vec2 TextureSize;
+
+// New uniforms to handle texture offsets and sizes
+uniform vec2 textureOffset; // Offset for the texture
+uniform vec2 textureSize;   // Size of the texture region to sample
 
 uniform mat4 model;
 uniform mat4 projection;
-uniform vec2 uv;
-uniform vec2 size;
 
 void main()
 {
-    // Handle UV coordinates
-    TexCoords = (uv.x == 0.0 && uv.y == 0.0) ? vertex.zw : uv;
-    
-    // Pass texture size to fragment shader
-    TextureSize = size;
-    
-    // Transform vertex position
+    TexCoords = vertex.zw * textureSize + textureOffset;
     gl_Position = projection * model * vec4(vertex.xy, 0.0, 1.0);
 }
