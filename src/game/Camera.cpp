@@ -1,9 +1,18 @@
 #include "Camera.h"
+
+// Initialize the static instance pointer
 std::shared_ptr<Camera> Camera::Instance = nullptr;
 
 Camera::Camera(glm::vec2 position, glm::vec2 size)
     : Position(position), Size(size), Zoom(1.0f) {
     UpdateViewMatrix();
+}
+
+std::shared_ptr<Camera> Camera::GetInstance(glm::vec2 position, glm::vec2 size) {
+    if (!Instance) {
+        Instance = std::shared_ptr<Camera>(new Camera(position, size));
+    }
+    return Instance;
 }
 
 void Camera::SetPosition(glm::vec2 position) {
@@ -22,18 +31,15 @@ void Camera::SetZoom(float zoom) {
 }
 
 void Camera::FollowPlayer(const glm::vec2& playerPosition) {
-    // Simple follow logic; you can add smoothing if desired
     SetPosition(playerPosition);
 }
 
 void Camera::FocusOnObject(const glm::vec2& objectPosition) {
-    // Center the camera on the specified object
     SetPosition(objectPosition);
 }
 
 void Camera::Update(float dt) {
     // This can be used for animations or smooth transitions
-    // For example, implement a lerp function here if you want to smooth the camera motion
 }
 
 glm::mat4 Camera::GetViewMatrix() const {
