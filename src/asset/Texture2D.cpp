@@ -1,5 +1,5 @@
     #include "Texture2D.h"
-    #include "Util.hpp"
+    #include "util/Util.h"
 
     Texture2D::Texture2D()
         : Width(0), Height(0), Internal_Format(GL_RGB), Image_Format(GL_RGB),

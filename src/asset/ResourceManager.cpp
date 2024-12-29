@@ -9,46 +9,54 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
-std::map<std::string, Shader>    ResourceManager::Shaders;
+std::map<std::string, Shader> ResourceManager::Shaders;
 std::map<std::string, Texture1D> ResourceManager::Textures1D;
-std::map<std::string, Texture2D> ResourceManager::Textures2D;
+std::map<std::string, std::shared_ptr<Texture2D>> ResourceManager::Textures2D;
 std::map<std::string, Texture3D> ResourceManager::Textures3D;
 
 // Static member initialization
 std::string ResourceManager::root = "";
 
 // Implement full path handling for shaders and textures
-const char* ResourceManager::GetFullPath(const std::string& filename) {
-    char* buffer = new char[BUFFER_SIZE];
+const char *ResourceManager::GetFullPath(const std::string &filename)
+{
+    char *buffer = new char[BUFFER_SIZE];
     std::strcpy(buffer, (filename).c_str());
     return buffer;
 }
-const char* ResourceManager::GetModelPath(const std::string& filename) {
+const char *ResourceManager::GetModelPath(const std::string &filename)
+{
     std::string path = (root.empty() ? "models/" : root + "/models/") + filename;
     return GetFullPath(path);
 }
-const char* ResourceManager::GetShaderPath(const std::string& filename) {
+const char *ResourceManager::GetShaderPath(const std::string &filename)
+{
     std::string path = (root.empty() ? "shaders/" : root + "/shaders/") + filename;
     return GetFullPath(path);
 }
-const char* ResourceManager::GetTexturePath(const std::string& filename) {
+const char *ResourceManager::GetTexturePath(const std::string &filename)
+{
     std::string path = (root.empty() ? "textures/" : root + "/textures/") + filename;
     return GetFullPath(path);
 }
 
-const char* ResourceManager::GetPath(const std::string& filename) {
+const char *ResourceManager::GetPath(const std::string &filename)
+{
     std::string path = root + "/" + filename;
     return GetFullPath(path);
 }
-Shader ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, std::string name) {
+Shader ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, std::string name)
+{
     return LoadShader(vShaderFile, fShaderFile, nullptr, name);
 }
 Shader ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile, std::string name)
 {
-    if (!includes(vShaderFile, ":")) {
+    if (!includes(vShaderFile, ":"))
+    {
         vShaderFile = GetShaderPath(vShaderFile);
     }
-    if (!includes(fShaderFile, ":")) {
+    if (!includes(fShaderFile, ":"))
+    {
         fShaderFile = GetShaderPath(fShaderFile);
     }
     Shaders[name] = loadShaderFromFile(vShaderFile, fShaderFile, gShaderFile);
@@ -59,7 +67,7 @@ Shader ResourceManager::GetShader(std::string name)
 {
     return Shaders[name];
 }
-Shader* ResourceManager::ShaderP(std::string& name)
+Shader *ResourceManager::ShaderP(std::string &name)
 {
     return &Shaders[name]; // Assuming Shaders is a map or similar structure
 }
@@ -76,29 +84,37 @@ Texture1D ResourceManager::GetTexture1D(std::string name)
     return Textures1D[name];
 }
 
-Texture2D ResourceManager::LoadTexture2D(const char *file,  std::string name, bool alpha,GLint sWrap,GLint tWrap,GLint minFilter,GLint magFilter)
+Texture2D ResourceManager::LoadTexture2D(const char *file, std::string name, bool alpha, GLint sWrap, GLint tWrap, GLint minFilter, GLint magFilter)
 {
-    if(name.empty()) {
+    if (name.empty())
+    {
         name = file;
     }
-    if (!includes(file, ":")) {
+    if (!includes(file, ":"))
+    {
         file = GetTexturePath(file);
     }
-    Textures2D[name] = loadTexture2DFromFile(file, alpha, sWrap, tWrap, minFilter, magFilter);
-    return Textures2D[name];
+    auto ptr = std::make_shared<Texture2D>(loadTexture2DFromFile(file, alpha, sWrap, tWrap, minFilter, magFilter));
+    Textures2D[file] = ptr;
+    Textures2D[name] = ptr;
+    return *ptr;
 }
 
 Texture2D ResourceManager::GetTexture2D(std::string name)
 {
-    if(Textures2D.find(name) == Textures2D.end()){
+    if (Textures2D.find(name) == Textures2D.end())
+    {
         LoadTexture2D(name.c_str(), "");
     }
-    return Textures2D[name];
+    return *Textures2D[name];
 }
-Texture2D* ResourceManager::GetTexture(std::string name) {
+Texture2D *ResourceManager::GetTexture(std::string name)
+{
     auto it = Textures2D.find(name);
-    if (it != Textures2D.end()) {
-        return &(it->second); // Return the address of the found texture
+    if (it != Textures2D.end())
+    {
+        // Return the raw pointer from the shared_ptr without creating a new instance
+        return it->second.get(); // Use .get() to get the raw pointer
     }
     return nullptr; // Texture not found
 }
@@ -116,25 +132,30 @@ Texture3D ResourceManager::GetTexture3D(std::string name)
     return Textures3D[name];
 }
 // Implementation of GetTexture2DByIndex
-Texture2D* ResourceManager::GetTexture2DByIndex(size_t index) {
+Texture2D *ResourceManager::GetTexture2DByIndex(size_t index)
+{
     static std::vector<Texture2D> textureList = ConvertMapToList(Textures2D);
 
-    if (index >= textureList.size()) {
+    if (index >= textureList.size())
+    {
         throw std::out_of_range("Index out of range");
     }
 
     return &textureList[index]; // Safe because textureList persists
 }
 
-void ResourceManager::LoadAllTexturesFromDirectory() {
+void ResourceManager::LoadAllTexturesFromDirectory()
+{
     namespace fs = std::filesystem;
 
     // Iterate over files in the directory
-    for (const auto &entry : fs::directory_iterator(ResourceManager::root + "/textures")) {
+    for (const auto &entry : fs::directory_iterator(ResourceManager::root + "/textures"))
+    {
         std::string path = entry.path().string();
 
         // Filter image files based on extension (e.g., png, jpg, jpeg)
-        if (entry.path().extension() == ".png" || entry.path().extension() == ".jpg" || entry.path().extension() == ".jpeg") {
+        if (entry.path().extension() == ".png" || entry.path().extension() == ".jpg" || entry.path().extension() == ".jpeg")
+        {
             std::string filename = entry.path().stem().string(); // File name without extension
 
             // Load texture and add to the map
@@ -143,18 +164,29 @@ void ResourceManager::LoadAllTexturesFromDirectory() {
         }
     }
 }
-void ResourceManager::Clear()
-{
-    for (auto iter : Shaders)
+void ResourceManager::Clear() {
+    // Clear shaders
+    for (auto& iter : Shaders) {
         glDeleteProgram(iter.second.ID);
-    for (auto iter : Textures1D)
-        glDeleteTextures(1, &iter.second.ID);
-    for (auto iter : Textures2D)
-        glDeleteTextures(1, &iter.second.ID);
-    for (auto iter : Textures3D)
-        glDeleteTextures(1, &iter.second.ID);
-}
+    }
 
+    // Clear 1D textures
+    for (auto& iter : Textures1D) {
+        glDeleteTextures(1, &iter.second.ID);
+    }
+
+    // Clear 2D textures
+    for (auto& iter : Textures2D) {
+        if (iter.second) { // Check if the shared_ptr is valid
+            glDeleteTextures(1, &iter.second->ID); // Use -> for dereferencing
+        }
+    }
+
+    // Clear 3D textures
+    for (auto& iter : Textures3D) {
+        glDeleteTextures(1, &iter.second.ID);
+    }
+}
 Shader ResourceManager::loadShaderFromFile(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile)
 {
     std::string vertexCode, fragmentCode, geometryCode;
@@ -178,7 +210,7 @@ Shader ResourceManager::loadShaderFromFile(const char *vShaderFile, const char *
             geometryCode = gShaderStream.str();
         }
     }
-    catch (std::exception& e)
+    catch (std::exception &e)
     {
         logger << "ERROR::SHADER: Failed to read shader files";
     }
@@ -200,7 +232,7 @@ Texture1D ResourceManager::loadTexture1DFromFile(const char *file, bool alpha,
         texture.Image_Format = GL_RGBA;
     }
     int width, nrChannels;
-    unsigned char* data = stbi_load(file, &width, nullptr, &nrChannels, 0);
+    unsigned char *data = stbi_load(file, &width, nullptr, &nrChannels, 0);
     texture.Wrap_S = sWrap;
     texture.Filter_Min = minFilter;
     texture.Filter_Max = magFilter;
@@ -215,12 +247,15 @@ Texture2D ResourceManager::loadTexture2DFromFile(const char *file, bool alpha, G
 
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true);
-    unsigned char* data = stbi_load(file, &width, &height, &nrChannels, 0);
-    if (!data) {
+    unsigned char *data = stbi_load(file, &width, &height, &nrChannels, 0);
+    if (!data)
+    {
         std::cerr << "Failed to load texture: " << file << std::endl;
         texture.status = -1;
         return texture;
-    } else {
+    }
+    else
+    {
         texture.status = 1;
     }
 
@@ -228,10 +263,13 @@ Texture2D ResourceManager::loadTexture2DFromFile(const char *file, bool alpha, G
     texture.Wrap_T = tWrap;
     texture.Filter_Min = minFilter;
     texture.Filter_Max = magFilter;
-    if (alpha || nrChannels > 3) {
+    if (alpha || nrChannels > 3)
+    {
         texture.Internal_Format = GL_RGBA;
         texture.Image_Format = GL_RGBA;
-    } else {
+    }
+    else
+    {
         texture.Internal_Format = GL_RGB;
         texture.Image_Format = GL_RGB;
     }
@@ -252,7 +290,7 @@ Texture3D ResourceManager::loadTexture3DFromFile(const char *file, bool alpha,
         texture.Image_Format = GL_RGBA;
     }
     int width, height, depth = 1, nrChannels;
-    unsigned char* data = stbi_load(file, &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load(file, &width, &height, &nrChannels, 0);
     texture.Wrap_S = sWrap;
     texture.Wrap_T = tWrap;
     texture.Wrap_R = rWrap;
@@ -263,7 +301,8 @@ Texture3D ResourceManager::loadTexture3DFromFile(const char *file, bool alpha,
     return texture;
 }
 
-std::string ResourceManager::getExecutablePath() {
+std::string ResourceManager::getExecutablePath()
+{
 #ifdef _WIN32
     char path[MAX_PATH];
     GetModuleFileNameA(NULL, path, MAX_PATH);
@@ -271,7 +310,8 @@ std::string ResourceManager::getExecutablePath() {
 #elif defined(__linux__) || defined(__APPLE__)
     char path[PATH_MAX];
     ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
-    if (count == -1) {
+    if (count == -1)
+    {
         return "Error retrieving path";
     }
     return std::string(path, count);
@@ -280,20 +320,23 @@ std::string ResourceManager::getExecutablePath() {
 #endif
 }
 
-std::string ResourceManager::getExecutableName() {
+std::string ResourceManager::getExecutableName()
+{
     std::string fullPath = getExecutablePath();
     size_t lastSlash = fullPath.find_last_of("/\\");
     return fullPath.substr(lastSlash + 1);
 }
-std::string ResourceManager::getExecutableDir() {
+std::string ResourceManager::getExecutableDir()
+{
     std::string fullPath = getExecutablePath();
     size_t lastSlash = fullPath.find_last_of("/\\");
-    
+
     // Ensure lastSlash is valid before using it in substr
-    if (lastSlash != std::string::npos) {
+    if (lastSlash != std::string::npos)
+    {
         return fullPath.substr(0, lastSlash + 1); // Include the last slash
     }
-    
+
     // Return an empty string or handle the error if no slash was found
-    return ""; 
+    return "";
 }

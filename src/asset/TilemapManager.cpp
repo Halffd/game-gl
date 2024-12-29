@@ -3,7 +3,10 @@
 
 TilemapManager::TilemapManager(const std::string& texturePath, unsigned int tilesAcross, unsigned int tilesDown)
     : texturePath(texturePath), tilesAcross(tilesAcross), tilesDown(tilesDown) {
-    texture = ResourceManager::LoadTexture2D(texturePath.c_str(), "tilemap");
+    ResourceManager::LoadTexture2D(texturePath.c_str(), "tilemap");
+    texture = std::make_shared<Texture2D>(
+        ResourceManager::GetTexture2D(texturePath)
+    );
 }
 
 void TilemapManager::LoadTilemap(const std::vector<std::vector<unsigned int>>& tileData, unsigned int levelWidth, unsigned int levelHeight) {
@@ -34,11 +37,10 @@ void TilemapManager::LoadTilemap(const std::vector<std::vector<unsigned int>>& t
         }
     }
 }
-
 void TilemapManager::Draw(SpriteRenderer& renderer) {
     for (const Tile& tile : tiles) {
         renderer.DrawSprite(
-            texture,
+            *texture, // Dereference the shared_ptr to get the Texture2D object
             tile.Position,
             tile.Size,
             0.0f,

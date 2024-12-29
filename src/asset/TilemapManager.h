@@ -7,7 +7,7 @@
 #include <memory>
 #include "ResourceManager.h"
 #include "render/SpriteRenderer.h"
-#include "GameObject.h"
+#include "game/GameObject.h"
 
 /**
  * @brief Manages a tilemap and its rendering, providing support for loading and rendering

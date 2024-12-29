@@ -18,7 +18,7 @@ void Animation::DrawAnimation(SpriteRenderer& renderer, const glm::vec2& positio
     glm::vec2 textureSize = glm::vec2(1.0f / tilesAcross, 1.0f / tilesDown);
 
     renderer.DrawSprite(
-        texture,
+        *texture,
         position,
         size,
         0.0f,

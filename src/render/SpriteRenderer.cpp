@@ -1,5 +1,5 @@
 #include "SpriteRenderer.h"
-#include "util/Util.hpp"
+#include "util/Util.h"
 
 glm::mat4 mat2To4(const glm::mat2& mat2){
     return glm::mat4(
@@ -35,12 +35,15 @@ glm::mat4 SpriteRenderer::Transform(glm::vec2 position, glm::vec2 size, float ro
 
     return model;
 }
-void SpriteRenderer::DrawSprite(const Texture2D &texture, glm::mat4 model, glm::vec3 color)
+void SpriteRenderer::DrawSprite(const Texture2D &texture, glm::mat4 model, glm::vec3 color, glm::vec2 uv, glm::vec2 textureSize)
 {
     Bind();
     // prepare transformations
     this->shader.Use();
     this->shader.SetMatrix4("model", model);
+
+    this->shader.SetVector2f("uv", uv);
+    this->shader.SetVector2f("size", textureSize);    
 
     // render textured quad
     this->shader.SetVector3f("spriteColor", color);
@@ -57,16 +60,19 @@ void SpriteRenderer::DrawSprite(const Texture2D &texture, glm::mat4 model, glm::
     glBindVertexArray(0);
     glCheckError();
 }
-void SpriteRenderer::DrawSprite(const Texture2D &texture, glm::vec2 position, glm::vec2 size, float rotate, glm::vec3 color)
+void SpriteRenderer::DrawSprite(const Texture2D &texture, glm::vec2 position, glm::vec2 size, float rotate, glm::vec3 color, glm::vec2 uv, glm::vec2 textureSize)
 {
     Bind();
     // prepare transformations
     this->shader.Use();
     glm::mat4 model = SpriteRenderer::Transform(position, size, rotate);
-this->shader.SetMatrix4("model", model);
+    this->shader.SetMatrix4("model", model);
 
     // render textured quad
     this->shader.SetVector3f("spriteColor", color);
+    
+    this->shader.SetVector2f("uv", uv);
+    this->shader.SetVector2f("size", textureSize);    
 
     glActiveTexture(GL_TEXTURE0);
     glCheckError();

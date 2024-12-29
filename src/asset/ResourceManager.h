@@ -4,7 +4,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <memory>
 #include <filesystem>
+#include "types.h"  
 
 #ifdef _WIN32
 #include <windows.h>
@@ -33,7 +35,7 @@ public:
     // Resource maps
     static std::map<std::string, Shader>    Shaders;
     static std::map<std::string, Texture1D> Textures1D;
-    static std::map<std::string, Texture2D> Textures2D;
+    static std::map<std::string, std::shared_ptr<Texture2D>> Textures2D;
     static std::map<std::string, Texture3D> Textures3D;
 
     // Shader management

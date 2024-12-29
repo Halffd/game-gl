@@ -19,7 +19,7 @@ class Game
 {
 public:
     std::vector<Level> Levels;
-    unsigned int           Level;
+    unsigned int level;
 
     // game state
     GameState    State;

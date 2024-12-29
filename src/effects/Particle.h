@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
-#include "GameObject.h"
+#include "game/GameObject.h"
 
 
 // Represents a single particle and its state
@@ -33,10 +33,10 @@ public:
 private:
     // state
     std::vector<Particle> particles;
-    unsigned int amount;
     // render state
     Shader shader;
     Texture2D texture;
+    unsigned int amount;
     unsigned int VAO;
     // initializes buffer and vertex attributes
     void init();
