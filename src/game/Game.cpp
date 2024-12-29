@@ -74,7 +74,6 @@ void Game::Init()
 
     // Load textures
     ResourceManager::LoadTexture2D("misc/particle.png", "particle");
-    ResourceManager::LoadTexture2D("bg/bg2.png", "background");
 
     // Initialize particle generator
     Particles = std::make_unique<ParticleGenerator>(
@@ -94,8 +93,9 @@ void Game::Init()
     );
 
     // Initialize the area manager
-    currentArea = std::make_shared<Area>(400, 600);
-    currentArea->LoadTilemap("levels/main.lvl", "tiles.png", 7, 7);
+    currentArea = std::make_shared<Area>(Width, Height);
+    currentArea->State = State;
+    currentArea->LoadTilemap("levels/main.lvl", "tiles.png", "bg.png", 7, 7);
 
     audio->play2D((ResourceManager::root + "/audio/breakout.wav").c_str(), true);
 }
@@ -113,54 +113,110 @@ void Game::Render()
         lastTime = currentTime;
     }
 
+    if(currentArea){
+        currentArea->Draw(*Renderer); 
+    }
     // Render based on the current game state
-    if (State == GAME_ACTIVE && currentArea) {
-        Renderer->DrawSprite(ResourceManager::GetTexture2D("background"), glm::vec2(0.0f, 0.0f), glm::vec2(this->Width, this->Height), 0.0f);
-        currentArea->Draw(*Renderer);
+    if ((State == GAME_PAUSED || State == GAME_ACTIVE) && currentArea) {
         player->Draw(*Renderer);
         Particles->Draw();
     } 
-    else if (State == GAME_PAUSED) {
-        // Only render the pause menu
-        ImGui::Begin("Pause Menu");
-        ImGui::Text("Game Paused");
-        if (ImGui::Button("Resume")) {
-            State = GAME_ACTIVE;
-        }
-        if (ImGui::Button("Main Menu")) {
-            State = GAME_MENU;
-        }
-        if (ImGui::Button("Exit Game")) {
-            exit(0);
-        }
-        ImGui::End();
-    } 
-    else if (State == GAME_MENU){
-        ImGui::Begin("Main Menu");
-        ImGui::Text("Welcome to the Game!");
-        if (ImGui::Button("Start Game")) {
-            std::cout << "Game Start Selected" << std::endl;
-            State = GAME_ACTIVE;
-        }
-        if (ImGui::Button("Credits")) {
-            std::cout << "Credits Selected" << std::endl;
-            State = GAME_CREDITS;
-        }
-        if (ImGui::Button("Exit Game")) {
-            std::cout << "Quit" << std::endl;
-            exit(0);
-        }
-        ImGui::End();
-    } 
-    else if (State == GAME_CREDITS) {
-        ImGui::Begin("Credits");
-        ImGui::Text("Created by Half");
-        if (ImGui::Button("Back to Menu")) {
-            std::cout << "Returning to Menu" << std::endl;
-        }
-        ImGui::End();
-    }
+    if(State != GAME_ACTIVE) {
+        // Set custom style for ImGui
+        ImGui::StyleColorsDark(); // Use dark theme
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.Colors[ImGuiCol_WindowBg] = ImColor(0, 0, 0); // Black background
+        style.Colors[ImGuiCol_Border] = ImColor(0, 100, 0); // Dark green borders
+        style.Colors[ImGuiCol_Text] = ImColor(255, 255, 255); // White text
+        style.Colors[ImGuiCol_Button] = ImColor(0, 100, 0); // Dark green button background
+        style.Colors[ImGuiCol_ButtonHovered] = ImColor(0, 150, 0); // Lighter green on hover
+        style.Colors[ImGuiCol_ButtonActive] = ImColor(0, 80, 0); // Even darker green when pressed
 
+        // Define the size of the window
+        const ImVec2 windowSize(400, 300); // Adjust dimensions as needed
+        ImVec2 windowPos = ImVec2((Width - windowSize.x) * 0.5f, (Height - windowSize.y) * 0.5f); // Centered position
+
+        // Set a larger font size (bold if you have a bold font)
+        ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]); // Assumes the first font is the one used (adjust if needed)
+        ImGui::GetFont()->Scale = 1.8f; // Increase scale (adjust as necessary)
+
+        // Pause Menu
+        if (State == GAME_PAUSED) {
+            ImGui::SetNextWindowPos(windowPos);
+            ImGui::SetNextWindowSize(windowSize);
+            ImGui::Begin("Pause Menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+            
+            ImGui::Text("Game Paused");
+
+            // Calculate button size
+            float buttonWidth = windowSize.x - 10.0f;
+            float buttonHeight = windowSize.y * 0.2f;
+
+            if (ImGui::Button("Resume", ImVec2(buttonWidth, buttonHeight))) {
+                State = GAME_ACTIVE;
+            }
+            //ImGui::SameLine(); // Maintain horizontal spacing for centering
+
+            if (ImGui::Button("Main Menu", ImVec2(buttonWidth, buttonHeight))) {
+                State = GAME_MENU;
+            }
+            //ImGui::SameLine(); // Maintain horizontal spacing for centering
+
+            if (ImGui::Button("Exit Game", ImVec2(buttonWidth, buttonHeight))) {
+                exit(0);
+            }
+            ImGui::End();
+        } 
+        // Main Menu
+        else if (State == GAME_MENU) {
+            ImGui::SetNextWindowPos(windowPos);
+            ImGui::SetNextWindowSize(windowSize);
+            ImGui::Begin("Main Menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+            
+            ImGui::Text("NeuroMonsters");
+
+            // Calculate button size
+            float buttonWidth = windowSize.x - 10.0f;
+            float buttonHeight = windowSize.y * 0.2f;
+
+            if (ImGui::Button("Start Game", ImVec2(buttonWidth, buttonHeight))) {
+                std::cout << "Game Start Selected" << std::endl;
+                State = GAME_ACTIVE;
+            }
+
+            if (ImGui::Button("Credits", ImVec2(buttonWidth, buttonHeight))) {
+                std::cout << "Credits Selected" << std::endl;
+                State = GAME_CREDITS;
+            }
+
+            if (ImGui::Button("Exit Game", ImVec2(buttonWidth, buttonHeight))) {
+                std::cout << "Quit" << std::endl;
+                exit(0);
+            }
+            ImGui::End();
+        } 
+        // Credits
+        else if (State == GAME_CREDITS) {
+            ImGui::SetNextWindowPos(windowPos);
+            ImGui::SetNextWindowSize(windowSize);
+            ImGui::Begin("Credits", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+            
+            ImGui::Text("Created by Half");
+            
+            // Calculate button size
+            float buttonWidth = windowSize.x - 10.0f;
+            float buttonHeight = windowSize.y * 0.2f;
+
+            if (ImGui::Button("Back to Menu", ImVec2(buttonWidth, buttonHeight))) {
+                std::cout << "Returning to Menu" << std::endl;
+                State = GAME_MENU;  // Update this line to actually change state
+            }
+            ImGui::End();
+        }
+
+        // Restore original font settings
+        ImGui::PopFont();
+    }
     if (debug) {
         ImGui::SetNextWindowBgAlpha(0.0f);
         ImGui::Begin("FPS Window", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
@@ -198,6 +254,7 @@ void Game::Render()
 
 void Game::Update(float dt)
 {
+    currentArea->State = State;
     if (State == GAME_ACTIVE && currentArea) {
         Collision->Update(player, dt);
 
@@ -209,7 +266,10 @@ void Game::Update(float dt)
         Particles->Update(dt, *player, 4, glm::vec2(10.0f));
         currentArea->Update(dt);
         player->Update(dt);
-        Camera::Instance->FollowPlayer(player->Position);
+        
+        float camX = player->Position.x - (Width / 2.0f);
+        float camY = player->Position.y - (Height / 2.0f);;
+        Camera::Instance->FollowPlayer(glm::vec2(camX, camY));
     }
 }
 

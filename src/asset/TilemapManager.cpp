@@ -9,6 +9,16 @@ TilemapManager::TilemapManager(const std::string& texturePath, unsigned int tile
     );
 }
 
+TilemapManager::TilemapManager(const std::string& texturePath, const std::string& bgTexturePath, unsigned int tilesAcross, unsigned int tilesDown)
+    : texturePath(texturePath), tilesAcross(tilesAcross), tilesDown(tilesDown) {
+    ResourceManager::LoadTexture2D(texturePath.c_str(), "tilemap");
+    texture = std::make_shared<Texture2D>(
+        ResourceManager::GetTexture2D(texturePath)
+    );
+    bgTexture = std::make_shared<Texture2D>(
+        ResourceManager::GetTexture2D(bgTexturePath)
+    ); 
+}
 void TilemapManager::LoadTilemap(const std::vector<std::vector<unsigned int>>& tileData, unsigned int levelWidth, unsigned int levelHeight) {
     tiles.clear();
 
@@ -59,5 +69,22 @@ void TilemapManager::Draw(SpriteRenderer& renderer) {
             tile.TextureOffset,        // Texture UV offset
             tile.TextureSize           // Texture UV size
         );
+    }
+}
+void TilemapManager::DrawBackground(SpriteRenderer& renderer, int width, int height) {
+    glm::vec2 size = glm::vec2(bgTexture->Width, bgTexture->Height); // Tile size
+
+    for (int i = 0; i < width / size.x; i++) {
+        for (int j = 0; j < height / size.y; j++) {
+            std::cout << size.x * i << "; ";
+            std::cout << size.y * j << " ";
+            renderer.DrawSprite(
+                *bgTexture,                          // Texture to use
+                glm::vec2(size.x * i, size.y * j), // Position in world space
+                size,                                 // Size of the tile
+                0.0f,                                 // No rotation
+                glm::vec3(1.0f)                       // Default color (white)
+            );
+        }
     }
 }

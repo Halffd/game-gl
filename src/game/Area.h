@@ -10,15 +10,25 @@
 #include <memory>
 #include "gamemode.h"
 
+// Represents the current state of the game
+enum GameState {
+    GAME_ACTIVE,
+    GAME_MENU,
+    GAME_PAUSED,
+    GAME_CREDITS,
+    GAME_WIN
+};
 class Area {
 public:
     unsigned int Width;
     unsigned int Height;
+    GameState State = GAME_ACTIVE;
+
     // Constructor
     Area(unsigned int levelWidth, unsigned int levelHeight);
 
     // Loads an area from a tilemap file (only applicable for GAME mode)
-    void LoadTilemap(const char* file, const char* texturePath, unsigned int tileWidth, unsigned int tileHeight);
+    void LoadTilemap(const char* file, const char* texturePath, const std::string& bgTexturePath, unsigned int tileWidth, unsigned int tileHeight);
 
     // Renders the area or UI based on the mode
     void Draw(SpriteRenderer& renderer);

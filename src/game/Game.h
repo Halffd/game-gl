@@ -11,15 +11,6 @@
 #include "irrKlang/irrKlang.h"
 #include <memory>
 
-// Represents the current state of the game
-enum GameState {
-    GAME_ACTIVE,
-    GAME_MENU,
-    GAME_PAUSED,
-    GAME_CREDITS,
-    GAME_WIN
-};
-
 class Game {
 public:
     std::shared_ptr<Area> currentArea;

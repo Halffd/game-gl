@@ -34,6 +34,7 @@ public:
      * @param tilesDown Number of tiles down the atlas.
      */
     TilemapManager(const std::string& texturePath, unsigned int tilesAcross, unsigned int tilesDown);
+    TilemapManager(const std::string& texturePath, const std::string& bgTexturePath, unsigned int tilesAcross, unsigned int tilesDown);
 
     /**
      * @brief Loads a tilemap configuration from tile data.
@@ -48,11 +49,13 @@ public:
      * @param renderer SpriteRenderer used for drawing.
      */
     void Draw(SpriteRenderer& renderer);
+    void DrawBackground(SpriteRenderer& renderer, int width, int height);
 
 protected:
     std::string texturePath;            ///< Path to the texture atlas.
     unsigned int tilesAcross, tilesDown; ///< Number of tiles across and down the atlas.
     std::shared_ptr<Texture2D> texture; ///< Shared pointer to the texture resource.
+    std::shared_ptr<Texture2D> bgTexture;
     std::vector<Tile> tiles;            ///< Vector storing tile data.
 };
 

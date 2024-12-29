@@ -1,4 +1,5 @@
 #include "Area.h"
+#include "Game.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -33,16 +34,18 @@ std::vector<std::vector<unsigned int>> Area::readTileData(const std::string& fil
     return tileData;
 }
 
-void Area::LoadTilemap(const char* file, const char* texturePath, unsigned int tileWidth, unsigned int tileHeight) {
+void Area::LoadTilemap(const char* file, const char* texturePath, const std::string& bgTexturePath, unsigned int tileWidth, unsigned int tileHeight) {
     std::vector<std::vector<unsigned int>> data = readTileData(file);
-    tilemapManager = std::make_shared<TilemapManager>(texturePath, tileWidth, tileHeight); // Adjust the texture path and tile dimensions as needed
+    tilemapManager = std::make_shared<TilemapManager>(texturePath, bgTexturePath, tileWidth, tileHeight); // Adjust the texture path and tile dimensions as needed
     tilemapManager->LoadTilemap(data, Width, Height);
 }
 
 void Area::Draw(SpriteRenderer& renderer) {
-    if (tilemapManager) {
+    if (tilemapManager && ((State == GameState::GAME_ACTIVE) || State == GameState::GAME_PAUSED)) {
         tilemapManager->Draw(renderer);
-    } 
+    }  else{
+        tilemapManager->DrawBackground(renderer, Width, Height);
+    }
 }
 
 void Area::Update(float deltaTime) {
