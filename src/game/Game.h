@@ -30,8 +30,7 @@ public:
     unsigned int Width, Height;
 
     std::unique_ptr<SpriteRenderer> Renderer = nullptr;
-    std::unique_ptr<Player> player = nullptr;
-    std::unique_ptr<Collider> Collision = nullptr;
+    std::unique_ptr<Player> player = nullptr;    std::unique_ptr<Collider> Collision = nullptr;
     std::shared_ptr<DialogueSystem> Dialogue = nullptr;
     std::unique_ptr<ParticleGenerator> Particles = nullptr;
     std::unique_ptr<irrklang::ISoundEngine> audio = nullptr;

@@ -9,6 +9,8 @@ std::string gameTypeStr = "MainMenu"; // Default game type string
 bool debug = true;
 Log o;
 Game NeuroJam(SCREEN_WIDTH, SCREEN_HEIGHT);
+float lastTime = 9;
+bool isPaused = false;
 
 int main(int argc, char *argv[])
 {
@@ -107,15 +109,40 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
     ImGuiIO &io = ImGui::GetIO();
     if (!io.WantCaptureKeyboard) {
-        // when a user presses the escape key, we set the WindowShouldClose property to true, closing the application
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        // Handle escape key to close the application
+        if (key == GLFW_KEY_F4 && action == GLFW_PRESS) {
             glfwSetWindowShouldClose(window, true);
-        if (key >= 0 && key < 1024)
+        }
+        static bool pausePressed = false; // Flag to track if the key is pressed
+        if (!pausePressed && glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
-            if (action == GLFW_PRESS)
-                NeuroJam.Keys[key] = true;
-            else if (action == GLFW_RELEASE)
-                NeuroJam.Keys[key] = false;
+            // Key was just pressed
+            isPaused = !isPaused;
+            if (isPaused)
+            {
+                NeuroJam.State = GAME_PAUSED; // Change game state to paused
+                lastTime = glfwGetTime();
+                std::cout << "Program paused. " << lastTime << std::endl;
+            }
+            else
+            {
+                NeuroJam.State = GAME_ACTIVE; // Change game state back to active
+                std::cout << "Program resumed." << std::endl;
+            }
+            pausePressed = true; // Set the flag
+        }
+        else if (pausePressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) != GLFW_PRESS)
+        {
+            // Key was just released
+            pausePressed = false; // Reset the flag
+        }
+        // Ensure key states are updated correctly
+        if (key >= 0 && key < 1024) {
+            if (action == GLFW_PRESS) {
+                NeuroJam.Keys[key] = true;  // Set key as pressed
+            } else if (action == GLFW_RELEASE) {
+                NeuroJam.Keys[key] = false; // Set key as not pressed
+            }
         }
     }
 }

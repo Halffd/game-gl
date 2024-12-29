@@ -1,5 +1,7 @@
 #include "game/Game.h"
+#include <map>
 
+std::map<int, bool> keyWasPressed;
 bool cursorEnabled = true;
 
 bool toggleKey(int key, bool &toggleState)
@@ -41,37 +43,16 @@ void lineMode(){
         glPolygonMode(GL_FRONT_AND_BACK, isLineMode ? GL_LINE : GL_FILL);
     }
 }
-void debugToggle(GLFWwindow *window){
+void debugToggle(int key){
     static bool debugToggled = debug;
-    if (toggleKey(window, debugToggled))
+    if (toggleKey(key, debugToggled))
     {
         debug = !debug;
     }
-}
-void pauseKey(GLFWwindow *window){
-    static bool graveAccentPressed = false; // Flag to track if the key is pressed
-    if (!graveAccentPressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS)
-    {
-        // Key was just pressed
-        isPaused = !isPaused;
-        if (isPaused)
-        {
-            lastTime = glfwGetTime();
-            std::cout << "Program paused. " << lastTime << std::endl;
-        }
-        else
-        {
-            std::cout << "Program resumed." << std::endl;
-        }
-        graveAccentPressed = true; // Set the flag
-    }
-    else if (graveAccentPressed && glfwGetKey(window, GLFW_KEY_GRAVE_ACCENT) != GLFW_PRESS)
-    {
-        // Key was just released
-        graveAccentPressed = false; // Reset the flag
-    }
-}
+}   
+/*
 void exitKey(GLFWwindow *window){
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, 1);
 }
+*/

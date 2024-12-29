@@ -4,6 +4,7 @@
 #include "Game.h"
 #include "asset/ResourceManager.h"
 #include "render/SpriteRenderer.h"
+#include "Camera.h"
 #include "Player.h"
 #include "CircleObject.h"
 #include "util/Util.h"
@@ -14,6 +15,7 @@
 #include "types.h"
 #include "effects/Particle.h"
 #include "Collider.h"
+#include "input/Input.h"
 #include "Area.h"
 #include "asset/TilemapManager.h"
 
@@ -29,6 +31,7 @@ Game::Game(unsigned int width, unsigned int height)
     Height(height),
     area(0)
 {
+    Camera::Instance = std::make_shared<Camera>(glm::vec2(0.0f, 0.0f), glm::vec2(Width, Height));
     Dialogue = std::make_shared<DialogueSystem>();
     Collision = std::make_unique<Collider>(Dialogue);
     audio = std::unique_ptr<irrklang::ISoundEngine>(irrklang::createIrrKlangDevice());
@@ -82,8 +85,8 @@ void Game::Init()
 
     // Initialize player object
     glm::vec2 playerPos = glm::vec2(
-        this->Width / 2.0f - PLAYER_SIZE.x / 2.0f, 
-        this->Height - PLAYER_SIZE.y
+        50.0f, 
+        this->Height / 4.0f
     );
     player = std::make_unique<Player>(
         playerPos, PLAYER_SIZE, 
@@ -110,29 +113,29 @@ void Game::Render()
         lastTime = currentTime;
     }
 
-    if (debug) {
-        ImGui::SetNextWindowBgAlpha(0.0f);
-        ImGui::Begin("FPS Window", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-        ImGui::SetCursorPos(ImVec2(10, 10));
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
-        ImGui::Text("FPS: %.1f", fps);
-        ImGui::PopStyleColor();
-        ImGui::End();
-    }
-
+    // Render based on the current game state
     if (State == GAME_ACTIVE && currentArea) {
         Renderer->DrawSprite(ResourceManager::GetTexture2D("background"), glm::vec2(0.0f, 0.0f), glm::vec2(this->Width, this->Height), 0.0f);
         currentArea->Draw(*Renderer);
         player->Draw(*Renderer);
         Particles->Draw();
-    } else if (State == GAME_PAUSED) {
+    } 
+    else if (State == GAME_PAUSED) {
+        // Only render the pause menu
         ImGui::Begin("Pause Menu");
         ImGui::Text("Game Paused");
-        if (ImGui::Button("Resume")) State = GAME_ACTIVE;
-        if (ImGui::Button("Main Menu")) State = GAME_MENU;
-        if (ImGui::Button("Exit Game")) exit(0);
+        if (ImGui::Button("Resume")) {
+            State = GAME_ACTIVE;
+        }
+        if (ImGui::Button("Main Menu")) {
+            State = GAME_MENU;
+        }
+        if (ImGui::Button("Exit Game")) {
+            exit(0);
+        }
         ImGui::End();
-    } else if (State == GAME_MENU){
+    } 
+    else if (State == GAME_MENU){
         ImGui::Begin("Main Menu");
         ImGui::Text("Welcome to the Game!");
         if (ImGui::Button("Start Game")) {
@@ -148,7 +151,8 @@ void Game::Render()
             exit(0);
         }
         ImGui::End();
-    } else if (State == GAME_CREDITS) {
+    } 
+    else if (State == GAME_CREDITS) {
         ImGui::Begin("Credits");
         ImGui::Text("Created by Half");
         if (ImGui::Button("Back to Menu")) {
@@ -157,30 +161,37 @@ void Game::Render()
         ImGui::End();
     }
 
+    if (debug) {
+        ImGui::SetNextWindowBgAlpha(0.0f);
+        ImGui::Begin("FPS Window", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+        ImGui::SetCursorPos(ImVec2(10, 10));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+        ImGui::Text("FPS: %.1f", fps);
+        ImGui::PopStyleColor();
+        ImGui::End();
+    }
+    // Render the GUI
     Gui::Render();
-}
-
-void Game::ProcessInput(float dt)
+}void Game::ProcessInput(float dt)
 {
+    static bool paused = false;
+
     if (State == GAME_ACTIVE) {
+        // Player movement
         if (this->Keys[GLFW_KEY_A]) {
             player->Move(Player::Direction::LEFT);
-        }
-        if (this->Keys[GLFW_KEY_D]) {
+        } 
+        else if (this->Keys[GLFW_KEY_D]) {
             player->Move(Player::Direction::RIGHT);
-        }
-        if (this->Keys[GLFW_KEY_W]) {
+        } 
+        else if (this->Keys[GLFW_KEY_W]) {
             player->Move(Player::Direction::UP);
-        }
-        if (this->Keys[GLFW_KEY_S]) {
+        } 
+        else if (this->Keys[GLFW_KEY_S]) {
             player->Move(Player::Direction::DOWN);
-        }
-        if (this->Keys[GLFW_KEY_P]) {
-            State = GAME_PAUSED;
-        }
-    } else if (State == GAME_PAUSED) {
-        if (this->Keys[GLFW_KEY_P]) {
-            State = GAME_ACTIVE;
+        } 
+        else {
+            player->Velocity = glm::vec2(0.0f, 0.0f); // Stop the player
         }
     }
 }
@@ -198,6 +209,7 @@ void Game::Update(float dt)
         Particles->Update(dt, *player, 4, glm::vec2(10.0f));
         currentArea->Update(dt);
         player->Update(dt);
+        Camera::Instance->FollowPlayer(player->Position);
     }
 }
 
