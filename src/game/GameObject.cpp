@@ -1,5 +1,5 @@
 #include "GameObject.h"
-
+#include "Camera.h"
 
 GameObject::GameObject() 
     : Position(0.0f, 0.0f), Size(1.0f, 1.0f), Velocity(0.0f), Color(1.0f), Rotation(0.0f), Sprite(), IsSolid(false), Destroyed(false) { }

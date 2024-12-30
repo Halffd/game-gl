@@ -58,7 +58,7 @@ GameObject* Area::GetRandomEnemy() {
     // Random enemy selection
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<size_t> dis(0, enemies.size() - 1);
+    std::uniform_int_distribution<size_t> dis(1, enemies.size() - 1);
     
     return enemies[dis(gen)].get();
 }

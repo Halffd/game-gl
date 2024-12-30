@@ -80,65 +80,8 @@ void Game::Init()
         ResourceManager::GetTexture2D("particle"), 
         1500
     );
-
-    // Initialize player object
-    glm::vec2 playerPos = glm::vec2(
-        120.0f, 
-        this->Height / 3.0f
-    );
-    player = std::make_unique<Player>(
-        playerPos, PLAYER_SIZE, 
-        ResourceManager::GetTexture2D("player.png"), glm::vec3(1.0f, 1.0f, 1.0f), 5, 5
-    );
-    player->tile = 0;
-    player->form = 0;
-    monsters.push_back(
-        std::make_shared<GameObject>(
-            glm::vec2(0.0f, 0.0f),
-            glm::vec2(200.0f, 400.0f),
-            ResourceManager::GetTexture2D("frog.png")
-        )
-    );
-    monsters.push_back(
-        std::make_shared<GameObject>(
-            glm::vec2(0.0f, 0.0f),
-            glm::vec2(200.0f, 400.0f),
-            ResourceManager::GetTexture2D("turtle.png")
-        )
-    );
-    monsters.push_back(
-        std::make_shared<GameObject>(
-            glm::vec2(0.0f, 0.0f),
-            glm::vec2(200.0f, 400.0f),
-            ResourceManager::GetTexture2D("Scorpio.png")
-        )
-    );
-    monsters.push_back(
-        std::make_shared<GameObject>(
-            glm::vec2(0.0f, 0.0f),
-            glm::vec2(200.0f, 400.0f),
-            ResourceManager::GetTexture2D("wolf.png")
-        )
-    );
-    monsters.push_back(
-        std::make_shared<GameObject>(
-            glm::vec2(0.0f, 0.0f),
-            glm::vec2(200.0f, 400.0f),
-            ResourceManager::GetTexture2D("insect.png")
-        )
-    );
-    monsters.push_back(
-        std::make_shared<GameObject>(
-            glm::vec2(0.0f, 0.0f),
-            glm::vec2(200.0f, 400.0f),
-            ResourceManager::GetTexture2D("turtle.png")
-        )
-    );
-    monsters[0]->name = "Froggy";
-    monsters[1]->name = "Tartoise";
-    monsters[2]->name = "Scorpio";
-    monsters[3]->name = "Roawer";
-    monsters[4]->name = "Inesctus";
+    ResetPlayer();
+    ResetLevel();
     // Initialize the area manager
     currentArea = std::make_shared<Area>(Width, Height);
     currentArea->State = State;
@@ -162,7 +105,6 @@ void Game::Render()
         frameCount = 0;
         lastTime = currentTime;
     }
-
     if (battleSystem && battleSystem->IsActive()) {
         battleSystem->Render(*Renderer);
         battleSystem->RenderUI();
@@ -177,16 +119,6 @@ void Game::Render()
         } 
     }
     if(State != GAME_ACTIVE) {
-        // Set custom style for ImGui
-        ImGui::StyleColorsDark(); // Use dark theme
-        ImGuiStyle& style = ImGui::GetStyle();
-        style.Colors[ImGuiCol_WindowBg] = ImColor(0, 0, 0); // Black background
-        style.Colors[ImGuiCol_Border] = ImColor(0, 100, 0); // Dark green borders
-        style.Colors[ImGuiCol_Text] = ImColor(255, 255, 255); // White text
-        style.Colors[ImGuiCol_Button] = ImColor(0, 100, 0); // Dark green button background
-        style.Colors[ImGuiCol_ButtonHovered] = ImColor(0, 150, 0); // Lighter green on hover
-        style.Colors[ImGuiCol_ButtonActive] = ImColor(0, 80, 0); // Even darker green when pressed
-
         // Define the size of the window
         const ImVec2 windowSize(400, 300); // Adjust dimensions as needed
         ImVec2 windowPos = ImVec2((Width - windowSize.x) * 0.5f, (Height - windowSize.y) * 0.5f); // Centered position
@@ -321,10 +253,11 @@ void Game::ProcessInput(float dt)
         } else {
             battle = true;
         }
+        if(player->stats.health <= 0){
+            return;
+        }
         // Check for battle initiation only if player moved
         if (moved && battle) {
-            Camera::Instance->SetPosition(glm::vec2(0.0f, 0.0f));
-
             // Calculate distance moved this frame
             glm::vec2 newPos = player->Position;
             float distanceMoved = 0.1f; //glm::length(newPos - oldPos);
@@ -346,10 +279,11 @@ void Game::ProcessInput(float dt)
                     // Initialize and start battle
                     auto enemy = currentArea->GetRandomEnemy();
                     if (enemy) {
-                        battleSystem = std::make_unique<Battle>(monsters[player->form], enemy);
-                        battleSystem->Start();
                         player->Stop(); // Stop player movement during battle
-                        Camera::Instance->SetPosition(glm::vec2(0.0f, 0.0f));
+                        Camera::Instance->SetPosition(glm::vec2(0.0f));
+                        Camera::Instance->SetSize(glm::vec2(Width, Height));
+                        battleSystem = std::make_unique<Battle>(monsters[player->form], enemy, Width, Height);
+                        battleSystem->Start();
                     }
                 } else {
                     battle = false;
@@ -373,12 +307,38 @@ void Game::Update(float dt)
             this->ResetLevel();
             this->ResetPlayer();
         }
+        if(battleSystem){
+            battle = battleSystem->IsActive();
+            if(battle){
+                battleSystem->Update(dt);
+                for (auto& key : Keys) {
+                    key = false; // Reset key states
+                }
+            }
+        } else {
+            battle = false;
+        }
+
         if(!battle){
+            if(monsters[player->form]->battleEnd){
+                ResetLevel();
+                for(auto& monster : monsters) {
+                    monster->stats.health = monster->stats.maxHealth; // Reset each shared_ptr to nullptr
+                }
+                monsters[player->form]->battleEnd = false;
+                player->battleEnd = false;
+                ResetPlayer();
+                if(monsters[player->form]->lost){
+                    monsters[player->form]->lost = false;
+                }
+            }
+            if(monsters[player->form]->won){
+                monsters[player->form]->won = false;
+            }
             player->Update(dt);  // Update player position
             Collision->Update(player, dt);  // Then handle collisions
             currentArea->Update(dt);
             Particles->Update(dt, *player, 4, glm::vec2(60.0f, 135.0f));
-            
             Center();
         }
     }
@@ -391,9 +351,100 @@ void Game::Center(){
 }
 void Game::ResetPlayer()
 {
-    player->Size = PLAYER_SIZE;
-    player->Position = glm::vec2(this->Width / 2.0f - PLAYER_SIZE.x / 2.0f, this->Height - PLAYER_SIZE.y);
+    player.reset();
+    // Initialize player object
+    glm::vec2 playerPos = glm::vec2(
+        120.0f, 
+        this->Height / 3.0f
+    );
+    player = std::make_unique<Player>(
+        playerPos, PLAYER_SIZE, 
+        ResourceManager::GetTexture2D("player.png"), glm::vec3(1.0f, 1.0f, 1.0f), 5, 5
+    );
+    player->tile = 2;
+    player->form = 0;
 }
 void Game::ResetLevel(){
-    
+    // Clear the vector
+    monsters.clear();
+
+    // Add Froggy
+    auto froggy = std::make_shared<GameObject>(
+        glm::vec2(0.0f, 0.0f),
+        glm::vec2(200.0f, 400.0f),
+        ResourceManager::GetTexture2D("frog.png")
+    );
+    froggy->name = "Froggy";
+    froggy->stats = {180, 180, 80, 60, 60, "Water"};
+    froggy->moves = {
+        {"Water Gun", "Water", 50, 95.0f, 30, "A basic water attack"},
+        {"Aqua Wave", "Water", 100, 70.0f, 10, "A powerful water wave that may lower enemy speed"},
+        {"Bubble Beam", "Water", 65, 90.0f, 20, "An attack that may lower enemy speed"},
+        {"Pound", "Normal", 30, 100.0f, 40, "A basic normal attack"}
+    };
+    monsters.push_back(froggy);
+
+    // Add Tortoise
+    auto tortoise = std::make_shared<GameObject>(
+        glm::vec2(0.0f, 0.0f),
+        glm::vec2(200.0f, 400.0f),
+        ResourceManager::GetTexture2D("turtle.png")
+    );
+    tortoise->name = "Tortoise";
+    tortoise->stats = {180, 80, 75, 95, 30, "Water"};
+    tortoise->moves = {
+        {"Shell Shield", "Water", 0, 100.0f, 10, "A defense move to increase defense for a few turns"},
+        {"Bite", "Normal", 60, 90.0f, 15, "A normal biting attack"},
+        {"Water Pulse", "Water", 40, 100.0f, 20, "A water attack that may confuse the enemy"},
+        {"Defense Curl", "Normal", 0, 100.0f, 10, "A move that increases defense for a few turns"}
+    };
+    monsters.push_back(tortoise);
+
+    // Add Scorpio
+    auto scorpio = std::make_shared<GameObject>(
+        glm::vec2(0.0f, 0.0f),
+        glm::vec2(200.0f, 400.0f),
+        ResourceManager::GetTexture2D("scorpion.png")
+    );
+    scorpio->name = "Scorpio";
+    scorpio->stats = {120, 120, 65, 55, 50, "Ground"};
+    scorpio->moves = {
+        {"Sandstorm", "Ground", 0, 85.0f, 15, "A powerful sandstorm that affects visibility and damages over time"},
+        {"Poison Sting", "Ground", 40, 95.0f, 20, "A stinging attack that may poison the opponent"},
+        {"Tail Whip", "Normal", 0, 100.0f, 30, "A move that lowers the enemy's defense"},
+        {"Rock Slide", "Rock", 75, 90.0f, 10, "An attack that may cause the enemy to flinch"}
+    };
+    monsters.push_back(scorpio);
+
+    // Add Roawer
+    auto roawer = std::make_shared<GameObject>(
+        glm::vec2(0.0f, 0.0f),
+        glm::vec2(200.0f, 400.0f),
+        ResourceManager::GetTexture2D("wolf.png")
+    );
+    roawer->name = "Roawer";
+    roawer->stats = {150, 150, 80, 60, 60, "Ground"};
+    roawer->moves = {
+        {"Ground Slam", "Ground", 80, 85.0f, 15, "A ground-shaking attack that lowers enemy speed"},
+        {"Howl", "Normal", 0, 100.0f, 10, "A move that boosts the user's attack"},
+        {"Fang Strike", "Normal", 70, 95.0f, 15, "A biting attack that deals significant damage"},
+        {"Earthquake", "Ground", 100, 75.0f, 5, "A powerful attack that hits all opponents"}
+    };
+    monsters.push_back(roawer);
+
+    // Add Insectus
+    auto insectus = std::make_shared<GameObject>(
+        glm::vec2(0.0f, 0.0f),
+        glm::vec2(200.0f, 400.0f),
+        ResourceManager::GetTexture2D("insect.png")
+    );
+    insectus->name = "Insectus";
+    insectus->stats = {90, 90, 50, 35, 40, "Insect"};
+    insectus->moves = {
+        {"Bug Bite", "Insect", 50, 90.0f, 20, "A bite attack with a chance to confuse the enemy"},
+        {"Toxic Powder", "Poison", 0, 90.0f, 10, "A powder that poisons the opponent over time"},
+        {"Quick Attack", "Normal", 40, 100.0f, 20, "A fast attack that strikes first"},
+        {"Leech Life", "Bug", 20, 100.0f, 15, "A move that restores some health based on damage dealt"}
+    };
+    monsters.push_back(insectus);
 }

@@ -49,6 +49,15 @@ void Gui::Start(){
     ImGui::NewFrame();
     // Create a docking space
     //ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()); // Use the main viewport
+// Set custom style for ImGui
+    ImGui::StyleColorsDark(); // Use dark theme
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.Colors[ImGuiCol_WindowBg] = ImColor(0, 0, 0); // Black background
+    style.Colors[ImGuiCol_Border] = ImColor(0, 100, 0); // Dark ` borders
+    style.Colors[ImGuiCol_Text] = ImColor(255, 255, 255); // White text
+    style.Colors[ImGuiCol_Button] = ImColor(0, 100, 0); // Dark green button background
+    style.Colors[ImGuiCol_ButtonHovered] = ImColor(0, 150, 0); // Lighter green on hover
+    style.Colors[ImGuiCol_ButtonActive] = ImColor(0, 80, 0); // Even darker green when pressed
 
     //ImGui::ShowDemoWindow();
 }

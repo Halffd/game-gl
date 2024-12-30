@@ -10,29 +10,9 @@
 #include "game/Player.h"
 #include "game/GameObject.h"
 
-enum class BattleState {
-    START,
-    PLAYER_TURN,
-    ENEMY_TURN,
-    WIN,
-    LOSE,
-    FINISHED
-};
-
-enum class StatusEffect { NONE, POISON, PARALYSIS, BURN };
-struct BattleStats {
-    int health;
-    int maxHealth;
-    int attack;
-    int defense;
-    int speed;
-    std::string name;
-    StatusEffect status = StatusEffect::NONE;
-};
-
 class Battle {
 public:
-    Battle(std::shared_ptr<GameObject> player, GameObject* enemy);
+    Battle(std::shared_ptr<GameObject> player, GameObject* enemy, int width, int height);
     ~Battle() = default;
 
     void Update(float dt);
@@ -42,6 +22,7 @@ public:
     bool IsActive() const { return isActive; }
     void Start();
     void End();
+    std::string StatusEffectToString(StatusEffect effect);
 
 private:
     void ApplyStatusEffect(StatusEffect effect, bool isPlayer);
@@ -67,27 +48,19 @@ private:
     BattleStats playerStats;
     BattleStats enemyStats;
     
-    // Move system
-    struct Move {
-        std::string name;
-        int power;
-        float accuracy;
-        std::string description;
-    };
-    std::vector<Move> playerMoves;
-    std::vector<Move> enemyMoves;
-    
     // UI state
     bool showMoveSelection;
     int selectedMove;
     float animationTimer;
     glm::vec2 playerPosition;
     glm::vec2 enemyPosition;
+    int Width;
+    int Height;
     
     // Constants
-    static constexpr float BATTLE_START_DELAY = 1.0f;
+    static constexpr float BATTLE_START_DELAY = 2.0f;
     static constexpr float MOVE_ANIMATION_DURATION = 0.5f;
-    static constexpr int MAX_LOG_ENTRIES = 5;
+    static constexpr int MAX_LOG_ENTRIES = 10;
     float GetTypeModifier(const std::string& attackType, const std::string& defenderType);
     bool CheckCriticalHit();
     // Helper functions

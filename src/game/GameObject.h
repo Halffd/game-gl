@@ -7,16 +7,34 @@
 #include "render/SpriteRenderer.h"
 
 // Attack structure for managing individual attacks
-struct Attack {
+struct Move {
     std::string name;
     std::string type; // e.g., "insect", "water", "ground"
     int power;
     float accuracy;
-    int speed;
-    int endurance;
+    int quantity;
     std::string description;
 };
+enum class BattleState {
+    START,
+    PLAYER_TURN,
+    ENEMY_TURN,
+    WIN,
+    LOSE,
+    FINISHED
+};
 
+enum class StatusEffect { NONE, POISON, PARALYSIS, BURN };
+struct BattleStats {
+    int health;
+    int maxHealth;
+    int attack;
+    int defense;
+    int speed;
+    std::string type; 
+    std::string name;
+    StatusEffect status = StatusEffect::NONE;
+};
 // Container object for holding all state relevant for a single
 // game object entity. Each object in the game likely needs the
 // minimal of state as described within GameObject.
@@ -40,8 +58,12 @@ public:
     int         exp;
     int         form;
     std::string type;
-    // List of attacks available to the GameObject
-    std::vector<Attack> attacks;
+    std::vector<Move> moves;
+    BattleStats stats;
+    bool battleEnd = false;
+    bool won = false;
+    bool lost = false;
+
     // constructor(s)
     GameObject();
     GameObject(glm::vec2 pos, glm::vec2 size, Texture2D sprite, glm::vec3 color = glm::vec3(1.0f), glm::vec2 velocity = glm::vec2(0.0f, 0.0f));

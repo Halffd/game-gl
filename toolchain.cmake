@@ -1,7 +1,7 @@
 # Specify the minimum version of CMake
 cmake_minimum_required(VERSION 3.10)
 
-# Set the project name
+# Set the project name  
 project(MyProject)
 
 # Check the architecture type
