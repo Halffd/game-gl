@@ -237,16 +237,16 @@ void Game::ProcessInput(float dt)
     if (State == GAME_ACTIVE) {
         // Player movement
         if (this->Keys[GLFW_KEY_A] || this->Keys[GLFW_KEY_LEFT]) {
-            player->Move(Player::Direction::LEFT);
+            player->Move(Direction::LEFT);
         } 
         else if (this->Keys[GLFW_KEY_D] || this->Keys[GLFW_KEY_RIGHT]) {
-            player->Move(Player::Direction::RIGHT);
+            player->Move(Direction::RIGHT);
         } 
         else if (this->Keys[GLFW_KEY_W] || this->Keys[GLFW_KEY_UP]) {
-            player->Move(Player::Direction::UP);
+            player->Move(Direction::UP);
         } 
         else if (this->Keys[GLFW_KEY_S] || this->Keys[GLFW_KEY_DOWN]) {
-            player->Move(Player::Direction::DOWN);
+            player->Move(Direction::DOWN);
         } 
         else {
             player->Stop();
