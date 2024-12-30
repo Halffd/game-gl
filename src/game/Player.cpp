@@ -4,7 +4,7 @@
 Player::Player()
     : GameObject(),
       facing(Direction::DOWN),
-      movementSpeed(200.0f),  // Increased base movement speed
+      movementSpeed(225.0f),  // Increased base movement speed
       isMoving(false),
       animationTimer(0.0f),
       currentFrame(0),
@@ -17,7 +17,7 @@ Player::Player()
 Player::Player(glm::vec2 pos, glm::vec2 size, Texture2D sprite, glm::vec3 color, unsigned int tileWidth, unsigned int tileHeight)
     : GameObject(pos, size, sprite, color, glm::vec2(0.0f)),
       facing(Direction::DOWN),
-      movementSpeed(200.0f),  // Increased from 100.0f to 400.0f
+      movementSpeed(225.0f),  // Increased from 100.0f to 400.0f
       isMoving(false),
       animationTimer(0.0f),
       currentFrame(0),
