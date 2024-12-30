@@ -6,7 +6,7 @@ const unsigned int SCREEN_HEIGHT = HEIGHT; // Example value
 
 GameMode gameMode = MENU;
 std::string gameTypeStr = "MainMenu"; // Default game type string
-bool debug = true;
+bool debug = false;
 Log o;
 Game NeuroMonsters(SCREEN_WIDTH, SCREEN_HEIGHT);
 float lastTime = 9;

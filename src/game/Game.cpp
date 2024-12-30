@@ -90,7 +90,7 @@ void Game::Init()
     Collision = std::make_unique<Collider>(Dialogue, currentArea->tilemapManager);
     Collision->SetBoundingBoxOffset(glm::vec2(50.0,25.0f));
     Collision->SetBoundingBoxSize(glm::vec2(60.0,120.0f));
-    audio->play2D((ResourceManager::root + "/audio/breakout.wav").c_str(), true);
+    audio->play2D((ResourceManager::root + "/audio/music.wav").c_str(), true);
 }
 
 void Game::Render()
