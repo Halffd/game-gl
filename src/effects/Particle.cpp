@@ -1,4 +1,5 @@
 #include "Particle.h"
+#include "game/Camera.h"
 
 ParticleGenerator::ParticleGenerator(Shader shader, Texture2D texture, unsigned int amount)
     : shader(shader), texture(texture), amount(amount)
@@ -41,6 +42,7 @@ void ParticleGenerator::Draw()
         {
             this->shader.SetVector2f("offset", particle.Position);
             this->shader.SetVector4f("color", particle.Color);
+            this->shader.SetMatrix4("view", Camera::Instance->GetViewMatrix());
             this->texture.Bind();
             glBindVertexArray(this->VAO);
             glDrawArrays(GL_TRIANGLES, 0, 6);

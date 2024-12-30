@@ -41,11 +41,11 @@ public:
 
     // Cleans up resources
     void Clean();
+    std::shared_ptr<TilemapManager> tilemapManager; // Tilemap manager for handling static tiles in GAME mode
 
 private:
     // Initializes the area from tile data
     std::vector<std::vector<unsigned int>> readTileData(const std::string& filename);
-    std::shared_ptr<TilemapManager> tilemapManager; // Tilemap manager for handling static tiles in GAME mode
 };
 
 #endif // AREA_H

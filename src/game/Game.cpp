@@ -22,7 +22,7 @@
 // Initial size of the player paddle
 const glm::vec2 PLAYER_SIZE(300.0f, 300.0f);
 // Initial velocity of the player paddle
-const float PLAYER_VELOCITY(500.0f);
+const float PLAYER_VELOCITY(12500.0f);
 bool gameOver = false;
 
 Game::Game(unsigned int width, unsigned int height) 
@@ -33,7 +33,6 @@ Game::Game(unsigned int width, unsigned int height)
 {
     Camera::Instance = std::make_shared<Camera>(glm::vec2(0.0f, 0.0f), glm::vec2(Width, Height));
     Dialogue = std::make_shared<DialogueSystem>();
-    Collision = std::make_unique<Collider>(Dialogue);
     audio = std::unique_ptr<irrklang::ISoundEngine>(irrklang::createIrrKlangDevice());
 }
 
@@ -79,24 +78,26 @@ void Game::Init()
     Particles = std::make_unique<ParticleGenerator>(
         ResourceManager::GetShader("particle"), 
         ResourceManager::GetTexture2D("particle"), 
-        500
+        1500
     );
 
     // Initialize player object
     glm::vec2 playerPos = glm::vec2(
-        50.0f, 
-        this->Height / 4.0f
+        120.0f, 
+        this->Height / 3.0f
     );
     player = std::make_unique<Player>(
         playerPos, PLAYER_SIZE, 
-        ResourceManager::GetTexture2D("char/Froggo 1_0/Froggo/Spritesheets/Fall.png")
+        ResourceManager::GetTexture2D("player.png"), glm::vec3(1.0f, 1.0f, 1.0f), 5, 5
     );
-
+    player->tile = 0;
     // Initialize the area manager
     currentArea = std::make_shared<Area>(Width, Height);
     currentArea->State = State;
     currentArea->LoadTilemap("levels/main.lvl", "tiles.png", "bg.png", 7, 7);
-
+    Collision = std::make_unique<Collider>(Dialogue, currentArea->tilemapManager);
+    Collision->SetBoundingBoxOffset(glm::vec2(50.0,25.0f));
+    Collision->SetBoundingBoxSize(glm::vec2(60.0,120.0f));
     audio->play2D((ResourceManager::root + "/audio/breakout.wav").c_str(), true);
 }
 
@@ -228,47 +229,51 @@ void Game::Render()
     }
     // Render the GUI
     Gui::Render();
-}void Game::ProcessInput(float dt)
+}
+void Game::ProcessInput(float dt)
 {
     static bool paused = false;
 
     if (State == GAME_ACTIVE) {
         // Player movement
-        if (this->Keys[GLFW_KEY_A]) {
+        if (this->Keys[GLFW_KEY_A] || this->Keys[GLFW_KEY_LEFT]) {
             player->Move(Player::Direction::LEFT);
         } 
-        else if (this->Keys[GLFW_KEY_D]) {
+        else if (this->Keys[GLFW_KEY_D] || this->Keys[GLFW_KEY_RIGHT]) {
             player->Move(Player::Direction::RIGHT);
         } 
-        else if (this->Keys[GLFW_KEY_W]) {
+        else if (this->Keys[GLFW_KEY_W] || this->Keys[GLFW_KEY_UP]) {
             player->Move(Player::Direction::UP);
         } 
-        else if (this->Keys[GLFW_KEY_S]) {
+        else if (this->Keys[GLFW_KEY_S] || this->Keys[GLFW_KEY_DOWN]) {
             player->Move(Player::Direction::DOWN);
         } 
         else {
-            player->Velocity = glm::vec2(0.0f, 0.0f); // Stop the player
+            player->Stop();
         }
     }
 }
 
 void Game::Update(float dt)
 {
-    currentArea->State = State;
     if (State == GAME_ACTIVE && currentArea) {
-        Collision->Update(player, dt);
-
+        // Process input first
+        ProcessInput(dt);
+        
+        // Then update everything else
         if (gameOver) {
             this->ResetLevel();
             this->ResetPlayer();
         }
 
-        Particles->Update(dt, *player, 4, glm::vec2(10.0f));
+        player->Update(dt);  // Update player position
+        Collision->Update(player, dt);  // Then handle collisions
         currentArea->Update(dt);
-        player->Update(dt);
+        Particles->Update(dt, *player, 4, glm::vec2(60.0f, 135.0f));
         
+        // Camera update last
         float camX = player->Position.x - (Width / 2.0f);
-        float camY = player->Position.y - (Height / 2.0f);;
+        float camY = player->Position.y - (Height / 2.0f);
         Camera::Instance->FollowPlayer(glm::vec2(camX, camY));
     }
 }

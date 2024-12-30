@@ -2,48 +2,54 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include <memory>
 #include "GameObject.h"
-#include <string>
-#include <glm/glm.hpp>
+#include "asset/TilemapManager.h"
+
+enum class Direction {
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+};
 
 class Player : public GameObject {
 public:
-    enum class Direction {
-        UP,
-        DOWN,
-        LEFT,
-        RIGHT
-    };
-
+    // Constructors
     Player();
-    Player(glm::vec2 pos, glm::vec2 size, Texture2D sprite, glm::vec3 color = glm::vec3(1.0f));
-    
-    // Getters/Setters
-    Direction GetFacing() const { return facing; }
-    float GetMovementSpeed() const { return movementSpeed; }
-    bool IsMoving() const { return isMoving; }
-    
-    // Movement methods
+    Player(glm::vec2 pos, glm::vec2 size, Texture2D sprite, glm::vec3 color, unsigned int tileWidth, unsigned int tileHeight);
+
+    // Movement and update functions
     void Move(Direction dir);
+    void Stop();
     void Update(float dt);
     void Draw(SpriteRenderer& renderer) override;
-    
-    // Stats and inventory could be added here
-    std::string name;
-    int level;
-    
-private:
-    Direction facing;
-    float movementSpeed;
-    bool isMoving;
-    float animationTimer;
-    
-    // Sprite animation
-    int currentFrame;
-    float frameTime;
-    const float FRAME_DURATION = 0.16f; // ~6 frames per second
-    
+
+    // Animation
     void UpdateAnimation(float dt);
     void UpdateSpriteFrame();
+
+    // Game properties
+    std::string name;
+    int level;
+    bool isMoving;
+    Direction facing;
+    
+    // Movement properties
+    float movementSpeed;
+    
+    // Animation properties
+    static constexpr float FRAME_DURATION = 0.1f;
+    float animationTimer;
+    int currentFrame;
+    float frameTime;
+
+    // Tilemap
+    std::shared_ptr<TilemapManager> sheet;
+    int tile = 0;
+
+private:
+    // Add any private members here
 };
-#endif
+
+#endif // PLAYER_H

@@ -8,7 +8,7 @@ GameMode gameMode = MENU;
 std::string gameTypeStr = "MainMenu"; // Default game type string
 bool debug = true;
 Log o;
-Game NeuroJam(SCREEN_WIDTH, SCREEN_HEIGHT);
+Game NeuroMonsters(SCREEN_WIDTH, SCREEN_HEIGHT);
 float lastTime = 9;
 bool isPaused = false;
 
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 #endif
     glfwWindowHint(GLFW_RESIZABLE, false);
 
-    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "NeuroJam", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "NeuroMonsters", nullptr, nullptr);
     glfwMakeContextCurrent(window);
 
     // glad: load all OpenGL function pointers
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     Gui::Init(window);
     // initialize game
     // ---------------
-    NeuroJam.Init();
+    NeuroMonsters.Init();
 
     // deltaTime variables
     // -------------------
@@ -83,17 +83,17 @@ int main(int argc, char *argv[])
 
         // manage user input
         // -----------------
-        NeuroJam.ProcessInput(deltaTime);
+        NeuroMonsters.ProcessInput(deltaTime);
 
         // update game state
         // -----------------
-        NeuroJam.Update(deltaTime);
+        NeuroMonsters.Update(deltaTime);
 
         // render
         // ------
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.2f, 0.4f, 0.34f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        NeuroJam.Render();
+        NeuroMonsters.Render();
 
         glfwSwapBuffers(window);
     }
@@ -107,6 +107,7 @@ int main(int argc, char *argv[])
 }
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
+    ImGuiIO &io = ImGui::GetIO();
     // Check for escape key to toggle pause state
     if (key == GLFW_KEY_ESCAPE) {
         if (action == GLFW_PRESS) {
@@ -120,18 +121,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
                 std::cout << "Program resumed." << std::endl;
             }
         } 
-        NeuroJam.State = isPaused ? GAME_PAUSED : GAME_ACTIVE;
+        NeuroMonsters.State = isPaused ? GAME_PAUSED : GAME_ACTIVE;
     }
-    ImGuiIO &io = ImGui::GetIO();
     if (!io.WantCaptureKeyboard) {
         // Handle F4 key to close the application
         if (key == GLFW_KEY_F4 && action == GLFW_PRESS) {
             glfwSetWindowShouldClose(window, true);
         }
-
-        // Ensure key states are updated correctly
-        if (key >= 0 && key < 1024) {
-            NeuroJam.Keys[key] = (action == GLFW_PRESS); // Update key state directly
+        if (key >= 0 && key < 1024)
+        {
+            if (action == GLFW_PRESS)
+                NeuroMonsters.Keys[key] = true;
+            else if (action == GLFW_RELEASE)
+            {
+                NeuroMonsters.Keys[key] = false;
+                //NeuroMonsters.KeysProcessed[key] = false;
+            }
         }
     }
 }
