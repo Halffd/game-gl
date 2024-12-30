@@ -1,0 +1,16 @@
+build
+bin
+src/file
+lib
+libs
+b
+.vscode
+.history
+.cache
+build-windows
+win
+assimp/build
+assimp/build-windows
+assimp/win
+imgui/build
+imgui/build-windows
