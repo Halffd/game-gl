@@ -30,8 +30,6 @@ public:
     void UpdateSpriteFrame();
 
     // Game properties
-    std::string name;
-    int level;
     bool isMoving;
     Direction facing;
     

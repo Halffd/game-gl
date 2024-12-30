@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <random>
 #include "gamemode.h"
 
 // Represents the current state of the game
@@ -41,7 +42,9 @@ public:
 
     // Cleans up resources
     void Clean();
+    GameObject* GetRandomEnemy();
     std::shared_ptr<TilemapManager> tilemapManager; // Tilemap manager for handling static tiles in GAME mode
+    std::vector<std::shared_ptr<GameObject>> enemies;
 
 private:
     // Initializes the area from tile data

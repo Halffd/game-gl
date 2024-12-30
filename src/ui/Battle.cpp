@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <random>
 
-Battle::Battle(std::shared_ptr<Player> player, GameObject* enemy)
+Battle::Battle(std::shared_ptr<GameObject> player, GameObject* enemy)
     : isActive(false)
     , currentState(BattleState::START)
     , stateTimer(0.0f)
@@ -30,7 +30,7 @@ Battle::Battle(std::shared_ptr<Player> player, GameObject* enemy)
         45,     // attack
         35,     // defense
         40,     // speed
-        "Wild Enemy"
+        enemy->name
     };
 
     // Initialize player moves

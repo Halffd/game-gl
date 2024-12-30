@@ -30,7 +30,7 @@ struct BattleStats {
 
 class Battle {
 public:
-    Battle(std::shared_ptr<Player> player, GameObject* enemy);
+    Battle(std::shared_ptr<GameObject> player, GameObject* enemy);
     ~Battle() = default;
 
     void Update(float dt);
@@ -58,7 +58,7 @@ private:
     std::vector<std::string> battleLog;
     
     // Combatants
-    std::shared_ptr<Player> playerCharacter;
+    std::shared_ptr<GameObject> playerCharacter;
     GameObject* enemyCharacter;
     BattleStats playerStats;
     BattleStats enemyStats;

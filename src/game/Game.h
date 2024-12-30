@@ -6,6 +6,7 @@
 #include "Collider.h"
 #include "Area.h"
 #include "effects/Particle.h"
+#include "ui/Battle.h"
 #include <glm/glm.hpp>
 #include <tuple>
 #include "irrKlang/irrKlang.h"
@@ -24,7 +25,10 @@ public:
     std::unique_ptr<Player> player = nullptr;    std::unique_ptr<Collider> Collision = nullptr;
     std::shared_ptr<DialogueSystem> Dialogue = nullptr;
     std::unique_ptr<ParticleGenerator> Particles = nullptr;
+    std::unique_ptr<Battle> battleSystem;
     std::unique_ptr<irrklang::ISoundEngine> audio = nullptr;
+    std::vector<std::shared_ptr<GameObject>> monsters;
+
     unsigned int area; 
     
     // constructor/destructor

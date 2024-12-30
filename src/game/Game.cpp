@@ -17,6 +17,7 @@
 #include "Collider.h"
 #include "input/Input.h"
 #include "Area.h"
+#include "ui/Battle.h"
 #include "asset/TilemapManager.h"
 
 // Initial size of the player paddle
@@ -24,7 +25,6 @@ const glm::vec2 PLAYER_SIZE(300.0f, 300.0f);
 // Initial velocity of the player paddle
 const float PLAYER_VELOCITY(12500.0f);
 bool gameOver = false;
-
 Game::Game(unsigned int width, unsigned int height) 
     : State(GAME_ACTIVE), 
     Width(width), 
@@ -34,6 +34,20 @@ Game::Game(unsigned int width, unsigned int height)
     Camera::Instance = std::make_shared<Camera>(glm::vec2(0.0f, 0.0f), glm::vec2(Width, Height));
     Dialogue = std::make_shared<DialogueSystem>();
     audio = std::unique_ptr<irrklang::ISoundEngine>(irrklang::createIrrKlangDevice());
+    monsters.push_back(
+        std::make_shared<GameObject>(
+            glm::vec2(0.0f, 0.0f),
+            glm::vec2(200.0f, 400.0f),
+            ResourceManager::GetTexture2D("frog.png")
+        )
+    );
+    monsters.push_back(
+        std::make_shared<GameObject>(
+            glm::vec2(0.0f, 0.0f),
+            glm::vec2(200.0f, 400.0f),
+            ResourceManager::GetTexture2D("turtle.png")
+        )
+    );
 }
 
 Game::~Game() { }
@@ -91,10 +105,14 @@ void Game::Init()
         ResourceManager::GetTexture2D("player.png"), glm::vec3(1.0f, 1.0f, 1.0f), 5, 5
     );
     player->tile = 0;
+    player->form = 0;
+    monsters[0]->name = "Frog";
+    monsters[1]->name = "Turtle";
     // Initialize the area manager
     currentArea = std::make_shared<Area>(Width, Height);
     currentArea->State = State;
     currentArea->LoadTilemap("levels/main.lvl", "tiles.png", "bg.png", 7, 7);
+    currentArea->enemies = monsters;
     Collision = std::make_unique<Collider>(Dialogue, currentArea->tilemapManager);
     Collision->SetBoundingBoxOffset(glm::vec2(50.0,25.0f));
     Collision->SetBoundingBoxSize(glm::vec2(60.0,120.0f));
@@ -114,14 +132,19 @@ void Game::Render()
         lastTime = currentTime;
     }
 
-    if(currentArea){
-        currentArea->Draw(*Renderer); 
+    if (battleSystem && battleSystem->IsActive()) {
+        battleSystem->Render(*Renderer);
+        battleSystem->RenderUI();
+    } else {    
+        if(currentArea){
+            currentArea->Draw(*Renderer); 
+        }
+        // Render based on the current game state
+        if ((State == GAME_PAUSED || State == GAME_ACTIVE) && currentArea) {
+            player->Draw(*Renderer);
+            Particles->Draw();
+        } 
     }
-    // Render based on the current game state
-    if ((State == GAME_PAUSED || State == GAME_ACTIVE) && currentArea) {
-        player->Draw(*Renderer);
-        Particles->Draw();
-    } 
     if(State != GAME_ACTIVE) {
         // Set custom style for ImGui
         ImGui::StyleColorsDark(); // Use dark theme
@@ -160,6 +183,7 @@ void Game::Render()
 
             if (ImGui::Button("Main Menu", ImVec2(buttonWidth, buttonHeight))) {
                 State = GAME_MENU;
+                battleSystem->End();
             }
             //ImGui::SameLine(); // Maintain horizontal spacing for centering
 
@@ -233,27 +257,67 @@ void Game::Render()
 void Game::ProcessInput(float dt)
 {
     static bool paused = false;
-
+    static float stepCounter = 0.0f;  // Tracks distance moved for battle checks
+    static const float STEP_THRESHOLD = 32.0f;  // Adjust based on your tile size
+    static const float BATTLE_CHANCE = 0.1f;    // 10% chance of battle when threshold reached
+    
     if (State == GAME_ACTIVE) {
+        bool moved = false;
+        glm::vec2 oldPos = player->Position;
+
         // Player movement
         if (this->Keys[GLFW_KEY_A] || this->Keys[GLFW_KEY_LEFT]) {
             player->Move(Direction::LEFT);
+            moved = true;
         } 
         else if (this->Keys[GLFW_KEY_D] || this->Keys[GLFW_KEY_RIGHT]) {
             player->Move(Direction::RIGHT);
+            moved = true;
         } 
         else if (this->Keys[GLFW_KEY_W] || this->Keys[GLFW_KEY_UP]) {
             player->Move(Direction::UP);
+            moved = true;
         } 
         else if (this->Keys[GLFW_KEY_S] || this->Keys[GLFW_KEY_DOWN]) {
             player->Move(Direction::DOWN);
+            moved = true;
         } 
         else {
             player->Stop();
         }
+
+        // Check for battle initiation only if player moved
+        if (moved && !battleSystem->IsActive()) {
+            // Calculate distance moved this frame
+            glm::vec2 newPos = player->Position;
+            float distanceMoved = glm::length(newPos - oldPos);
+            
+            // Add to step counter
+            stepCounter += distanceMoved;
+
+            // Check for battle when step threshold is reached
+            if (stepCounter >= STEP_THRESHOLD) {
+                // Reset step counter
+                stepCounter = 0.0f;
+
+                // Random battle check
+                static std::random_device rd;
+                static std::mt19937 gen(rd());
+                static std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+
+                if (dis(gen) < BATTLE_CHANCE) {
+                    // Initialize and start battle
+                    auto enemy = currentArea->GetRandomEnemy();
+                    if (enemy) {
+                        battleSystem = std::make_unique<Battle>(monsters[player->form], enemy);
+                        battleSystem->Start();
+                        player->Stop(); // Stop player movement during battle
+                    }
+                }
+            }
+        }
     }
 }
-
 void Game::Update(float dt)
 {
     if (State == GAME_ACTIVE && currentArea) {

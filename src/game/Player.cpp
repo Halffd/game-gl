@@ -8,9 +8,7 @@ Player::Player()
       isMoving(false),
       animationTimer(0.0f),
       currentFrame(0),
-      frameTime(0.0f),
-      name("Player"),
-      level(1) 
+      frameTime(0.0f)
 {
 }
 
@@ -21,9 +19,7 @@ Player::Player(glm::vec2 pos, glm::vec2 size, Texture2D sprite, glm::vec3 color,
       isMoving(false),
       animationTimer(0.0f),
       currentFrame(0),
-      frameTime(0.0f),
-      name("Player"),
-      level(1)
+      frameTime(0.0f)
 {
     sheet = std::make_shared<TilemapManager>(Sprite, tileWidth, tileHeight);
     sheet->LoadTilemap(glm::vec2(tileWidth, tileHeight));

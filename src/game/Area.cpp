@@ -52,6 +52,16 @@ void Area::Update(float deltaTime) {
     
 }
 
+GameObject* Area::GetRandomEnemy() {
+    if (enemies.empty()) return nullptr;
+
+    // Random enemy selection
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<size_t> dis(0, enemies.size() - 1);
+    
+    return enemies[dis(gen)].get();
+}
 bool Area::IsCompleted() const {
     return true;
 }
