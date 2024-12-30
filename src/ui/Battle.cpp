@@ -26,6 +26,7 @@ void Battle::Start() {
     stateTimer = BATTLE_START_DELAY;
     battleLog.clear();
     AddLogMessage("Battle started!");
+    currentState == BattleState::PLAYER_TURN;
 }
 
 void Battle::Update(float dt) {
@@ -117,12 +118,12 @@ void Battle::RenderUI() {
     if (ImGui::Button("Attack", ImVec2(200, 50))) {
         showMoveSelection = true;
     }
-    if (ImGui::Button("Item", ImVec2(200, 50))) {
+    /*if (ImGui::Button("Item", ImVec2(200, 50))) {
         AddLogMessage("You selected Item. (Feature WIP)");
     }
     if (ImGui::Button("Monsters", ImVec2(200, 50))) {
         AddLogMessage("You selected Monsters. (Feature WIP)");
-    }
+    }*/
     
     // Function to execute the "Run" action with 40% chance
     if (ImGui::Button("Run", ImVec2(200, 50))) {
@@ -359,7 +360,7 @@ void Battle::ExecuteEnemyMove() {
     } else {
         AddLogMessage(enemyCharacter->name + "'s " + selectedMove.name + " missed!");
     }
-
+    currentState = BattleState::PLAYER_TURN;   
     // Check for battle end if player's health drops to zero
     if (playerCharacter->stats.health <= 0) {
         currentState = BattleState::LOSE;

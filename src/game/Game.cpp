@@ -375,7 +375,7 @@ void Game::ResetLevel(){
         ResourceManager::GetTexture2D("frog.png")
     );
     froggy->name = "Froggy";
-    froggy->stats = {250, 250, 90, 70, 60, "Water"};
+    froggy->stats = {150, 80, 70, 50, 50, "Water"};
     froggy->moves = {
         {"Water Gun", "Water", 50, 95.0f, 30, "A basic water attack"},
         {"Aqua Wave", "Water", 100, 70.0f, 10, "A powerful water wave that may lower enemy speed"},
