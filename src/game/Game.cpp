@@ -34,20 +34,6 @@ Game::Game(unsigned int width, unsigned int height)
     Camera::Instance = std::make_shared<Camera>(glm::vec2(0.0f, 0.0f), glm::vec2(Width, Height));
     Dialogue = std::make_shared<DialogueSystem>();
     audio = std::unique_ptr<irrklang::ISoundEngine>(irrklang::createIrrKlangDevice());
-    monsters.push_back(
-        std::make_shared<GameObject>(
-            glm::vec2(0.0f, 0.0f),
-            glm::vec2(200.0f, 400.0f),
-            ResourceManager::GetTexture2D("frog.png")
-        )
-    );
-    monsters.push_back(
-        std::make_shared<GameObject>(
-            glm::vec2(0.0f, 0.0f),
-            glm::vec2(200.0f, 400.0f),
-            ResourceManager::GetTexture2D("turtle.png")
-        )
-    );
 }
 
 Game::~Game() { }
@@ -86,7 +72,7 @@ void Game::Init()
     );
 
     // Load textures
-    ResourceManager::LoadTexture2D("misc/particle.png", "particle");
+    ResourceManager::LoadTexture2D("particle.png", "particle");
 
     // Initialize particle generator
     Particles = std::make_unique<ParticleGenerator>(
@@ -106,8 +92,53 @@ void Game::Init()
     );
     player->tile = 0;
     player->form = 0;
-    monsters[0]->name = "Frog";
-    monsters[1]->name = "Turtle";
+    monsters.push_back(
+        std::make_shared<GameObject>(
+            glm::vec2(0.0f, 0.0f),
+            glm::vec2(200.0f, 400.0f),
+            ResourceManager::GetTexture2D("frog.png")
+        )
+    );
+    monsters.push_back(
+        std::make_shared<GameObject>(
+            glm::vec2(0.0f, 0.0f),
+            glm::vec2(200.0f, 400.0f),
+            ResourceManager::GetTexture2D("turtle.png")
+        )
+    );
+    monsters.push_back(
+        std::make_shared<GameObject>(
+            glm::vec2(0.0f, 0.0f),
+            glm::vec2(200.0f, 400.0f),
+            ResourceManager::GetTexture2D("Scorpio.png")
+        )
+    );
+    monsters.push_back(
+        std::make_shared<GameObject>(
+            glm::vec2(0.0f, 0.0f),
+            glm::vec2(200.0f, 400.0f),
+            ResourceManager::GetTexture2D("wolf.png")
+        )
+    );
+    monsters.push_back(
+        std::make_shared<GameObject>(
+            glm::vec2(0.0f, 0.0f),
+            glm::vec2(200.0f, 400.0f),
+            ResourceManager::GetTexture2D("insect.png")
+        )
+    );
+    monsters.push_back(
+        std::make_shared<GameObject>(
+            glm::vec2(0.0f, 0.0f),
+            glm::vec2(200.0f, 400.0f),
+            ResourceManager::GetTexture2D("turtle.png")
+        )
+    );
+    monsters[0]->name = "Froggy";
+    monsters[1]->name = "Tartoise";
+    monsters[2]->name = "Scorpio";
+    monsters[3]->name = "Roawer";
+    monsters[4]->name = "Inesctus";
     // Initialize the area manager
     currentArea = std::make_shared<Area>(Width, Height);
     currentArea->State = State;
@@ -258,8 +289,8 @@ void Game::ProcessInput(float dt)
 {
     static bool paused = false;
     static float stepCounter = 0.0f;  // Tracks distance moved for battle checks
-    static const float STEP_THRESHOLD = 32.0f;  // Adjust based on your tile size
-    static const float BATTLE_CHANCE = 0.1f;    // 10% chance of battle when threshold reached
+    static const float STEP_THRESHOLD = 12.0f;  // Adjust based on your tile size
+    static const float BATTLE_CHANCE = 0.4f;    // 10% chance of battle when threshold reached
     
     if (State == GAME_ACTIVE) {
         bool moved = false;
@@ -285,12 +316,19 @@ void Game::ProcessInput(float dt)
         else {
             player->Stop();
         }
-
+        bool battle = false;
+        if(battleSystem){
+            battle = !battleSystem->IsActive();
+        } else {
+            battle = true;
+        }
         // Check for battle initiation only if player moved
-        if (moved && !battleSystem->IsActive()) {
+        if (moved && battle) {
+            Camera::Instance->FollowPlayer(glm::vec2(camX, camY));
+
             // Calculate distance moved this frame
             glm::vec2 newPos = player->Position;
-            float distanceMoved = glm::length(newPos - oldPos);
+            float distanceMoved = 0.1f; //glm::length(newPos - oldPos);
             
             // Add to step counter
             stepCounter += distanceMoved;
