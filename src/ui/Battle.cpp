@@ -354,10 +354,10 @@ void Battle::ExecuteEnemyMove() {
     if (CheckAccuracy(selectedMove.accuracy)) {
         int damage = CalculateDamage(selectedMove, enemyCharacter->stats, playerCharacter->stats);
         playerCharacter->stats.health = std::max(0, playerCharacter->stats.health - damage);
-        AddLogMessage(enemyCharacter->stats.name + " used " + selectedMove.name + "!");
+        AddLogMessage(enemyCharacter->name + " used " + selectedMove.name + "!");
         AddLogMessage("Dealt " + std::to_string(damage) + " damage!");
     } else {
-        AddLogMessage(enemyCharacter->stats.name + "'s " + selectedMove.name + " missed!");
+        AddLogMessage(enemyCharacter->name + "'s " + selectedMove.name + " missed!");
     }
 
     // Check for battle end if player's health drops to zero
