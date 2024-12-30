@@ -316,7 +316,6 @@ void Game::ProcessInput(float dt)
         else {
             player->Stop();
         }
-        bool battle = false;
         if(battleSystem){
             battle = !battleSystem->IsActive();
         } else {
@@ -324,7 +323,7 @@ void Game::ProcessInput(float dt)
         }
         // Check for battle initiation only if player moved
         if (moved && battle) {
-            Camera::Instance->FollowPlayer(glm::vec2(camX, camY));
+            Camera::Instance->SetPosition(glm::vec2(0.0f, 0.0f));
 
             // Calculate distance moved this frame
             glm::vec2 newPos = player->Position;
@@ -350,9 +349,16 @@ void Game::ProcessInput(float dt)
                         battleSystem = std::make_unique<Battle>(monsters[player->form], enemy);
                         battleSystem->Start();
                         player->Stop(); // Stop player movement during battle
+                        Camera::Instance->SetPosition(glm::vec2(0.0f, 0.0f));
                     }
+                } else {
+                    battle = false;
                 }
+            } else {
+                battle = false;
             }
+        } else {
+            battle = false;
         }
     }
 }
@@ -367,19 +373,22 @@ void Game::Update(float dt)
             this->ResetLevel();
             this->ResetPlayer();
         }
-
-        player->Update(dt);  // Update player position
-        Collision->Update(player, dt);  // Then handle collisions
-        currentArea->Update(dt);
-        Particles->Update(dt, *player, 4, glm::vec2(60.0f, 135.0f));
-        
-        // Camera update last
-        float camX = player->Position.x - (Width / 2.0f);
-        float camY = player->Position.y - (Height / 2.0f);
-        Camera::Instance->FollowPlayer(glm::vec2(camX, camY));
+        if(!battle){
+            player->Update(dt);  // Update player position
+            Collision->Update(player, dt);  // Then handle collisions
+            currentArea->Update(dt);
+            Particles->Update(dt, *player, 4, glm::vec2(60.0f, 135.0f));
+            
+            Center();
+        }
     }
 }
-
+void Game::Center(){
+    // Camera update last
+    float camX = player->Position.x - (Width / 2.0f);
+    float camY = player->Position.y - (Height / 2.0f);
+    Camera::Instance->FollowPlayer(glm::vec2(camX, camY));
+}
 void Game::ResetPlayer()
 {
     player->Size = PLAYER_SIZE;

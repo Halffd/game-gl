@@ -106,6 +106,19 @@ void Battle::Render(SpriteRenderer& renderer) {
 
     RenderBattleScene(renderer);
 }
+float Battle::GetTypeModifier(const std::string& attackType, const std::string& defenderType) {
+    if ((attackType == "Water" && defenderType == "Insect") ||
+        (attackType == "Ground" && defenderType == "Water") ||
+        (attackType == "Insect" && defenderType == "Ground")) {
+        return 1.5f; // Advantage
+    } else if ((attackType == "Insect" && defenderType == "Water") ||
+               (attackType == "Water" && defenderType == "Ground") ||
+               (attackType == "Ground" && defenderType == "Insect")) {
+        return 0.5f; // Disadvantage
+    }
+    return 1.0f; // Neutral
+}
+
 
 void Battle::RenderBattleScene(SpriteRenderer& renderer) {
     // Render battle background
@@ -119,45 +132,52 @@ void Battle::RenderBattleScene(SpriteRenderer& renderer) {
     playerCharacter->Position = playerPosition;
     playerCharacter->Draw(renderer);
 }
-
 void Battle::RenderUI() {
     if (!isActive) return;
 
-    // Main battle window
-    ImGui::SetNextWindowPos(ImVec2(0, 450), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(800, 150), ImGuiCond_Always);
-    ImGui::Begin("Battle", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    // Main battle menu
+    ImGui::SetNextWindowPos(ImVec2(600, 450), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(200, 150), ImGuiCond_Always);
+    ImGui::Begin("BattleMenu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
-    // Split the window into two columns
-    ImGui::Columns(2, "BattleColumns", false);
-    
-    // Left column: Battle log
+    // Render main action buttons
+    if (ImGui::Button("Attack", ImVec2(200, 50))) {
+        showMoveSelection = true;
+    }
+    if (ImGui::Button("Item", ImVec2(200, 50))) {
+        AddLogMessage("You selected Item. (Feature WIP)");
+    }
+    if (ImGui::Button("Monsters", ImVec2(200, 50))) {
+        AddLogMessage("You selected Monsters. (Feature WIP)");
+    }
+    if (ImGui::Button("Run", ImVec2(200, 50))) {
+        currentState = BattleState::LOSE;
+        AddLogMessage("You ran away!");
+    }
+
+    ImGui::End();
+
+    // Render player health and stats
+    RenderHealthBars();
     RenderBattleLog();
-    
-    ImGui::NextColumn();
-    
-    // Right column: Move selection or battle status
+
+    // Render move selection if active
     if (showMoveSelection && currentState == BattleState::PLAYER_TURN) {
         RenderMoveSelection();
     }
-    
-    ImGui::End();
-
-    // Render health bars in a separate window
-    RenderHealthBars();
 }
 
 void Battle::RenderHealthBars() {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(800, 60), ImGuiCond_Always);
-    ImGui::Begin("Health Bars", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    ImGui::Begin("HealthBars", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
     // Enemy health bar
-    ImGui::Text("%s: %d/%d", enemyStats.name.c_str(), enemyStats.health, enemyStats.maxHealth);
+    ImGui::Text("Enemy: %s", enemyStats.name.c_str());
     ImGui::ProgressBar((float)enemyStats.health / enemyStats.maxHealth, ImVec2(-1, 0));
 
     // Player health bar
-    ImGui::Text("%s: %d/%d", playerStats.name.c_str(), playerStats.health, playerStats.maxHealth);
+    ImGui::Text("Player: %s", playerStats.name.c_str());
     ImGui::ProgressBar((float)playerStats.health / playerStats.maxHealth, ImVec2(-1, 0));
 
     ImGui::End();
@@ -190,6 +210,27 @@ void Battle::RenderBattleLog() {
     ImGui::EndChild();
 }
 
+void Battle::RenderMoveSelection() {
+    ImGui::SetNextWindowPos(ImVec2(600, 300), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(200, 150), ImGuiCond_Always);
+    ImGui::Begin("MoveSelection", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    ImGui::Text("Select your move:");
+
+    for (size_t i = 0; i < playerCharacter->attacks.size(); i++) {
+        const auto& attack = playerCharacter->attacks[i];
+        if (ImGui::Button(attack.name.c_str(), ImVec2(200, 50))) {
+            ExecutePlayerMove(attack.name);
+            showMoveSelection = false;
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s\nType: %s\nPower: %d\nAccuracy: %.0f%%\nSpeed: %d\nEndurance: %d", 
+                              attack.description.c_str(), attack.type.c_str(), attack.power, 
+                              attack.accuracy, attack.speed, attack.endurance);
+        }
+    }
+    ImGui::End();
+}
+
 void Battle::ExecutePlayerMove(const std::string& moveName) {
     auto move = std::find_if(playerMoves.begin(), playerMoves.end(),
         [&moveName](const Move& m) { return m.name == moveName; });
@@ -218,13 +259,87 @@ void Battle::ExecutePlayerMove(const std::string& moveName) {
     stateTimer = BATTLE_START_DELAY;
 }
 
-void Battle::ExecuteEnemyMove() {
-    // Randomly select enemy move
+
+void Battle::HandleStatusEffects(BattleStats& stats) {
+    switch (stats.status) {
+        case StatusEffect::POISON:
+            stats.health -= 5; // Fixed damage per turn
+            AddLogMessage(stats.name + " is hurt by poison!");
+            break;
+        case StatusEffect::PARALYSIS:
+            if (std::rand() % 100 < 25) { // 25% chance to skip turn
+                AddLogMessage(stats.name + " is paralyzed and cannot move!");
+            }
+            break;
+        case StatusEffect::BURN:
+            stats.attack -= 2; // Reduce attack while burned
+            stats.health -= 5; // Fixed damage per turn
+            AddLogMessage(stats.name + " is hurt by the burn!");
+            break;
+        default:
+            break;
+    }
+}
+void Battle::ApplyStatusEffect(StatusEffect effect, bool isPlayer) {
+    if (isPlayer) {
+        playerStats.status = effect;
+        AddLogMessage(playerStats.name + " is now " + StatusEffectToString(effect) + "!");
+    } else {
+        enemyStats.status = effect;
+        AddLogMessage(enemyStats.name + " is now " + StatusEffectToString(effect) + "!");
+    }
+}
+
+bool Battle::CheckCriticalHit() {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, enemyMoves.size() - 1);
+    std::uniform_real_distribution<> dis(0.0, 100.0);
+    return dis(gen) < 15; // e.g., 10%
+}
+
+int Battle::CalculateDamage(const Move& move, const BattleStats& attacker, const BattleStats& defender) {
+    float attackPower = (float)move.power * ((float)attacker.attack / defender.defense);
+    float randomFactor = (std::rand() % 15 + 85) / 100.0f; // 0.85 to 1.00
+    int damage = static_cast<int>(attackPower * randomFactor);
+
+    if (CheckCriticalHit()) {
+        AddLogMessage("Critical hit!");
+        damage *= 2; // Double damage
+    }
+
+    return damage;
+}
+
+void Battle::ExecuteEnemyMove() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    // Add weights for moves based on health and strategy
+    std::vector<std::pair<int, float>> moveWeights;
+    for (size_t i = 0; i < enemyMoves.size(); ++i) {
+        const auto& move = enemyMoves[i];
+        float weight = move.accuracy; // Base weight on accuracy
+
+        // Add bonus weight if the move's power is high and enemy health is safe
+        if (enemyStats.health > 0.5f * enemyStats.maxHealth && move.power > 50) {
+            weight += 20.0f;
+        }
+
+        // Adjust weight based on type effectiveness
+        float typeModifier = GetTypeModifier(move.type, playerStats.type);
+        weight *= typeModifier;
+
+        moveWeights.emplace_back(i, weight);
+    }
+
+    // Select a move based on weighted random choice
+    std::discrete_distribution<> dis(
+        moveWeights.begin(), moveWeights.end(),
+        [](const std::pair<int, float>& pair) { return pair.second; });
+
     const Move& selectedMove = enemyMoves[dis(gen)];
 
+    // Execute the move
     if (CheckAccuracy(selectedMove.accuracy)) {
         int damage = CalculateDamage(selectedMove, enemyStats, playerStats);
         playerStats.health = std::max(0, playerStats.health - damage);

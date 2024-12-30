@@ -6,6 +6,16 @@
 
 #include "render/SpriteRenderer.h"
 
+// Attack structure for managing individual attacks
+struct Attack {
+    std::string name;
+    std::string type; // e.g., "insect", "water", "ground"
+    int power;
+    float accuracy;
+    int speed;
+    int endurance;
+    std::string description;
+};
 
 // Container object for holding all state relevant for a single
 // game object entity. Each object in the game likely needs the
@@ -29,7 +39,9 @@ public:
     int         level;
     int         exp;
     int         form;
-
+    std::string type;
+    // List of attacks available to the GameObject
+    std::vector<Attack> attacks;
     // constructor(s)
     GameObject();
     GameObject(glm::vec2 pos, glm::vec2 size, Texture2D sprite, glm::vec3 color = glm::vec3(1.0f), glm::vec2 velocity = glm::vec2(0.0f, 0.0f));

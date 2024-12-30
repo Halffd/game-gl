@@ -19,6 +19,7 @@ enum class BattleState {
     FINISHED
 };
 
+enum class StatusEffect { NONE, POISON, PARALYSIS, BURN };
 struct BattleStats {
     int health;
     int maxHealth;
@@ -26,6 +27,7 @@ struct BattleStats {
     int defense;
     int speed;
     std::string name;
+    StatusEffect status = StatusEffect::NONE;
 };
 
 class Battle {
@@ -42,6 +44,8 @@ public:
     void End();
 
 private:
+    void ApplyStatusEffect(StatusEffect effect, bool isPlayer);
+    void HandleStatusEffects(BattleStats& stats);
     void UpdateBattleLogic(float dt);
     void RenderBattleScene(SpriteRenderer& renderer);
     void RenderBattleMenu();
@@ -84,7 +88,8 @@ private:
     static constexpr float BATTLE_START_DELAY = 1.0f;
     static constexpr float MOVE_ANIMATION_DURATION = 0.5f;
     static constexpr int MAX_LOG_ENTRIES = 5;
-    
+    float GetTypeModifier(const std::string& attackType, const std::string& defenderType);
+    bool CheckCriticalHit();
     // Helper functions
     void AddLogMessage(const std::string& message);
     int CalculateDamage(const Move& move, const BattleStats& attacker, const BattleStats& defender);

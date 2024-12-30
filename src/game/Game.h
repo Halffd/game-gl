@@ -43,11 +43,13 @@ public:
     void Render();
     void ResetPlayer();
     void ResetLevel();
+    void Center();
     
 private:
     double lastTime;
     int frameCount;
     float fps;
+    bool battle = false;
 };
 
 
