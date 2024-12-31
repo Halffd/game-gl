@@ -25,15 +25,20 @@ const glm::vec2 PLAYER_SIZE(300.0f, 300.0f);
 // Initial velocity of the player paddle
 const float PLAYER_VELOCITY(12500.0f);
 bool gameOver = false;
+// Add this in your Game constructor or Init method
+std::random_device rd;
+std::mt19937 gen = std::mt19937(rd());  // Seeded generator
+std::uniform_real_distribution<float> dis = std::uniform_real_distribution<float>(0.0f, 1.0f);
+
 Game::Game(unsigned int width, unsigned int height) 
-    : State(GAME_ACTIVE), 
+    : State(GAME_MENU), 
     Width(width), 
     Height(height),
     area(0)
 {
     Camera::Instance = std::make_shared<Camera>(glm::vec2(0.0f, 0.0f), glm::vec2(Width, Height));
     Dialogue = std::make_shared<DialogueSystem>();
-    audio = std::unique_ptr<irrklang::ISoundEngine>(irrklang::createIrrKlangDevice());
+    //audio = std::unique_ptr<irrklang::ISoundEngine>(irrklang::createIrrKlangDevice());
 }
 
 Game::~Game() { }
@@ -84,13 +89,13 @@ void Game::Init()
     ResetLevel();
     // Initialize the area manager
     currentArea = std::make_shared<Area>(Width, Height);
-    currentArea->State = State;
+    // currentArea->State = State;
     currentArea->LoadTilemap("levels/main.lvl", "tiles.png", "bg.png", 7, 7);
     currentArea->enemies = monsters;
     Collision = std::make_unique<Collider>(Dialogue, currentArea->tilemapManager);
     Collision->SetBoundingBoxOffset(glm::vec2(50.0,25.0f));
     Collision->SetBoundingBoxSize(glm::vec2(60.0,120.0f));
-    audio->play2D((ResourceManager::root + "/audio/music.wav").c_str(), true);
+    //audio->play2D((ResourceManager::root + "/audio/music.wav").c_str(), true);
 }
 
 void Game::Render()
@@ -113,10 +118,10 @@ void Game::Render()
             currentArea->Draw(*Renderer); 
         }
         // Render based on the current game state
-        if ((State == GAME_PAUSED || State == GAME_ACTIVE) && currentArea) {
+        //if ((State == GAME_PAUSED || State == GAME_ACTIVE) && currentArea) {
             player->Draw(*Renderer);
             Particles->Draw();
-        } 
+        //} 
     }
     if(State != GAME_ACTIVE) {
         // Define the size of the window
@@ -221,8 +226,8 @@ void Game::ProcessInput(float dt)
 {
     static bool paused = false;
     static float stepCounter = 0.0f;  // Tracks distance moved for battle checks
-    static const float STEP_THRESHOLD = 12.0f;  // Adjust based on your tile size
-    static const float BATTLE_CHANCE = 0.4f;    // 10% chance of battle when threshold reached
+    static const float STEP_THRESHOLD = 29.0f;  // Adjust based on your tile size
+    static const float BATTLE_CHANCE = 0.45f;    // 10% chance of battle when threshold reached
     
     if (State == GAME_ACTIVE) {
         bool moved = false;
@@ -256,6 +261,8 @@ void Game::ProcessInput(float dt)
         if(player->stats.health <= 0){
             return;
         }
+        std::cout << battle << "\n";
+        std::cout << moved << "\n";
         // Check for battle initiation only if player moved
         if (moved && battle) {
             // Calculate distance moved this frame
@@ -264,21 +271,21 @@ void Game::ProcessInput(float dt)
             
             // Add to step counter
             stepCounter += distanceMoved;
+        std::cout << stepCounter << "st\n";
 
             // Check for battle when step threshold is reached
             if (stepCounter >= STEP_THRESHOLD) {
                 // Reset step counter
                 stepCounter = 0.0f;
 
-                // Random battle check
-                static std::random_device rd;
-                static std::mt19937 gen(rd());
-                static std::uniform_real_distribution<float> dis(0.0f, 1.0f);
-
                 if (dis(gen) < BATTLE_CHANCE) {
                     // Initialize and start battle
                     auto enemy = currentArea->GetRandomEnemy();
+        std::cout << battle << "battle\n";
+                    
                     if (enemy) {
+        std::cout << "enemy\n";
+
                         player->Stop(); // Stop player movement during battle
                         Camera::Instance->SetPosition(glm::vec2(0.0f));
                         Camera::Instance->SetSize(glm::vec2(Width, Height));

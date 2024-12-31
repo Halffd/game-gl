@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28.1)
 
 # Define project name and output executable name
-set(PROJECT_NAME "game")
+set(PROJECT_NAME "NeuroMonsters")
 set(EXECUTABLE_NAME "${PROJECT_NAME}")
 
 project(${PROJECT_NAME}
@@ -66,7 +66,7 @@ if(WIN32)
     set(LIB_DIR "${CMAKE_SOURCE_DIR}/lib")
     set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 	add_link_options(-static -static-libgcc -static-libstdc++)
-
+    find_package(glfw3 REQUIRED)
     # Check required directories
     foreach(REQUIRED_DIR IN ITEMS ${LIB_DIR} ${INCLUDE_DIR})
         if(NOT EXISTS ${REQUIRED_DIR})
@@ -77,12 +77,13 @@ if(WIN32)
     # Windows include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
         ${CMAKE_SOURCE_DIR}/include_libs/windows
+        ${GLFW_INCLUDE_DIRS}
     )
-    add_library(glfw SHARED IMPORTED)
-    set_target_properties(glfw PROPERTIES
-            IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/glfw3.lib"
-            IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
-    )
+    #add_library(glfw SHARED IMPORTED)
+    #set_target_properties(glfw PROPERTIES
+    #        IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/glfw3.lib"
+    #        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
+    #)
     
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
@@ -90,30 +91,30 @@ if(WIN32)
     )
 
     # Set up irrKlang paths
-    set(IRRKLANG_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/lib/irrKlang/include") # Adjust the path if needed
-    set(IRRKLANG_LIB_DIR "${CMAKE_SOURCE_DIR}/lib/irrKlang/lib/Winx64-visualStudio") # MSVC-specific lib directory
-    set(IRRKLANG_LIB "${IRRKLANG_LIB_DIR}/irrKlang.lib") # Static or dynamic library for MSVC
-    set(IRRKLANG_DLL "${IRRKLANG_LIB_DIR}/irrKlang.dll") # DLL for dynamic linking (if needed)
+    # set(IRRKLANG_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/lib/irrKlang/include") # Adjust the path if needed
+    # set(IRRKLANG_LIB_DIR "${CMAKE_SOURCE_DIR}/lib/irrKlang/lib/Winx64-visualStudio") # MSVC-specific lib directory
+    # set(IRRKLANG_LIB "${IRRKLANG_LIB_DIR}/irrKlang.lib") # Static or dynamic library for MSVC
+    # set(IRRKLANG_DLL "${IRRKLANG_LIB_DIR}/irrKlang.dll") # DLL for dynamic linking (if needed)
 
     # Check if the required files exist
-    if(NOT EXISTS ${IRRKLANG_LIB})
-        message(FATAL_ERROR "irrKlang library not found at: ${IRRKLANG_LIB}")
-    endif()
+    #if(NOT EXISTS ${IRRKLANG_LIB})
+    #    message(FATAL_ERROR "irrKlang library not found at: ${IRRKLANG_LIB}")
+    #endif()
 
     # Include irrKlang directories
-    target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRKLANG_INCLUDE_DIR})
+    #target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRKLANG_INCLUDE_DIR})
 
     # Link irrKlang
-    target_link_libraries(${EXECUTABLE_NAME} PRIVATE
-        "${IRRKLANG_LIB}"
-    )
+    #target_link_libraries(${EXECUTABLE_NAME} PRIVATE
+    #    "${IRRKLANG_LIB}"
+    #)
     # Ensure the DLL is available at runtime (for dynamic linking)
-    add_custom_command(TARGET game POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${IRRKLANG_DLL}" $<TARGET_FILE_DIR:game>)
-    add_custom_command(TARGET game POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_SOURCE_DIR}/lib/glfw3.dll" $<TARGET_FILE_DIR:game>)
+    #add_custom_command(TARGET game POST_BUILD
+    #        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    #        "${IRRKLANG_DLL}" $<TARGET_FILE_DIR:game>)
+    #add_custom_command(TARGET game POST_BUILD
+    #        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    #        "${CMAKE_SOURCE_DIR}/lib/glfw3.dll" $<TARGET_FILE_DIR:game>)
 else()
     # Linux: Use system packages
     

@@ -140,6 +140,7 @@ void Battle::RenderUI() {
             End();  // End the battle or transition to another state
         } else {
             AddLogMessage("You failed to run away!");  // If the chance is not met, player fails to run away
+            currentState = BattleState::ENEMY_TURN;
         }
     }
 
