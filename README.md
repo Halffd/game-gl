@@ -22,6 +22,10 @@ To build this project, ensure you have the following library installed:
   - On **Ubuntu**: `libglfw-dev` and `glfw`
   - On **Fedora**: `glfw-devel` and `glfw`
   - On **Arch**: `glfw`
+  - On **Windows MSYS (MinGW)**: Install the GLFW package using:
+    ```bash
+    pacman -S mingw-w64-x86_64-glfw
+    ```
 
 ## Building
 
