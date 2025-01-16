@@ -368,7 +368,7 @@ void Game::ResetPlayer()
         playerPos, PLAYER_SIZE, 
         ResourceManager::GetTexture2D("player.png"), glm::vec3(1.0f, 1.0f, 1.0f), 5, 5
     );
-    player->tile = 2;
+    player->tile = 23;
     player->form = 0;
 }
 void Game::ResetLevel(){

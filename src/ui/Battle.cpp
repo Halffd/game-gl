@@ -97,12 +97,10 @@ void Battle::RenderBattleScene(SpriteRenderer& renderer) {
     // Render enemy
     enemyCharacter->Position = enemyPosition;
     enemyCharacter->Size = glm::vec2(300.0f, 300.0f);
-    enemyCharacter->Rotation = 180.0f;
     enemyCharacter->Draw(renderer);
 
     // Render player
     playerCharacter->Position = playerPosition;
-    playerCharacter->Rotation = 180.0f;
     playerCharacter->Draw(renderer);
 }
 void Battle::RenderUI() {

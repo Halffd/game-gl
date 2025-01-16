@@ -14,6 +14,8 @@ project(${PROJECT_NAME}
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_FIND_STATIC_PREFERENCES TRUE)
+set(BUILD_SHARED_LIBS OFF)  # Ensure shared libraries are not built
 
 # Option to enable verbose messages
 option(ENABLE_VERBOSE "Enable verbose makefile messages" ON)
@@ -66,7 +68,14 @@ if(WIN32)
     set(LIB_DIR "${CMAKE_SOURCE_DIR}/lib")
     set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 	add_link_options(-static -static-libgcc -static-libstdc++)
-    find_package(glfw3 REQUIRED)
+    # Example for MSYS2
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++ -static")
+    #find_package(glfw3 REQUIRED STATIC)
+
+    if(glfw3_FOUND)
+    set(GLFW_LIBRARIES glfw3_static)  # Use the static version
+    endif()
+
     # Check required directories
     foreach(REQUIRED_DIR IN ITEMS ${LIB_DIR} ${INCLUDE_DIR})
         if(NOT EXISTS ${REQUIRED_DIR})
@@ -79,12 +88,17 @@ if(WIN32)
         ${CMAKE_SOURCE_DIR}/include_libs/windows
         ${GLFW_INCLUDE_DIRS}
     )
-    #add_library(glfw SHARED IMPORTED)
-    #set_target_properties(glfw PROPERTIES
-    #        IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/glfw3.lib"
-    #        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
-    #)
-    
+    add_library(glfw STATIC IMPORTED)
+    set_target_properties(glfw PROPERTIES
+            IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/glfw3.lib"
+            IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
+    )
+    # Add MSYS2 static libraries
+    target_link_libraries(${PROJECT_NAME} PRIVATE 
+    -Wl,--start-group
+    ${MSYS2_LIBRARIES}  # Add other static libraries here
+    -Wl,--end-group
+    )
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
         glfw
@@ -120,13 +134,15 @@ else()
     
     find_package(PkgConfig REQUIRED)
     cmake_policy(SET CMP0072 NEW)
-    find_package(OpenGL REQUIRED)
     #find_package(Freetype REQUIRED)
-    find_package(glfw3 REQUIRED)
+    find_package(glfw3 REQUIRED STATIC)
 
+    add_library(lglfw STATIC IMPORTED)
+    set_target_properties(lglfw PROPERTIES
+        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/libglfw3.a"
+    )
     # Linux include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
-        ${OPENGL_INCLUDE_DIR}
         ${GLFW_INCLUDE_DIRS}
         #${FREETYPE_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include_libs/GL
@@ -151,7 +167,7 @@ else()
     # Link irrKlang
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
-        glfw
+        lglfw
         ${OPENGL_LIBRARIES}
         #${FREETYPE_LIBRARIES}
         ${IRRKLANG_LIB}
