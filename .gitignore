@@ -14,3 +14,4 @@ assimp/build-windows
 assimp/win
 imgui/build
 imgui/build-windows
+glfw

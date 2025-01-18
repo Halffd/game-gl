@@ -70,20 +70,20 @@ case "$1" in
             echo "Invalid architecture: $2. Use '32' or '64'."
             exit 1
         fi
-
+        
         log "Starting Windows $ARCH-bit build..."
-        rm -rf "$BIN_DIR/windows/$ARCH/*"  # Clean previous binaries
-        mkdir -p "$BUILD_DIR/windows/$ARCH"  # Ensure build directory exists
-        cd "$BUILD_DIR/windows/$ARCH"
-
+  #      rm -r "$BIN_DIR*"  # Clean previous binaries
+        mkdir -p "$BUILD_DIR"  # Ensure build directory exists
+        cd "$BUILD_DIR"
+        pwd
         # Configure the project based on architecture
         cmake -DCMAKE_SYSTEM_NAME=Windows \
               -DCMAKE_C_COMPILER=${TOOLCHAIN}-gcc \
               -DCMAKE_CXX_COMPILER=${TOOLCHAIN}-g++ \
-              -DCMAKE_FIND_ROOT_PATH=/usr/${TOOLCHAIN} ../../..  # Adjust as necessary
+              -DCMAKE_FIND_ROOT_PATH=/usr/${TOOLCHAIN} ..  # Adjust as necessary
 
         cmake --build .  # Compile the project
-        cd ../../..
+        #cd ..
 
         # Copy Windows binaries to their directory using rsync
         rsync -a --exclude=zip --exclude=linux --exclude=linux --exclude=windows "$BUILD_DIR/" "$BIN_DIR/windows/$ARCH/"  # Use rsync to copy files

@@ -88,7 +88,7 @@ if(WIN32)
         ${CMAKE_SOURCE_DIR}/include_libs/windows
         ${GLFW_INCLUDE_DIRS}
     )
-    add_library(glfw STATIC IMPORTED)
+    add_library(glfw SHARED IMPORTED)
     set_target_properties(glfw PROPERTIES
             IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/glfw3.lib"
             IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
@@ -126,9 +126,9 @@ if(WIN32)
     #add_custom_command(TARGET game POST_BUILD
     #        COMMAND ${CMAKE_COMMAND} -E copy_if_different
     #        "${IRRKLANG_DLL}" $<TARGET_FILE_DIR:game>)
-    #add_custom_command(TARGET game POST_BUILD
-    #        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    #        "${CMAKE_SOURCE_DIR}/lib/glfw3.dll" $<TARGET_FILE_DIR:game>)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/lib/glfw3.dll" $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 else()
     # Linux: Use system packages
     
