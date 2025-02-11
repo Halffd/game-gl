@@ -3,18 +3,12 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-
+#include <algorithm>
+#include <vector>
+#include <memory>
+#include "Move.h"
 #include "render/SpriteRenderer.h"
 
-// Attack structure for managing individual attacks
-struct Move {
-    std::string name;
-    std::string type; // e.g., "insect", "water", "ground"
-    int power;
-    float accuracy;
-    int quantity;
-    std::string description;
-};
 enum class BattleState {
     START,
     PLAYER_TURN,
@@ -45,6 +39,7 @@ public:
     glm::vec2   Position, Size, Velocity;
     glm::vec3   Color;
     float       Rotation;
+    bool        Mirror = false;
 
     // render state
     Texture2D   Sprite;	
@@ -63,6 +58,9 @@ public:
     bool battleEnd = false;
     bool won = false;
     bool lost = false;
+
+    bool isVisible = true;  // Add visibility flag
+    std::vector<std::shared_ptr<GameObject>> monsters;  // Add monsters container
 
     // constructor(s)
     GameObject();

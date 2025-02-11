@@ -18,6 +18,7 @@
 #endif
 
 #include <glad/glad.h>
+#include <algorithm>
 
 #include "Texture1D.h"
 #include "Texture2D.h"

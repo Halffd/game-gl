@@ -1,3 +1,7 @@
+#ifndef INPUT_H
+#define INPUT_H
+
+#include "../types.h"  // Include for debug variable
 #include "game/Game.h"
 #include <map>
 
@@ -56,3 +60,5 @@ void exitKey(GLFWwindow *window){
         glfwSetWindowShouldClose(window, 1);
 }
 */
+
+#endif // INPUT_H

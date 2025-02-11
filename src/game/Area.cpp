@@ -4,6 +4,8 @@
 #include <sstream>
 #include <iostream>
 
+extern bool debug;  // Make the debug variable accessible
+
 Area::Area(unsigned int levelWidth, unsigned int levelHeight) {
     Width = levelWidth;
     Height = levelHeight;
@@ -48,19 +50,39 @@ void Area::Draw(SpriteRenderer& renderer) {
     }
 }
 
-void Area::Update(float deltaTime) {
-    
+void Area::Update([[maybe_unused]] float deltaTime) {
+    // Empty implementation
 }
 
 GameObject* Area::GetRandomEnemy() {
-    if (enemies.empty()) return nullptr;
+    if (enemies.empty() || enemies.size() < 2) {
+        if (debug) {
+            std::cout << "GetRandomEnemy: No enemies available (size: " 
+                      << enemies.size() << ")" << std::endl;
+        }
+        return nullptr;
+    }
 
-    // Random enemy selection
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<size_t> dis(1, enemies.size() - 1);
     
-    return enemies[dis(gen)].get();
+    size_t index = dis(gen);
+    if (debug) {
+        std::cout << "GetRandomEnemy: Selected index " << index 
+                  << " from " << enemies.size() << " enemies" << std::endl;
+    }
+
+    if (index < enemies.size() && enemies[index]) {
+        if (debug) {
+            std::cout << "GetRandomEnemy: Returning enemy '" 
+                      << enemies[index]->name << "'" << std::endl;
+        }
+        return enemies[index].get();
+    }
+    
+    if (debug) std::cout << "GetRandomEnemy: Failed to get valid enemy" << std::endl;
+    return nullptr;
 }
 bool Area::IsCompleted() const {
     return true;

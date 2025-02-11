@@ -2,6 +2,9 @@
 #include "Battle.h"
 #include <algorithm>
 #include <random>
+#include "game/BattleRNG.h"  // Include the header instead of redefining
+
+extern bool debug;  // Make the debug variable accessible
 
 Battle::Battle(std::shared_ptr<GameObject> player, GameObject* enemy, int width, int height)
     : isActive(false)
@@ -12,33 +15,104 @@ Battle::Battle(std::shared_ptr<GameObject> player, GameObject* enemy, int width,
     , showMoveSelection(false)
     , selectedMove(0)
     , animationTimer(0.0f)
-    , Width(width)
-    , Height(height)
+    , viewportWidth(width)
+    , viewportHeight(height)
 {
-    // Set initial positions
-    playerPosition = glm::vec2(70.0f, Height - 470.0f);  // Adjust these values based on your screen
-    enemyPosition = glm::vec2(Width - 400.0f, 80.0f);   // Adjust these values based on your screen
+    UpdateViewport(width, height);
 }
 
 void Battle::Start() {
+    if (debug) std::cout << "\n=== Starting Battle ===" << std::endl;
+    
     isActive = true;
     currentState = BattleState::START;
     stateTimer = BATTLE_START_DELAY;
     battleLog.clear();
+    showMoveSelection = false;
+    
+    // Store player's original position
+    playerOriginalPosition = playerCharacter->Position;
+    
+    // Set initial battle positions
+    UpdateViewport(viewportWidth, viewportHeight);
+    
+    // Hide player character
+    playerCharacter->isVisible = false;
+    
+    // Set up battle monster
+    if (playerCharacter) {
+        // If no monsters, use player as battle monster
+        if (playerCharacter->monsters.empty()) {
+            battleMonster = playerCharacter;
+        } else if (static_cast<size_t>(playerCharacter->form) < playerCharacter->monsters.size()) {
+            battleMonster = playerCharacter->monsters[playerCharacter->form];
+        }
+
+        if (battleMonster) {
+            battleMonster->Position = playerPosition;
+            battleMonster->isVisible = true;
+            battleMonster->Size = glm::vec2(300.0f, 300.0f);
+            
+            // Ensure battle monster has moves
+            if (battleMonster->moves.empty()) {
+                battleMonster->moves = {
+                    Move("Tackle", "A basic attack", "Normal", 40, 95.0f, 35),
+                    Move("Scratch", "A basic scratch attack", "Normal", 35, 100.0f, 35)
+                };
+            }
+        }
+    }
+    
+    // Set up enemy
+    if (enemyCharacter) {
+        enemyCharacter->Position = enemyPosition;
+        enemyCharacter->isVisible = true;
+        enemyCharacter->Size = glm::vec2(300.0f, 300.0f);
+        
+        // Initialize enemy moves if empty
+        if (enemyCharacter->moves.empty()) {
+            enemyCharacter->moves = {
+                Move("Tackle", "A basic attack", "Normal", 40, 95.0f, 35),
+                Move("Scratch", "A basic scratch attack", "Normal", 35, 100.0f, 35),
+                Move("Bite", "A biting attack", "Normal", 45, 90.0f, 25)
+            };
+        }
+    }
+
+    if (debug) {
+        std::cout << "Battle initialized:" << std::endl;
+        std::cout << "- Player monster: " << (battleMonster ? battleMonster->name : "None") << std::endl;
+        std::cout << "- Enemy monster: " << (enemyCharacter ? enemyCharacter->name : "None") << std::endl;
+        std::cout << "- Player moves: " << (battleMonster ? std::to_string(battleMonster->moves.size()) : "0") << std::endl;
+        std::cout << "- Enemy moves: " << (enemyCharacter ? std::to_string(enemyCharacter->moves.size()) : "0") << std::endl;
+    }
+    
     AddLogMessage("Battle started!");
-    currentState == BattleState::PLAYER_TURN;
 }
 
 void Battle::Update(float dt) {
-    if (!isActive) return;
+    if (!isActive) {
+        if (debug) std::cout << "Battle update skipped - battle not active" << std::endl;
+        return;
+    }
 
+    if (debug) std::cout << "\n--- Battle Update Frame Start ---" << std::endl;
+    
     stateTimer -= dt;
     animationTimer += dt;
+    
+    if (debug) {
+        std::cout << "Current battle state: " << static_cast<int>(currentState) << std::endl;
+        std::cout << "State timer: " << stateTimer << std::endl;
+        std::cout << "Animation timer: " << animationTimer << std::endl;
+    }
 
     UpdateBattleLogic(dt);
+    
+    if (debug) std::cout << "--- Battle Update Frame End ---\n" << std::endl;
 }
 
-void Battle::UpdateBattleLogic(float dt) {
+void Battle::UpdateBattleLogic([[maybe_unused]] float dt) {
     switch (currentState) {
         case BattleState::START:
             if (stateTimer <= 0.0f) {
@@ -50,6 +124,7 @@ void Battle::UpdateBattleLogic(float dt) {
         case BattleState::PLAYER_TURN:
             HandleStatusEffects(currentState == BattleState::PLAYER_TURN ? playerCharacter->stats : enemyCharacter->stats);
             break;
+
         case BattleState::ENEMY_TURN:
             HandleStatusEffects(currentState == BattleState::PLAYER_TURN ? playerCharacter->stats : enemyCharacter->stats);
             ExecuteEnemyMove();
@@ -57,6 +132,8 @@ void Battle::UpdateBattleLogic(float dt) {
 
         case BattleState::LOSE:
             playerCharacter->battleEnd = true;
+            [[fallthrough]];  // Explicitly indicate fallthrough
+            
         case BattleState::WIN:
             if (stateTimer <= 0.0f) {
                 isActive = false;
@@ -91,26 +168,37 @@ float Battle::GetTypeModifier(const std::string& attackType, const std::string& 
 
 
 void Battle::RenderBattleScene(SpriteRenderer& renderer) {
-    // Render battle background
-    // renderer.DrawSprite(backgroundTexture, glm::vec2(0.0f), glm::vec2(800.0f, 600.0f));
+    // Render battle background (if you have one)
+    // renderer.DrawSprite(backgroundTexture, glm::vec2(0.0f), glm::vec2(viewportWidth, viewportHeight));
 
     // Render enemy
-    enemyCharacter->Position = enemyPosition;
-    enemyCharacter->Size = glm::vec2(300.0f, 300.0f);
-    enemyCharacter->Draw(renderer);
+    if (enemyCharacter && enemyCharacter->isVisible) {
+        enemyCharacter->Position = enemyPosition;
+        enemyCharacter->Size = glm::vec2(300.0f, 300.0f);
+        enemyCharacter->Draw(renderer);
+    }
 
-    // Render player
-    playerCharacter->Position = playerPosition;
-    playerCharacter->Draw(renderer);
+    // Render player's monster
+    if (battleMonster && battleMonster->isVisible) {
+        battleMonster->Position = playerPosition;
+        battleMonster->Mirror = true;
+        battleMonster->Draw(renderer);
+        battleMonster->Mirror = false;
+    }
 }
 void Battle::RenderUI() {
     if (!isActive) return;
 
     // Main battle menu
-    ImVec2 size(220, 220);
-    ImGui::SetNextWindowPos(ImVec2(Width-size.x, Height - size.y), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
-    ImGui::Begin("Battle", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    ImVec2 menuPos = getScreenPos(UILayout::BATTLE_MENU_X, UILayout::BATTLE_MENU_Y);
+    ImVec2 menuSize(UILayout::BATTLE_MENU_WIDTH, UILayout::BATTLE_MENU_HEIGHT);
+    
+    ImGui::SetNextWindowPos(menuPos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(menuSize, ImGuiCond_Always);
+    ImGui::Begin("Battle", nullptr, 
+        ImGuiWindowFlags_NoTitleBar | 
+        ImGuiWindowFlags_NoResize | 
+        ImGuiWindowFlags_NoMove);
 
     // Render main action buttons
     if (ImGui::Button("Attack", ImVec2(200, 50))) {
@@ -144,22 +232,24 @@ void Battle::RenderUI() {
 
     ImGui::End();
 
-    // Render player health and stats
+    // Health bars
     RenderHealthBars();
     RenderBattleLog();
 
-    // Render move selection if active
     if (showMoveSelection && currentState == BattleState::PLAYER_TURN) {
         RenderMoveSelection();
     }
 }
 void Battle::RenderBattleLog() {
-    ImVec2 screenSize = ImGui::GetIO().DisplaySize;
-    ImGui::SetNextWindowPos(ImVec2(620, screenSize.y - 340), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(Width - 920, 305), ImGuiCond_Always);
+    ImVec2 logPos = getScreenPos(UILayout::LOG_X, UILayout::LOG_Y);
+    ImVec2 logSize = getScreenSize(UILayout::LOG_WIDTH, UILayout::LOG_HEIGHT * viewportHeight);
+    
+    ImGui::SetNextWindowPos(logPos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(logSize, ImGuiCond_Always);
+    
+    // Create a child window with a scrollable area for the battle log
     ImGui::Begin("Battle Log", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar);
 
-    // Create a child window with a scrollable area for the battle log
     ImGui::BeginChild("BattleLogChild", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysUseWindowPadding);
     
     for (const auto& message : battleLog) {
@@ -172,9 +262,16 @@ void Battle::RenderBattleLog() {
 
 void Battle::RenderHealthBars() {
     // Enemy health bar
-    ImGui::SetNextWindowPos(ImVec2(Width - 800, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(800, 80), ImGuiCond_Always);
-    ImGui::Begin("Enemy", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground);
+    ImVec2 enemyHealthPos = getScreenPos(0.0f, UILayout::ENEMY_HEALTH_Y);
+    ImVec2 healthBarSize = getScreenSize(UILayout::HEALTH_BAR_WIDTH, UILayout::HEALTH_BAR_HEIGHT);
+    
+    ImGui::SetNextWindowPos(enemyHealthPos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(healthBarSize, ImGuiCond_Always);
+    ImGui::Begin("Enemy Health", nullptr, 
+        ImGuiWindowFlags_NoTitleBar | 
+        ImGuiWindowFlags_NoResize | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoBackground);
 
     ImGui::Text("%s: %s", enemyCharacter->name.c_str(), std::to_string(enemyCharacter->stats.health).c_str());
     ImGui::ProgressBar((float)enemyCharacter->stats.health / enemyCharacter->stats.maxHealth, ImVec2(-1, 0));
@@ -182,9 +279,11 @@ void Battle::RenderHealthBars() {
     ImGui::End();
     
     // Player health bar
-    ImGui::SetNextWindowPos(ImVec2(0, Height - 80), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(800, 80), ImGuiCond_Always);
-    ImGui::Begin("Player", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground);
+    ImVec2 playerHealthPos = getScreenPos(0.0f, UILayout::PLAYER_HEALTH_Y);
+    ImGui::SetNextWindowPos(playerHealthPos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(healthBarSize, ImGuiCond_Always);
+    
+    ImGui::Begin("Player Health", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground);
 
     ImGui::Text("%s: %s", playerCharacter->name.c_str(), std::to_string(playerCharacter->stats.health).c_str());
     ImGui::ProgressBar((float)playerCharacter->stats.health / playerCharacter->stats.maxHealth, ImVec2(-1, 0));
@@ -193,40 +292,70 @@ void Battle::RenderHealthBars() {
 }
 
 void Battle::RenderMoveSelection() {
-    ImGui::SetNextWindowPos(ImVec2(Width - 700, Height - 280), ImGuiCond_Always);
+    if (!battleMonster) {
+        if (debug) std::cout << "Warning: No battle monster available" << std::endl;
+        return;
+    }
+
+    if (battleMonster->moves.empty()) {
+        if (debug) std::cout << "Warning: Battle monster has no moves" << std::endl;
+        return;
+    }
+
+    ImGui::SetNextWindowPos(ImVec2(viewportWidth - 700, viewportHeight - 280), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(250, 280), ImGuiCond_Always);
     ImGui::Begin("MoveSelection", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
     
     ImGui::Text("Select your move:");
-    for (size_t i = 0; i < playerCharacter->moves.size(); i++) {
-        const auto& attack = playerCharacter->moves[i];
-        if (ImGui::Button(attack.name.c_str(), ImVec2(200, 50))) {
-            ExecutePlayerMove(attack.name);
+    for (const auto& move : battleMonster->moves) {
+        if (ImGui::Button(move.name.c_str(), ImVec2(200, 50))) {
+            ExecutePlayerMove(move.name);
             showMoveSelection = false;
         }
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s\nType: %s\nPower: %d\nAccuracy: %.0f%%\nLimit: %d\n", 
-                              attack.description.c_str(), attack.type.c_str(), attack.power, 
-                              attack.accuracy, attack.quantity);
+            ImGui::SetTooltip("%s\nType: %s\nPower: %d\nAccuracy: %.0f%%\nPP: %d", 
+                            move.description.c_str(), move.type.c_str(), 
+                            move.power, move.accuracy, move.quantity);
         }
     }
     ImGui::End();
 }
 
 void Battle::ExecutePlayerMove(const std::string& moveName) {
+    if (debug) {
+        std::cout << "\n=== Executing Player Move ===" << std::endl;
+        std::cout << "Move selected: " << moveName << std::endl;
+    }
+    
     auto move = std::find_if(playerCharacter->moves.begin(), playerCharacter->moves.end(),
         [&moveName](const Move& m) { return m.name == moveName; });
 
     if (move != playerCharacter->moves.end()) {
+        if (debug) {
+            std::cout << "Move details:" << std::endl;
+            std::cout << "- Power: " << move->power << std::endl;
+            std::cout << "- Accuracy: " << move->accuracy << std::endl;
+            std::cout << "- Type: " << move->type << std::endl;
+        }
+        
         if (CheckAccuracy(move->accuracy)) {
             int damage = CalculateDamage(*move, playerCharacter->stats, enemyCharacter->stats);
+            if (debug) std::cout << "Calculated damage: " << damage << std::endl;
+            
             enemyCharacter->stats.health = std::max(0, enemyCharacter->stats.health - damage);
+            if (debug) std::cout << "Enemy health after damage: " << enemyCharacter->stats.health << std::endl;
+            
             AddLogMessage(playerCharacter->stats.name + " used " + moveName + "!");
             AddLogMessage("Dealt " + std::to_string(damage) + " damage!");
         } else {
+            if (debug) std::cout << "Move missed!" << std::endl;
             AddLogMessage(moveName + " missed!");
         }
+    } else {
+        if (debug) std::cout << "ERROR: Move not found in player's move list!" << std::endl;
     }
+    
+    if (debug) std::cout << "=== Player Move Execution Complete ===\n" << std::endl;
 
     // Check for battle end
     if (enemyCharacter->stats.health <= 0) {
@@ -320,53 +449,68 @@ int Battle::CalculateDamage(const Move& move, const BattleStats& attacker, const
 }
 
 void Battle::ExecuteEnemyMove() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
-    // Add weights for moves based on health and strategy
-    std::vector<float> weights; // Vector to store the weights of the moves
-    
-    // Loop through the enemy's available moves
-    for (size_t i = 0; i < enemyCharacter->moves.size(); ++i) {
-        const auto& move = enemyCharacter->moves[i];
-        float weight = move.accuracy;  // Base weight on accuracy
-
-        // Add bonus weight if the move's power is high and enemy health is above 50%
-        if (enemyCharacter->stats.health > 0.5f * enemyCharacter->stats.maxHealth && move.power > 50) {
-            weight += 20.0f;
-        }
-
-        // Adjust weight based on type effectiveness (attack vs. defender type)
-        float typeModifier = GetTypeModifier(move.type, playerCharacter->stats.type);
-        weight *= typeModifier;
-
-        // Add the weight to the weights vector
-        weights.push_back(weight);
+    if (!enemyCharacter || enemyCharacter->moves.empty()) {
+        if (debug) std::cout << "Warning: Enemy has no moves or is invalid" << std::endl;
+        currentState = BattleState::PLAYER_TURN;
+        return;
     }
 
-    // Select a move based on weighted random choice using the weights vector
-    std::discrete_distribution<> dis(weights.begin(), weights.end()); // Correct constructor usage
+    // Calculate move probabilities
+    std::vector<float> moveWeights;
+    moveWeights.reserve(enemyCharacter->moves.size());
 
-    // Select the move based on the distribution
-    const Move& selectedMove = enemyCharacter->moves[dis(gen)];
+    for (const auto& move : enemyCharacter->moves) {
+        float weight = move.accuracy;
+        if (move.quantity <= 0) {
+            weight = 0.0f;
+        } else if (playerCharacter->stats.health < playerCharacter->stats.maxHealth * 0.5f) {
+            weight *= 1.2f;
+        }
+        weight *= GetTypeModifier(move.type, playerCharacter->stats.type);
+        moveWeights.push_back(weight);
+    }
 
-    // Execute the move if it hits
+    // Select move
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::discrete_distribution<size_t> dist(moveWeights.begin(), moveWeights.end());
+    size_t selectedIndex = dist(gen);
+
+    if (selectedIndex >= enemyCharacter->moves.size()) {
+        currentState = BattleState::PLAYER_TURN;
+        return;
+    }
+
+    const Move& selectedMove = enemyCharacter->moves[selectedIndex];
+    
+    if (debug) {
+        std::cout << "\nEnemy selecting move:" << std::endl;
+        std::cout << "- Selected index: " << selectedIndex << std::endl;
+        std::cout << "- Move name: " << selectedMove.name << std::endl;
+        std::cout << "- Accuracy: " << selectedMove.accuracy << std::endl;
+    }
+
+    // Execute the selected move
     if (CheckAccuracy(selectedMove.accuracy)) {
         int damage = CalculateDamage(selectedMove, enemyCharacter->stats, playerCharacter->stats);
+        
+        if (debug) std::cout << "Calculated damage: " << damage << std::endl;
+        
         playerCharacter->stats.health = std::max(0, playerCharacter->stats.health - damage);
+        
         AddLogMessage(enemyCharacter->name + " used " + selectedMove.name + "!");
         AddLogMessage("Dealt " + std::to_string(damage) + " damage!");
+        
+        if (playerCharacter->stats.health <= 0) {
+            currentState = BattleState::LOSE;
+            stateTimer = 2.0f;
+            AddLogMessage("You lost the battle!");
+        }
     } else {
-        AddLogMessage(enemyCharacter->name + "'s " + selectedMove.name + " missed!");
+        AddLogMessage(enemyCharacter->name + " used " + selectedMove.name + " but missed!");
     }
-    currentState = BattleState::PLAYER_TURN;   
-    // Check for battle end if player's health drops to zero
-    if (playerCharacter->stats.health <= 0) {
-        currentState = BattleState::LOSE;
-        stateTimer = BATTLE_START_DELAY;
-        AddLogMessage("You lost the battle!");
-        printf("You lost the battle!\n");
-    }
+
+    currentState = BattleState::PLAYER_TURN;
 }
 
 void Battle::AddLogMessage(const std::string& message) {
@@ -377,12 +521,26 @@ void Battle::AddLogMessage(const std::string& message) {
 }
 
 bool Battle::CheckAccuracy(float accuracy) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0.0, 100.0);
     return dis(gen) < accuracy;
 }
 
 void Battle::End() {
     isActive = false;
+    
+    // Restore original game state
+    if (playerCharacter) {
+        playerCharacter->isVisible = true;
+        playerCharacter->Position = playerOriginalPosition;
+    }
+    
+    if (battleMonster) {
+        battleMonster->isVisible = false;
+    }
+    
+    if (enemyCharacter) {
+        enemyCharacter->isVisible = false;
+    }
 }

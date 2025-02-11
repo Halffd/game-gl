@@ -24,7 +24,9 @@ TilemapManager::TilemapManager(const std::string& texturePath, const std::string
         ResourceManager::GetTexture2D(bgTexturePath)
     ); 
 }
-void TilemapManager::LoadTilemap(const std::vector<std::vector<unsigned int>>& tileData, unsigned int levelWidth, unsigned int levelHeight) {
+void TilemapManager::LoadTilemap(const std::vector<std::vector<unsigned int>>& tileData, 
+                                [[maybe_unused]] unsigned int levelWidth, 
+                                [[maybe_unused]] unsigned int levelHeight) {
     tiles.clear();
 
     // Calculate individual tile dimensions in world space
@@ -130,9 +132,9 @@ void TilemapManager::DrawBackground(SpriteRenderer& renderer, int width, int hei
         }
     }
 }
-void TilemapManager::DrawPlayer(SpriteRenderer& renderer, glm::vec2 pos, glm::vec2 size, int tile) {
-    if (tile < 0 || tile >= tiles.size()) {
-        std::cerr << "Invalid tile index: " << tile << std::endl;
+void TilemapManager::DrawPlayer(SpriteRenderer& renderer, glm::vec2 pos, 
+                              [[maybe_unused]] glm::vec2 size, int tile) {
+    if (tile < 0 || static_cast<size_t>(tile) >= tiles.size()) {
         return;
     }
 

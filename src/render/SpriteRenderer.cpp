@@ -63,12 +63,17 @@ void SpriteRenderer::DrawSprite(const Texture2D &texture, glm::mat4 model, glm::
     glBindVertexArray(0);
     glCheckError();
 }
-void SpriteRenderer::DrawSprite(const Texture2D &texture, glm::vec2 position, glm::vec2 size, float rotate, glm::vec3 color, glm::vec2 textureOffset, glm::vec2 textureSize, glm::mat4 view)
+void SpriteRenderer::DrawSprite(const Texture2D &texture, glm::vec2 position, glm::vec2 size, float rotate, glm::vec3 color, glm::vec2 textureOffset, glm::vec2 textureSize, glm::mat4 view, bool mirror)
 {
     Bind();
     // prepare transformations
     this->shader.Use();
     glm::mat4 model = SpriteRenderer::Transform(position, size, rotate);
+
+    // Apply mirroring if needed
+    if (mirror) {
+        model = glm::scale(model, glm::vec3(-1.0f, 1.0f, 1.0f)); // Mirror horizontally
+    }
     this->shader.SetMatrix4("model", model);
     this->shader.SetMatrix4("view", Camera::Instance->GetViewMatrix());
 

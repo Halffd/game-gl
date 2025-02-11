@@ -81,3 +81,41 @@ void Gui::Clean() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
+
+void Gui::RenderPauseMenu(bool& isPaused, GameMode& gameMode)
+{
+    int screenW, screenH;
+    GLFWwindow* window = glfwGetCurrentContext();
+    glfwGetWindowSize(window, &screenW, &screenH);
+    
+    ImGui::SetNextWindowPos(ImVec2(screenW/2 - MENU_WIDTH/2, screenH/2 - MENU_HEIGHT/2));
+    ImGui::SetNextWindowSize(ImVec2(MENU_WIDTH, MENU_HEIGHT));
+    
+    ImGui::Begin("Pause Menu", nullptr, 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoResize | 
+        ImGuiWindowFlags_NoCollapse);
+    
+    if (ImGui::Button("Resume", ImVec2(180, 30))) {
+        isPaused = false;
+    }
+    
+    ImGui::Spacing();
+    
+    if (ImGui::Button("Options", ImVec2(180, 30))) {
+        // TODO: Show options menu
+    }
+    
+    ImGui::Spacing();
+    
+    if (ImGui::Button("Quit to Menu", ImVec2(180, 30))) {
+        gameMode = MENU;
+        isPaused = false;
+    }
+    
+    if (ImGui::Button("Exit Game", ImVec2(180, 30))) {
+        glfwSetWindowShouldClose(window, true);
+    }
+    
+    ImGui::End();
+}

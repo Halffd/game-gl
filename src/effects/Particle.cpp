@@ -2,9 +2,12 @@
 #include "game/Camera.h"
 
 ParticleGenerator::ParticleGenerator(Shader shader, Texture2D texture, unsigned int amount)
-    : shader(shader), texture(texture), amount(amount)
+    : shader(shader)
+    , texture(texture)
+    , amount(amount)
+    , VAO(0)
 {
-    this->init();
+    init();
 }
 
 void ParticleGenerator::Update(float dt, GameObject &object, unsigned int newParticles, glm::vec2 offset)
@@ -20,7 +23,7 @@ void ParticleGenerator::Update(float dt, GameObject &object, unsigned int newPar
     {
         Particle &p = this->particles[i];
         //p.Life -= dt; // reduce life
-        p.Life = std::max(0.0f, p.Life - dt); // Ensure Life doesn't go below 0
+        p.Life = std::max(0.0f, p.Life - dt);
 
         if (p.Life > 0.0f)
         {	// particle is alive, thus update

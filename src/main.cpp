@@ -1,16 +1,72 @@
 #include "init.h"
+#include "types.h"
+#include "game/Game.h"
 
 // Define the dimensions
-const unsigned SCREEN_WIDTH = WIDTH; // Example value
-const unsigned int SCREEN_HEIGHT = HEIGHT; // Example value
+const unsigned SCREEN_WIDTH = WIDTH;
+const unsigned int SCREEN_HEIGHT = HEIGHT;
 
-GameMode gameMode = MENU;
-std::string gameTypeStr = "MainMenu"; // Default game type string
-bool debug = false;
+GameMode gameMode = MENU;  // Start in menu mode
+std::string gameTypeStr = "MainMenu";
+bool debug;
 Log o;
-Game NeuroMonsters(SCREEN_WIDTH, SCREEN_HEIGHT);
-float lastTime = 9;
+
+Game* NeuroMonsters = nullptr;
 bool isPaused = false;
+double lastTime = 0.0;
+
+// Add key state tracking
+bool keys[1024] = {false};
+bool keysProcessed[1024] = {false};
+
+// At the top with other globals
+struct {
+    bool current[1024] = {false};
+    bool previous[1024] = {false};
+} KeyState;
+
+// Add these functions at the top
+struct Resolution {
+    int width;
+    int height;
+    float aspectRatio;
+};
+
+Resolution getOptimalResolution() {
+    Resolution res;
+    
+    // Get primary monitor
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    if (!monitor) {
+        return {1280, 720, 16.0f/9.0f};
+    }
+
+    // Get all video modes for the monitor
+    int count;
+    const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
+    if (!modes || count == 0) {
+        return {1280, 720, 16.0f/9.0f};
+    }
+
+    // Find mode with highest resolution
+    const GLFWvidmode* bestMode = &modes[0];
+    for (int i = 1; i < count; i++) {
+        if (modes[i].width * modes[i].height > bestMode->width * bestMode->height) {
+            bestMode = &modes[i];
+        }
+    }
+    
+    res.width = bestMode->width;
+    res.height = bestMode->height;
+    res.aspectRatio = static_cast<float>(res.width) / static_cast<float>(res.height);
+    
+    if (debug) {
+        std::cout << "Selected resolution: " << res.width << "x" << res.height 
+                  << " (" << res.aspectRatio << ")" << std::endl;
+    }
+    
+    return res;
+}
 
 int main(int argc, char *argv[])
 {
@@ -34,38 +90,60 @@ int main(int argc, char *argv[])
     o.setDir(root);
     o << root << " / " << __FILE__ << "\n";
     
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-    glfwWindowHint(GLFW_RESIZABLE, false);
-
-    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "NeuroMonsters", nullptr, nullptr);
-    glfwMakeContextCurrent(window);
-
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
+    // Initialize GLFW
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW" << std::endl;
         return -1;
     }
+
+    // Get optimal resolution
+    Resolution res = getOptimalResolution();
+    
+    // Create window with detected resolution
+    GLFWwindow* window = glfwCreateWindow(res.width, res.height, "NeuroMonsters", NULL, NULL);
+    if (!window) {
+        std::cerr << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+
+    // Make the window's context current
+    glfwMakeContextCurrent(window);
+
+    // Initialize GLAD
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cerr << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    // Update viewport with actual framebuffer size
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    glViewport(0, 0, fbWidth, fbHeight);
+    
+    // Create game with actual resolution
+    NeuroMonsters = new Game(fbWidth, fbHeight);
+    NeuroMonsters->Init();
+    
+    // Initialize collision system
+    if (NeuroMonsters->currentArea) {
+        NeuroMonsters->InitializeCollision();
+    } else {
+        std::cerr << "Warning: Area not initialized!" << std::endl;
+    }
+
+    // Reset all key states
+    std::fill(std::begin(keys), std::end(keys), false);
+    std::fill(std::begin(keysProcessed), std::end(keysProcessed), false);
 
     glfwSetKeyCallback(window, key_callback);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     // OpenGL configuration
     // --------------------
-    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     Gui::Init(window);
-    // initialize game
-    // ---------------
-    NeuroMonsters.Init();
 
     // deltaTime variables
     // -------------------
@@ -74,73 +152,73 @@ int main(int argc, char *argv[])
 
     while (!glfwWindowShouldClose(window))
     {
-        // calculate delta time
-        // --------------------
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         glfwPollEvents();
 
-        // manage user input
-        // -----------------
-        NeuroMonsters.ProcessInput(deltaTime);
+        // Skip updates if paused
+        if (!isPaused) {
+            NeuroMonsters->ProcessInput(deltaTime);
+            NeuroMonsters->Update(deltaTime);
+        }
 
-        // update game state
-        // -----------------
-        NeuroMonsters.Update(deltaTime);
-
-        // render
-        // ------
+        // Always render
         glClearColor(0.2f, 0.4f, 0.34f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        NeuroMonsters.Render();
+        NeuroMonsters->Render();
+
+        // Render pause menu if paused
+        if (isPaused) {
+            Gui::RenderPauseMenu(isPaused, gameMode);
+        }
 
         glfwSwapBuffers(window);
     }
 
-    // delete all resources as loaded using the resource manager
-    // ---------------------------------------------------------
+    // Clean up
+    delete NeuroMonsters;
     ResourceManager::Clear();
     Gui::Clean();
     glfwTerminate();
     return 0;
 }
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+
+void key_callback([[maybe_unused]] GLFWwindow* window, int key, 
+                 [[maybe_unused]] int scancode, int action, 
+                 [[maybe_unused]] int mode)
 {
     ImGuiIO &io = ImGui::GetIO();
-    // Check for escape key to toggle pause state
-    if (key == GLFW_KEY_ESCAPE) {
-        if (action == GLFW_PRESS) {
-            // Toggle pause state
-            isPaused = !isPaused;
+    if (io.WantCaptureKeyboard) {
+        return;
+    }
 
+    if (key >= 0 && key < 1024) {
+        // Update key state
+        KeyState.previous[key] = KeyState.current[key];
+        KeyState.current[key] = (action != GLFW_RELEASE);
+
+        // Handle escape key for pause menu
+        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS && !keysProcessed[key]) {
+            isPaused = !isPaused;
+            keysProcessed[key] = true;
             if (isPaused) {
                 lastTime = glfwGetTime();
-                std::cout << "Program paused. " << lastTime << std::endl;
-            } else {
-                std::cout << "Program resumed." << std::endl;
             }
-        } 
-        NeuroMonsters.State = isPaused ? GAME_PAUSED : GAME_ACTIVE;
-    }
-    if (!io.WantCaptureKeyboard) {
-        // Handle F4 key to close the application
-        if (key == GLFW_KEY_F4 && action == GLFW_PRESS) {
-            glfwSetWindowShouldClose(window, true);
+            return;
         }
-        if (key >= 0 && key < 1024)
-        {
-            if (action == GLFW_PRESS)
-                NeuroMonsters.Keys[key] = true;
-            else if (action == GLFW_RELEASE)
-            {
-                NeuroMonsters.Keys[key] = false;
-                //NeuroMonsters.KeysProcessed[key] = false;
-            }
+
+        // Update game key state
+        NeuroMonsters->Keys[key] = KeyState.current[key];
+        
+        // Handle key release
+        if (action == GLFW_RELEASE) {
+            keysProcessed[key] = false;
         }
     }
 }
-void framebufferSizeCallback(GLFWwindow *window, int width, int height)
+
+void framebufferSizeCallback([[maybe_unused]] GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
     glCheckError(__FILE__, __LINE__);

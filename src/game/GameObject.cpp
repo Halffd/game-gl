@@ -9,5 +9,5 @@ GameObject::GameObject(glm::vec2 pos, glm::vec2 size, Texture2D sprite, glm::vec
 
 void GameObject::Draw(SpriteRenderer &renderer)
 {
-    renderer.DrawSprite(this->Sprite, this->Position, this->Size, this->Rotation, this->Color);
+    renderer.DrawSprite(this->Sprite, this->Position, this->Size, this->Rotation, this->Color, glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::mat4(1.0f), this->Mirror);
 }

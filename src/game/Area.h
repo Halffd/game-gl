@@ -1,24 +1,18 @@
 #ifndef AREA_H
 #define AREA_H
 
-#include "GameObject.h"
-#include "asset/TilemapManager.h"
-#include "asset/ResourceManager.h"
-#include "ui/Gui.h"
 #include <vector>
 #include <string>
 #include <memory>
 #include <random>
-#include "gamemode.h"
+#include "../gamemode.h"  // Include the shared GameState enum
+#include "GameObject.h"
+#include "../asset/TilemapManager.h"
+#include "../asset/ResourceManager.h"
+#include "../ui/Gui.h"
 
-// Represents the current state of the game
-enum GameState {
-    GAME_ACTIVE,
-    GAME_MENU,
-    GAME_PAUSED,
-    GAME_CREDITS,
-    GAME_WIN
-};
+extern bool debug;  // Declare the debug variable
+
 class Area {
 public:
     unsigned int Width;

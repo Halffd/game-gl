@@ -1,5 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <algorithm>
+#include <cassert>
 
 #include "Game.h"
 #include "asset/ResourceManager.h"
@@ -19,6 +21,7 @@
 #include "Area.h"
 #include "ui/Battle.h"
 #include "asset/TilemapManager.h"
+#include "util/Random.h"
 
 // Initial size of the player paddle
 const glm::vec2 PLAYER_SIZE(300.0f, 300.0f);
@@ -30,6 +33,9 @@ std::random_device rd;
 std::mt19937 gen = std::mt19937(rd());  // Seeded generator
 std::uniform_real_distribution<float> dis = std::uniform_real_distribution<float>(0.0f, 1.0f);
 
+// Add debug variable declaration if not already present
+extern bool debug;
+
 Game::Game(unsigned int width, unsigned int height) 
     : State(GAME_MENU), 
     Width(width), 
@@ -38,7 +44,17 @@ Game::Game(unsigned int width, unsigned int height)
 {
     Camera::Instance = std::make_shared<Camera>(glm::vec2(0.0f, 0.0f), glm::vec2(Width, Height));
     Dialogue = std::make_shared<DialogueSystem>();
-    //audio = std::unique_ptr<irrklang::ISoundEngine>(irrklang::createIrrKlangDevice());
+
+    // Initialize essential resources with proper parameters
+    glm::vec2 playerPos = glm::vec2(120.0f, Height / 3.0f);
+    player = std::make_shared<Player>(
+        playerPos, PLAYER_SIZE, 
+        ResourceManager::GetTexture2D("player.png"), 
+        glm::vec3(1.0f, 1.0f, 1.0f), 5, 5
+    );
+
+    currentArea = std::make_shared<Area>(Width, Height);
+    Collision = std::make_unique<Collider>(Dialogue, currentArea->tilemapManager);
 }
 
 Game::~Game() { }
@@ -60,8 +76,9 @@ void Game::Init()
     ResourceManager::GetShader("sprite").Use().SetInteger("image", 0);
     ResourceManager::GetShader("sprite").SetMatrix4("projection", projection);
     ResourceManager::GetShader("particle").Use().SetMatrix4("projection", projection);
-    // set render-specific controls
-    const std::vector<float>  vertices = {
+
+    // Initialize renderer
+    const std::vector<float> vertices = {
         // pos      // tex
         0.0f, 1.0f, 0.0f, 1.0f,
         1.0f, 0.0f, 1.0f, 0.0f,
@@ -85,17 +102,37 @@ void Game::Init()
         ResourceManager::GetTexture2D("particle"), 
         1500
     );
+
+    // Initialize game resources
+    InitializeGameResources();
+
+    // Initialize battle system
+    battleSystem = std::make_unique<Battle>(player, nullptr, Width, Height);
+    
+    if (debug) {
+        std::cout << "Game initialized with resolution: " << Width << "x" << Height << std::endl;
+    }
+}
+
+// New method to separate game resource initialization
+void Game::InitializeGameResources()
+{
     ResetPlayer();
     ResetLevel();
-    // Initialize the area manager
-    currentArea = std::make_shared<Area>(Width, Height);
-    // currentArea->State = State;
+
+    // Initialize area
+    if (!currentArea) {
+        currentArea = std::make_shared<Area>(Width, Height);
+    }
     currentArea->LoadTilemap("levels/main.lvl", "tiles.png", "bg.png", 7, 7);
     currentArea->enemies = monsters;
-    Collision = std::make_unique<Collider>(Dialogue, currentArea->tilemapManager);
+
+    // Initialize collision system
+    if (!Collision) {
+        Collision = std::make_unique<Collider>(Dialogue, currentArea->tilemapManager);
+    }
     Collision->SetBoundingBoxOffset(glm::vec2(50.0,25.0f));
     Collision->SetBoundingBoxSize(glm::vec2(60.0,120.0f));
-    //audio->play2D((ResourceManager::root + "/audio/music.wav").c_str(), true);
 }
 
 void Game::Render()
@@ -222,16 +259,14 @@ void Game::Render()
     // Render the GUI
     Gui::Render();
 }
-void Game::ProcessInput(float dt)
+void Game::ProcessInput([[maybe_unused]] float dt)
 {
-    static bool paused = false;
-    static float stepCounter = 0.0f;  // Tracks distance moved for battle checks
-    static const float STEP_THRESHOLD = 29.0f;  // Adjust based on your tile size
-    static const float BATTLE_CHANCE = 0.45f;    // 10% chance of battle when threshold reached
+    static float stepCounter = 0.0f;
+    static const float STEP_THRESHOLD = 29.0f;
+    static const float BATTLE_CHANCE = 0.45f;
     
     if (State == GAME_ACTIVE) {
         bool moved = false;
-        glm::vec2 oldPos = player->Position;
 
         // Player movement
         if (this->Keys[GLFW_KEY_A] || this->Keys[GLFW_KEY_LEFT]) {
@@ -255,98 +290,137 @@ void Game::ProcessInput(float dt)
         }
         if(battleSystem){
             battle = !battleSystem->IsActive();
+            if (debug) std::cout << "Battle system exists, battle=" << battle << std::endl;
         } else {
             battle = true;
+            if (debug) std::cout << "No battle system, battle=true" << std::endl;
         }
+        
         if(player->stats.health <= 0){
+            if (debug) std::cout << "Player health <= 0, returning" << std::endl;
             return;
         }
-        std::cout << battle << "\n";
-        std::cout << moved << "\n";
-        // Check for battle initiation only if player moved
+
+        // Check for battle initiation only if player moved and battle is possible
         if (moved && battle) {
-            // Calculate distance moved this frame
-            glm::vec2 newPos = player->Position;
-            float distanceMoved = 0.1f; //glm::length(newPos - oldPos);
-            
-            // Add to step counter
+            if (debug) {
+                std::cout << "Movement detected, checking for battle" << std::endl;
+                std::cout << "Current step counter: " << stepCounter << std::endl;
+            }
+
+            float distanceMoved = 0.1f;
             stepCounter += distanceMoved;
-        std::cout << stepCounter << "st\n";
 
-            // Check for battle when step threshold is reached
             if (stepCounter >= STEP_THRESHOLD) {
-                // Reset step counter
+                if (debug) std::cout << "Step threshold reached (" << STEP_THRESHOLD << ")" << std::endl;
+                
                 stepCounter = 0.0f;
+                std::uniform_real_distribution<float> battleChance(0.0f, 1.0f);
+                float roll = battleChance(gen);
 
-                if (dis(gen) < BATTLE_CHANCE) {
-                    // Initialize and start battle
+                if (debug) {
+                    std::cout << "Battle roll: " << roll << " (needs < " << BATTLE_CHANCE << ")" << std::endl;
+                }
+
+                if (roll < BATTLE_CHANCE) {
+                    if (debug) std::cout << "Battle triggered, getting random enemy..." << std::endl;
+                    
                     auto enemy = currentArea->GetRandomEnemy();
-        std::cout << battle << "battle\n";
                     
                     if (enemy) {
-        std::cout << "enemy\n";
+                        if (debug) {
+                            std::cout << "Enemy found: " << enemy->name << std::endl;
+                            std::cout << "Starting battle..." << std::endl;
+                        }
 
-                        player->Stop(); // Stop player movement during battle
+                        player->Stop();
                         Camera::Instance->SetPosition(glm::vec2(0.0f));
                         Camera::Instance->SetSize(glm::vec2(Width, Height));
-                        battleSystem = std::make_unique<Battle>(monsters[player->form], enemy, Width, Height);
-                        battleSystem->Start();
+                        
+                        battleSystem = std::make_unique<Battle>(player, enemy, Width, Height);
+                        if (battleSystem) {
+                            battleSystem->Start();
+                            battle = false;
+                            if (debug) std::cout << "Battle system created and started successfully" << std::endl;
+                        } else {
+                            if (debug) std::cout << "Failed to create battle system!" << std::endl;
+                        }
+                    } else {
+                        if (debug) std::cout << "No enemy found!" << std::endl;
                     }
                 } else {
-                    battle = false;
+                    if (debug) std::cout << "Battle check failed, continuing normal gameplay" << std::endl;
                 }
-            } else {
-                battle = false;
             }
         } else {
+            if (debug && !moved) std::cout << "No movement detected" << std::endl;
+            if (debug && !battle) std::cout << "Battle not possible at this time" << std::endl;
             battle = false;
         }
     }
 }
 void Game::Update(float dt)
 {
-    if (State == GAME_ACTIVE && currentArea) {
-        // Process input first
-        ProcessInput(dt);
-        
-        // Then update everything else
-        if (gameOver) {
-            this->ResetLevel();
-            this->ResetPlayer();
+    if (State == GAME_ACTIVE) {
+        // Add null checks
+        if (!player) {
+            std::cerr << "Player is null!" << std::endl;
+            return;
         }
-        if(battleSystem){
-            battle = battleSystem->IsActive();
-            if(battle){
-                battleSystem->Update(dt);
-                for (auto& key : Keys) {
-                    key = false; // Reset key states
-                }
-            }
-        } else {
-            battle = false;
+        if (!Collision) {
+            std::cerr << "Collision system is null!" << std::endl;
+            return;
+        }
+        if (!currentArea) {
+            std::cerr << "Current area is null!" << std::endl;
+            return;
         }
 
-        if(!battle){
-            if(monsters[player->form]->battleEnd){
-                ResetLevel();
-                for(auto& monster : monsters) {
-                    monster->stats.health = monster->stats.maxHealth; // Reset each shared_ptr to nullptr
-                }
-                monsters[player->form]->battleEnd = false;
-                player->battleEnd = false;
-                ResetPlayer();
-                if(monsters[player->form]->lost){
-                    monsters[player->form]->lost = false;
-                }
-            }
-            if(monsters[player->form]->won){
-                monsters[player->form]->won = false;
-            }
-            player->Update(dt);  // Update player position
-            Collision->Update(player, dt);  // Then handle collisions
-            currentArea->Update(dt);
+        // Store previous position to detect movement
+        glm::vec2 oldPosition = player->Position;
+
+        // Update game systems
+        player->Update(dt);
+        Collision->Update(player, dt);
+        currentArea->Update(dt);
+        
+        if (Particles) {
             Particles->Update(dt, *player, 4, glm::vec2(60.0f, 135.0f));
-            Center();
+        }
+
+        // Check if player has moved
+        bool hasMoved = glm::length(player->Position - oldPosition) > 0.1f;
+        
+        // Random battle check after movement
+        if (hasMoved && !battleSystem->IsActive()) {
+            static std::uniform_real_distribution<> dis(0.0, 1.0);
+            
+            // 5% chance of battle per movement
+            if (dis(Random::getGenerator()) < 0.05) {
+                if (debug) std::cout << "Random battle triggered after movement" << std::endl;
+                StartBattle();
+            }
+        }
+
+        Center();
+
+        // Check if battle should start
+        if (battle && !battleSystem->IsActive()) {
+            if (debug) std::cout << "Starting battle..." << std::endl;
+            
+            // Make sure we have an enemy selected
+            if (auto enemy = getCurrentEnemy()) {
+                battleSystem = std::make_unique<Battle>(player, enemy.get(), Width, Height);
+                battleSystem->Start();
+            } else {
+                std::cerr << "Warning: No enemy available for battle" << std::endl;
+                battle = false;
+            }
+        }
+
+        // Update battle if active
+        if (battleSystem && battleSystem->IsActive()) {
+            battleSystem->Update(dt);
         }
     }
 }
@@ -358,100 +432,115 @@ void Game::Center(){
 }
 void Game::ResetPlayer()
 {
+    if (debug) std::cout << "\n=== Resetting Player ===" << std::endl;
+    
+    if (debug && player) {
+        std::cout << "Current player state before reset:" << std::endl;
+        std::cout << "- Position: " << player->Position.x << ", " << player->Position.y << std::endl;
+        std::cout << "- Form: " << player->form << std::endl;
+    }
+    
     player.reset();
-    // Initialize player object
-    glm::vec2 playerPos = glm::vec2(
-        120.0f, 
-        this->Height / 3.0f
-    );
-    player = std::make_unique<Player>(
+    if (debug) std::cout << "Player object reset" << std::endl;
+
+    glm::vec2 playerPos = glm::vec2(120.0f, this->Height / 3.0f);
+    player = std::make_shared<Player>(
         playerPos, PLAYER_SIZE, 
-        ResourceManager::GetTexture2D("player.png"), glm::vec3(1.0f, 1.0f, 1.0f), 5, 5
+        ResourceManager::GetTexture2D("player.png"), 
+        glm::vec3(1.0f, 1.0f, 1.0f), 5, 5
     );
+    
     player->tile = 23;
     player->form = 0;
+    
+    if (debug) {
+        std::cout << "New player created:" << std::endl;
+        std::cout << "- Position: " << player->Position.x << ", " << player->Position.y << std::endl;
+        std::cout << "- Size: " << PLAYER_SIZE.x << ", " << PLAYER_SIZE.y << std::endl;
+        std::cout << "- Tile: " << player->tile << std::endl;
+        std::cout << "- Form: " << player->form << std::endl;
+        std::cout << "=== Player Reset Complete ===\n" << std::endl;
+    }
 }
-void Game::ResetLevel(){
-    // Clear the vector
+void Game::ResetLevel()
+{
+    if (debug) std::cout << "\n=== Resetting Level ===" << std::endl;
+    
     monsters.clear();
+    if (debug) std::cout << "Cleared existing monsters" << std::endl;
 
-    // Add Froggy
+    // Add Froggy with complete stats initialization
     auto froggy = std::make_shared<GameObject>(
         glm::vec2(0.0f, 0.0f),
         glm::vec2(200.0f, 400.0f),
         ResourceManager::GetTexture2D("frog.png")
     );
     froggy->name = "Froggy";
-    froggy->stats = {150, 80, 70, 50, 50, "Water"};
-    froggy->moves = {
-        {"Water Gun", "Water", 50, 95.0f, 30, "A basic water attack"},
-        {"Aqua Wave", "Water", 100, 70.0f, 10, "A powerful water wave that may lower enemy speed"},
-        {"Bubble Beam", "Water", 65, 90.0f, 20, "An attack that may lower enemy speed"},
-        {"Pound", "Normal", 30, 100.0f, 40, "A basic normal attack"}
-    };
+    froggy->stats = {150, 80, 70, 50, 50, "Water", "Froggy"};
     monsters.push_back(froggy);
 
-    // Add Tortoise
+    // Add Tortoise with complete stats
     auto tortoise = std::make_shared<GameObject>(
         glm::vec2(0.0f, 0.0f),
         glm::vec2(200.0f, 400.0f),
         ResourceManager::GetTexture2D("turtle.png")
     );
     tortoise->name = "Tortoise";
-    tortoise->stats = {180, 80, 75, 95, 30, "Water"};
-    tortoise->moves = {
-        {"Shell Shield", "Water", 0, 100.0f, 10, "A defense move to increase defense for a few turns"},
-        {"Bite", "Normal", 60, 90.0f, 15, "A normal biting attack"},
-        {"Water Pulse", "Water", 40, 100.0f, 20, "A water attack that may confuse the enemy"},
-        {"Defense Curl", "Normal", 0, 100.0f, 10, "A move that increases defense for a few turns"}
-    };
+    tortoise->stats = {180, 80, 75, 95, 30, "Water", "Tortoise"};
     monsters.push_back(tortoise);
 
-    // Add Scorpio
+    // Add Scorpio with complete stats
     auto scorpio = std::make_shared<GameObject>(
         glm::vec2(0.0f, 0.0f),
         glm::vec2(200.0f, 400.0f),
         ResourceManager::GetTexture2D("scorpion.png")
     );
     scorpio->name = "Scorpio";
-    scorpio->stats = {120, 120, 65, 55, 50, "Ground"};
-    scorpio->moves = {
-        {"Sandstorm", "Ground", 0, 85.0f, 15, "A powerful sandstorm that affects visibility and damages over time"},
-        {"Poison Sting", "Ground", 40, 95.0f, 20, "A stinging attack that may poison the opponent"},
-        {"Tail Whip", "Normal", 0, 100.0f, 30, "A move that lowers the enemy's defense"},
-        {"Rock Slide", "Rock", 75, 90.0f, 10, "An attack that may cause the enemy to flinch"}
-    };
+    scorpio->stats = {120, 120, 65, 55, 50, "Ground", "Scorpio"};
     monsters.push_back(scorpio);
 
-    // Add Roawer
+    // Add Roawer with complete stats
     auto roawer = std::make_shared<GameObject>(
         glm::vec2(0.0f, 0.0f),
         glm::vec2(200.0f, 400.0f),
         ResourceManager::GetTexture2D("wolf.png")
     );
     roawer->name = "Roawer";
-    roawer->stats = {150, 150, 80, 60, 60, "Ground"};
-    roawer->moves = {
-        {"Ground Slam", "Ground", 80, 85.0f, 15, "A ground-shaking attack that lowers enemy speed"},
-        {"Howl", "Normal", 0, 100.0f, 10, "A move that boosts the user's attack"},
-        {"Fang Strike", "Normal", 70, 95.0f, 15, "A biting attack that deals significant damage"},
-        {"Earthquake", "Ground", 100, 75.0f, 5, "A powerful attack that hits all opponents"}
-    };
+    roawer->stats = {150, 150, 80, 60, 60, "Ground", "Roawer"};
     monsters.push_back(roawer);
 
-    // Add Insectus
+    // Add Insectus with complete stats
     auto insectus = std::make_shared<GameObject>(
         glm::vec2(0.0f, 0.0f),
         glm::vec2(200.0f, 400.0f),
         ResourceManager::GetTexture2D("insect.png")
     );
     insectus->name = "Insectus";
-    insectus->stats = {90, 90, 50, 35, 40, "Insect"};
-    insectus->moves = {
-        {"Bug Bite", "Insect", 50, 90.0f, 20, "A bite attack with a chance to confuse the enemy"},
-        {"Toxic Powder", "Poison", 0, 90.0f, 10, "A powder that poisons the opponent over time"},
-        {"Quick Attack", "Normal", 40, 100.0f, 20, "A fast attack that strikes first"},
-        {"Leech Life", "Bug", 20, 100.0f, 15, "A move that restores some health based on damage dealt"}
-    };
+    insectus->stats = {90, 90, 50, 35, 40, "Insect", "Insectus"};
     monsters.push_back(insectus);
+
+    if (debug) {
+        std::cout << "Total monsters after reset: " << monsters.size() << std::endl;
+        std::cout << "=== Level Reset Complete ===\n" << std::endl;
+    }
+}
+
+void Game::InitializeCollision() {
+    if (currentArea && currentArea->tilemapManager) {
+        Collision->SetTilemapManager(currentArea->tilemapManager);
+    }
+}
+
+// Helper function to get current enemy
+std::shared_ptr<GameObject> Game::getCurrentEnemy() {
+    if (monsters.empty()) return nullptr;
+    
+    // Get a random enemy from the available monsters
+    std::uniform_int_distribution<size_t> dis(0, monsters.size() - 1);
+    return monsters[dis(Random::getGenerator())];
+}
+
+void Game::StartBattle() {
+    battle = true;
+    if (debug) std::cout << "Battle flag set" << std::endl;
 }

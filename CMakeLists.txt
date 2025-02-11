@@ -88,10 +88,10 @@ if(WIN32)
         ${CMAKE_SOURCE_DIR}/include_libs/windows
         ${GLFW_INCLUDE_DIRS}
     )
-    add_library(glfw SHARED IMPORTED)
+    add_library(glfw STATIC IMPORTED)
     set_target_properties(glfw PROPERTIES
-            IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/glfw3.lib"
-            IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.dll"
+            #IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/lib/glfw3.lib"
+            IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/glfw3.lib"
     )
     # Add MSYS2 static libraries
     target_link_libraries(${PROJECT_NAME} PRIVATE 
@@ -129,6 +129,10 @@ if(WIN32)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_SOURCE_DIR}/lib/glfw3.dll" $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+
+    target_link_libraries(${PROJECT_NAME} bcrypt)
+elseif(APPLE)
+    target_link_libraries(${PROJECT_NAME} "-framework Security")
 else()
     # Linux: Use system packages
     
@@ -150,28 +154,12 @@ else()
         ${CMAKE_SOURCE_DIR}/include_libs/imgui/backends
         ${CMAKE_SOURCE_DIR}/include_libs/imgui/misc/cpp
     )
-
-    # Linux specific settings for irrKlang
-    set(IRRKLANG_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/lib/irrKlang/include")
-    set(IRRKLANG_LIB_DIR "${CMAKE_SOURCE_DIR}/lib/irrKlang/bin/linux-gcc-64")
-    set(IRRKLANG_LIB "${IRRKLANG_LIB_DIR}/libIrrKlang.so") # Dynamic library for Linux
-
-    # Check if the required files exist
-    if(NOT EXISTS ${IRRKLANG_LIB})
-        message(FATAL_ERROR "irrKlang library not found at: ${IRRKLANG_LIB}")
-    endif()
-
-    # Include irrKlang directories
-    target_include_directories(${EXECUTABLE_NAME} PRIVATE ${IRRKLANG_INCLUDE_DIR})
-
-    # Link irrKlang
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
         lglfw
         ${OPENGL_LIBRARIES}
         #${FREETYPE_LIBRARIES}
-        ${IRRKLANG_LIB}
-    )
+   )
 endif()
 
 # Common compiler warnings
