@@ -26,7 +26,7 @@ void Battle::Start() {
     stateTimer = BATTLE_START_DELAY;
     battleLog.clear();
     AddLogMessage("Battle started!");
-    currentState == BattleState::PLAYER_TURN;
+    currentState = BattleState::PLAYER_TURN;
 }
 
 void Battle::Update(float dt) {
@@ -97,12 +97,10 @@ void Battle::RenderBattleScene(SpriteRenderer& renderer) {
     // Render enemy
     enemyCharacter->Position = enemyPosition;
     enemyCharacter->Size = glm::vec2(300.0f, 300.0f);
-    enemyCharacter->Rotation = 180.0f;
     enemyCharacter->Draw(renderer);
 
     // Render player
     playerCharacter->Position = playerPosition;
-    playerCharacter->Rotation = 180.0f;
     playerCharacter->Draw(renderer);
 }
 void Battle::RenderUI() {
@@ -222,7 +220,8 @@ void Battle::ExecutePlayerMove(const std::string& moveName) {
     if (move != playerCharacter->moves.end()) {
         if (CheckAccuracy(move->accuracy)) {
             int damage = CalculateDamage(*move, playerCharacter->stats, enemyCharacter->stats);
-            enemyCharacter->stats.health = std::max(0, enemyCharacter->stats.health - damage);
+            enemyCharacter->stats.health = (enemyCharacter->stats.health - damage > 0) ? 
+                enemyCharacter->stats.health - damage : 0;
             AddLogMessage(playerCharacter->stats.name + " used " + moveName + "!");
             AddLogMessage("Dealt " + std::to_string(damage) + " damage!");
         } else {
@@ -355,7 +354,8 @@ void Battle::ExecuteEnemyMove() {
     // Execute the move if it hits
     if (CheckAccuracy(selectedMove.accuracy)) {
         int damage = CalculateDamage(selectedMove, enemyCharacter->stats, playerCharacter->stats);
-        playerCharacter->stats.health = std::max(0, playerCharacter->stats.health - damage);
+        playerCharacter->stats.health = (playerCharacter->stats.health - damage > 0) ? 
+            playerCharacter->stats.health - damage : 0;
         AddLogMessage(enemyCharacter->name + " used " + selectedMove.name + "!");
         AddLogMessage("Dealt " + std::to_string(damage) + " damage!");
     } else {

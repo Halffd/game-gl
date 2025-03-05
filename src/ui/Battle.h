@@ -23,6 +23,9 @@ public:
     void Start();
     void End();
     std::string StatusEffectToString(StatusEffect effect);
+    int GetEnemyHealth() const {
+        return enemyCharacter ? enemyCharacter->stats.health : 0;
+    }
 
 private:
     void ApplyStatusEffect(StatusEffect effect, bool isPlayer);

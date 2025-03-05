@@ -1,5 +1,6 @@
 #include "Particle.h"
 #include "game/Camera.h"
+#include <algorithm>
 
 ParticleGenerator::ParticleGenerator(Shader shader, Texture2D texture, unsigned int amount)
     : shader(shader), texture(texture), amount(amount)
@@ -12,15 +13,15 @@ void ParticleGenerator::Update(float dt, GameObject &object, unsigned int newPar
     // add new particles 
     for (unsigned int i = 0; i < newParticles; ++i)
     {
-        int unusedParticle = this->firstUnusedParticle();
-        this->respawnParticle(this->particles[unusedParticle], object, offset);
+        int unusedParticle = firstUnusedParticle();
+        respawnParticle(particles[unusedParticle], object, offset);
     }
     // update all particles
     for (unsigned int i = 0; i < this->amount; ++i)
     {
         Particle &p = this->particles[i];
         //p.Life -= dt; // reduce life
-        p.Life = std::max(0.0f, p.Life - dt); // Ensure Life doesn't go below 0
+        p.Life = (p.Life - dt > 0.0f) ? p.Life - dt : 0.0f;
 
         if (p.Life > 0.0f)
         {	// particle is alive, thus update

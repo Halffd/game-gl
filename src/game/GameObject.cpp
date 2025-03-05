@@ -9,5 +9,14 @@ GameObject::GameObject(glm::vec2 pos, glm::vec2 size, Texture2D sprite, glm::vec
 
 void GameObject::Draw(SpriteRenderer &renderer)
 {
-    renderer.DrawSprite(this->Sprite, this->Position, this->Size, this->Rotation, this->Color);
+    // Mirror only the frog character by adjusting texture coordinates
+    if (name == "Froggy") {
+        // Mirror by using texture coordinates
+        glm::vec2 texOffset(1.0f, 0.0f);  // Start from right side
+        glm::vec2 texScale(-1.0f, 1.0f);  // Negative X scale to mirror
+        renderer.DrawSprite(this->Sprite, this->Position, this->Size, this->Rotation, this->Color, texOffset, texScale);
+    } else {
+        // Normal rendering
+        renderer.DrawSprite(this->Sprite, this->Position, this->Size, this->Rotation, this->Color);
+    }
 }

@@ -28,26 +28,42 @@ Player::Player(glm::vec2 pos, glm::vec2 size, Texture2D sprite, glm::vec3 color,
 void Player::Move(Direction dir) {
     facing = dir;
     isMoving = true;
-    
+    if(facing != prevDir){
+        anim = 0;
+        frame = 0;
+    }
+    frame++;
+    if (frame % animTime == 0){
+        anim++;
+    }
+    if(anim >= 3){
+        anim = 0;
+    }
     // Calculate normalized velocity vector
     glm::vec2 moveDir(0.0f);
     switch(dir) {
         case Direction::UP:
             moveDir = glm::vec2(0.0f, -1.0f);
+            animDir = 0;
             break;
         case Direction::DOWN:
             moveDir = glm::vec2(0.0f, 1.0f);
+            animDir = 1;
             break;
         case Direction::LEFT:
             moveDir = glm::vec2(-1.0f, 0.0f);
+            animDir = 2;
             break;
         case Direction::RIGHT:
             moveDir = glm::vec2(1.0f, 0.0f);
+            animDir = 3;
             break;
     }
-    
+    tile = anims[animDir][anim] - 1;
+    //std::cout << tile << " " << animDir << ":" << anim << " / " << frame;
     // Set velocity with full movement speed
     Velocity = moveDir * movementSpeed;
+    prevDir = facing;
 }
 
 void Player::Stop() {

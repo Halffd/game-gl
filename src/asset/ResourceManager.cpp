@@ -247,7 +247,7 @@ Texture2D ResourceManager::loadTexture2DFromFile(const char *file, bool alpha, G
     Texture2D texture;
 
     int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(true);
+    // stbi_set_flip_vertically_on_load(true);
     unsigned char *data = stbi_load(file, &width, &height, &nrChannels, 0);
     if (!data)
     {

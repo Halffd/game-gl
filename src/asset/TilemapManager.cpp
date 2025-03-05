@@ -39,7 +39,7 @@ void TilemapManager::LoadTilemap(const std::vector<std::vector<unsigned int>>& t
         for (unsigned int col = 0; col < tileData[row].size(); ++col) {
             unsigned int tileIndex = tileData[row][col];
 
-            if (tileIndex == 0) continue; // Skip empty tiles
+            //if (tileIndex == 0) continue; // Skip empty tiles
 
             // Calculate texture coordinates (UV offset)
             unsigned int texCol = (tileIndex - 1) % tilesAcross;
@@ -53,10 +53,14 @@ void TilemapManager::LoadTilemap(const std::vector<std::vector<unsigned int>>& t
             Tile tile;
             tile.Position = tilePosition;
             tile.Size = tileSize;
-            tile.TileID = tileIndex; 
-            tile.TextureOffset = textureOffset;
-            tile.TextureSize = textureSize;
-            tile.IsSolid = (tileIndex == 37) || (tileIndex == 34); // Mark solid tiles (customize as needed)
+            if(tileIndex != 0){
+                tile.TileID = tileIndex; 
+                tile.TextureOffset = textureOffset;
+                tile.TextureSize = textureSize;
+            } else {
+                tile.TextureSize = glm::vec2(0.0f,0.0f);
+            }
+            tile.IsSolid = (tileIndex != 40); // Mark solid tiles (customize as needed)
 
             tiles.push_back(tile);
         }
@@ -143,7 +147,7 @@ void TilemapManager::DrawPlayer(SpriteRenderer& renderer, glm::vec2 pos, glm::ve
         *texture,              // Texture to use
         pos,                   // Position in world space
         glm::vec2(tileData.Size.x, tileData.Size.y),                  // Size of the tile
-        180.0f,                
+        0.0f,                
         glm::vec3(1.0f),       // Default color (white)
         tileData.TextureOffset,// Texture UV offset
         tileData.TextureSize   // Texture UV size

@@ -41,6 +41,17 @@ public:
     float animationTimer;
     int currentFrame;
     float frameTime;
+    unsigned int anim = 0;
+    unsigned int frame = 0;
+    unsigned int animDir = 0;
+    unsigned int animTime = 30;
+    Direction prevDir = Direction::UP;
+    std::vector<std::vector<unsigned int>> anims = {
+        { 13, 14, 15 }, //up
+        { 1, 2, 3 }, //down
+        { 7, 8, 9 }, //left
+        { 19, 20, 21 } //right
+    };
 
     // Tilemap
     std::shared_ptr<TilemapManager> sheet;

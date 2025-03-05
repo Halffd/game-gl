@@ -36,10 +36,17 @@ void Collider::HandleCollisions(std::unique_ptr<Player>& player, const glm::vec2
         // Check for AABB collision using the bounding box
         if (CheckCollision(boxPosition, actualSize, tile.Position, tile.Size)) {
             // Calculate overlap
-            float overlapX = std::min(boxPosition.x + actualSize.x, tile.Position.x + tile.Size.x) -
-                            std::max(boxPosition.x, tile.Position.x);
-            float overlapY = std::min(boxPosition.y + actualSize.y, tile.Position.y + tile.Size.y) -
-                            std::max(boxPosition.y, tile.Position.y);
+            float minX = (boxPosition.x + actualSize.x < tile.Position.x + tile.Size.x) ? 
+                boxPosition.x + actualSize.x : tile.Position.x + tile.Size.x;
+            float maxX = (boxPosition.x > tile.Position.x) ? 
+                boxPosition.x : tile.Position.x;
+            float overlapX = minX - maxX;
+
+            float minY = (boxPosition.y + actualSize.y < tile.Position.y + tile.Size.y) ? 
+                boxPosition.y + actualSize.y : tile.Position.y + tile.Size.y;
+            float maxY = (boxPosition.y > tile.Position.y) ? 
+                boxPosition.y : tile.Position.y;
+            float overlapY = minY - maxY;
 
             // Determine which axis to resolve based on the smallest overlap
             if (overlapX < overlapY) {
