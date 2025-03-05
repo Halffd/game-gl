@@ -4,12 +4,15 @@
 #include "BallObject.h"
 #include <glm/glm.hpp>
 #include <tuple>
+#include <memory>
 
 // Represents the current state of the game
 enum GameState {
     GAME_ACTIVE,
     GAME_MENU,
-    GAME_WIN
+    GAME_WIN,
+    GAME_PAUSED,
+    GAME_CREDITS
 };
 
 class Game
@@ -45,12 +48,16 @@ public:
     bool CheckCollision(GameObject &one, GameObject &two);
     Collision CheckCollision(BallObject &one, GameObject &two);
     
-private:
+protected:
+    // Performance monitoring
     double lastTime;
     int frameCount;
     float fps;
+
+    // Core systems
+    std::unique_ptr<SpriteRenderer> Renderer;
+    std::unique_ptr<SpriteRenderer> Renderer2;
+    std::unique_ptr<ParticleGenerator> Particles;
 };
 
-
-
-#endif //GAME_H
+#endif // GAME_H

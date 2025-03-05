@@ -13,35 +13,33 @@
 #include "../GameMode.h"
 #include "Particle.h"
 #include "irrKlang/irrKlang.h"
-GameType mode = GAME2D;
-SpriteRenderer  *Renderer;
-SpriteRenderer  *Renderer2;
+
 // Initial size of the player paddle
 const glm::vec2 PLAYER_SIZE(200.0f, 40.0f);
 // Initial velocity of the player paddle
 const float PLAYER_VELOCITY(500.0f);
 
-GameObject      *Player;
+GameObject *Player;
 
 // Initial velocity of the Ball
 const glm::vec2 INITIAL_BALL_VELOCITY(100.0f, -350.0f);
 // Radius of the ball object
 const float BALL_RADIUS = 12.5f;
 
-BallObject     *Ball; 
-ParticleGenerator   *Particles; 
+BallObject *Ball;
 
 Game::Game(unsigned int width, unsigned int height) 
     : State(GAME_ACTIVE), 
       Width(width), 
       Height(height)
 {
+}
 
-}
 Game::~Game() {
-    delete Renderer;
-    delete Renderer2;
+    delete Player;
+    delete Ball;
 }
+
 void Game::Init()
 {
     // Timing variables
@@ -57,6 +55,8 @@ void Game::Init()
         static_cast<float>(this->Height), 0.0f, -1.0f, 1.0f);
     ResourceManager::GetShader("sprite").Use().SetInteger("image", 0);
     ResourceManager::GetShader("sprite").SetMatrix4("projection", projection);
+    ResourceManager::GetShader("particle").Use().SetMatrix4("projection", projection);
+
     // set render-specific controls
     const std::vector<float>  vertices = {
         // pos      // tex
@@ -157,10 +157,10 @@ void Game::Init()
 void Game::Render()
 {
     Gui::Start();
- // Calculate FPS
+    // Calculate FPS
     double currentTime = glfwGetTime();
     frameCount++;
-    if (currentTime - lastTime >= 1.0) { // Update every second
+    if (currentTime - lastTime >= 1.0) {
         fps = frameCount / (currentTime - lastTime);
         frameCount = 0;
         lastTime = currentTime;
@@ -171,10 +171,7 @@ void Game::Render()
     ImGui::Begin("FPS Window", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
     ImGui::SetCursorPos(ImVec2(10, 10)); // Position the text
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f)); // Yellow color
-    //ImGui::PushFont(io.Fonts->Fonts[0]); // Use the default font
     ImGui::Text("FPS: %.1f", fps);
-    //ImGui::PopFont();
-
     ImGui::PopStyleColor();
     ImGui::End();
     

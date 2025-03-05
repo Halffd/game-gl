@@ -16,7 +16,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <map>
-#include <glm/gtc/random.hpp> // for glm::linearRand
+#include <glm/gtc/random.hpp>
 
 #include "setup.h"
 #include "types.h"
@@ -42,9 +42,11 @@
 #include "Gui.h"
 #include "model.h"
 
+// Function declarations
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
+void framebufferSizeCallback(GLFWwindow *window, int width, int height);
 
 // Global variables
 int screenWidth = WIDTH;
@@ -55,9 +57,50 @@ bool canPrint = true;
 bool isPaused = false;
 double lastTime = 0.0;
 bool web = false;
+bool debug = false;
 
 GameType gameType = GAME2D;
-std::string gameTypeStr = "Default"; // Default game type string
+std::string gameTypeStr = "Default";
+
+// Add key state tracking from game jam branch
+struct {
+    bool current[1024] = {false};
+    bool previous[1024] = {false};
+} KeyState;
+
+// Keep the resolution helper from game jam branch
+struct Resolution {
+    int width;
+    int height;
+    float aspectRatio;
+};
+
+Resolution getOptimalResolution() {
+    Resolution res;
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    if (!monitor) {
+        return {1280, 720, 16.0f/9.0f};
+    }
+
+    int count;
+    const GLFWvidmode* modes = glfwGetVideoModes(monitor, &count);
+    if (!modes || count == 0) {
+        return {1280, 720, 16.0f/9.0f};
+    }
+
+    const GLFWvidmode* bestMode = &modes[0];
+    for (int i = 1; i < count; i++) {
+        if (modes[i].width * modes[i].height > bestMode->width * bestMode->height) {
+            bestMode = &modes[i];
+        }
+    }
+    
+    res.width = bestMode->width;
+    res.height = bestMode->height;
+    res.aspectRatio = static_cast<float>(res.width) / static_cast<float>(res.height);
+    
+    return res;
+}
 
 // Array to store 25 cube positions
 #define CUBES -1

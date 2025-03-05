@@ -13,4 +13,9 @@ assimp/build
 assimp/build-windows
 assimp/win
 imgui/build
+<<<<<<< HEAD
 imgui/build-windows
+=======
+imgui/build-windows
+glfw
+>>>>>>> jam/master
