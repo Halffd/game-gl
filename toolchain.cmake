@@ -1,11 +1,7 @@
 # Specify the minimum version of CMake
 cmake_minimum_required(VERSION 3.10)
 
-<<<<<<< HEAD
-# Set the project name
-=======
 # Set the project name  
->>>>>>> jam/master
 project(MyProject)
 
 # Check the architecture type

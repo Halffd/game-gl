@@ -7,18 +7,5 @@ uniform sampler2D sprite;
 
 void main()
 {
-<<<<<<< HEAD
     color = (texture(sprite, TexCoords) * ParticleColor);
-=======
-    // Sample the texture
-    vec4 texColor = texture(sprite, TexCoords);
-
-    // Make the texture greener by multiplying the green channel
-    // You can adjust the multiplier to control the intensity of greenness
-    float greenMultiplier = 7.5; // Adjust this value as needed
-    texColor.g *= greenMultiplier;
-
-    // Combine the texture color with the particle color
-    color = texColor * ParticleColor;
->>>>>>> jam/master
 }

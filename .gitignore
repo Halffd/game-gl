@@ -13,9 +13,21 @@ assimp/build
 assimp/build-windows
 assimp/win
 imgui/build
-<<<<<<< HEAD
-imgui/build-windows
-=======
 imgui/build-windows
 glfw
->>>>>>> jam/master
+*.log
+*.txt
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.deb
+*.rpm
+*.dmg
+*.pkg
+*.pkg.tar
+*.pkg.tar.gz
+*.pkg.tar.bz2
+build-linux
+build-macos
