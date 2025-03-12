@@ -31,3 +31,7 @@ glfw
 *.pkg.tar.bz2
 build-linux
 build-macos
+assimp
+glfw
+imgui
+irrklang
