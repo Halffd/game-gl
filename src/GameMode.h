@@ -19,6 +19,27 @@ enum GameType {
     PLANE
 };
 
+/**
+ * @brief Represents the current state of the game
+ */
+enum GameState {
+    GAME_ACTIVE,
+    GAME_MENU,
+    GAME_PAUSED,
+    GAME_CREDITS,
+    GAME_WIN
+};
+
+/**
+ * @brief Represents the game mode
+ */
+enum GameMode {
+    MENU,
+    GAME,
+    CREDITS
+};
+
+
 int game2d(int argc, char *argv[], std::string type);
 int game3d(int argc, char *argv[], std::string type);
 
