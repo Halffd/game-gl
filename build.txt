@@ -1,3 +1,0 @@
-MSBuild version 17.12.12+1cce77968 for .NET Framework
-MSBUILD : error MSB1009: Project file does not exist.
-Switch: game.sln

@@ -98,9 +98,24 @@ if(WIN32)
     ${MSYS2_LIBRARIES}  # Add other static libraries here
     -Wl,--end-group
     )
+
+    # Set up Assimp paths
+    set(ASSIMP "${CMAKE_SOURCE_DIR}/lib/libassimp.dll.a")
+
+    # Verify files exist
+    if(NOT EXISTS ${ASSIMP})
+        message(FATAL_ERROR "Assimp library not found at: ${ASSIMP_LIB}")
+    endif()
+
+    # Set up Assimp as imported library
+    add_library(assimp STATIC IMPORTED)
+    set_target_properties(assimp PROPERTIES
+        IMPORTED_LOCATION "${ASSIMP}"
+    )
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
         glfw
+        assimp
     )
 
     # Set up irrKlang paths
@@ -138,15 +153,17 @@ else()
     find_package(PkgConfig REQUIRED)
     cmake_policy(SET CMP0072 NEW)
     #find_package(Freetype REQUIRED)
-    find_package(glfw3 REQUIRED STATIC)
+    find_package(glfw3 REQUIRED)
+    find_package(assimp REQUIRED)
 
-    add_library(lglfw STATIC IMPORTED)
-    set_target_properties(lglfw PROPERTIES
-        IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/libglfw3.a"
-    )
+  #  add_library(lglfw STATIC IMPORTED)
+   # set_target_properties(lglfw PROPERTIES
+    #    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/libglfw3.a"
+    #)
     # Linux include directories
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
         ${GLFW_INCLUDE_DIRS}
+        ${ASSIMP_INCLUDE_DIRS} 
         #${FREETYPE_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include_libs/GL
         ${CMAKE_SOURCE_DIR}/include_libs/imgui
@@ -155,8 +172,9 @@ else()
     )
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         glad
-        lglfw
+        glfw
         ${OPENGL_LIBRARIES}
+        ${ASSIMP_LIBRARIES}
         #${FREETYPE_LIBRARIES}
    )
 endif()
