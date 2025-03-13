@@ -6,8 +6,8 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include "Mesh.hpp"
-#include "vertex.h"
+#include "../Mesh.hpp"
+#include "Vertex.h"
 
 namespace m3D
 {

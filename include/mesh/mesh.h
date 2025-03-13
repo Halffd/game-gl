@@ -6,7 +6,7 @@
 #include <cstdint>
 
 #include "math/vector.h"
-#include "../vertex.h"
+#include "../../src/render/Vertex.h"
 
 namespace Engine
 {

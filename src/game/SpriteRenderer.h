@@ -13,8 +13,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "../Texture2D.h"
-#include "../Shader.h"
+#include "../asset/Texture2D.h"
+#include "../render/Shader.h"
 #include <vector>
 
 // constexpr function to convert glm::mat2 to glm::mat4

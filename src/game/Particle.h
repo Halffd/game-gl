@@ -5,8 +5,8 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
-#include "../Shader.h"
-#include "../Texture2D.h"
+#include "../render/Shader.h"
+#include "../asset/Texture2D.h"
 #include "GameObject.h"
 
 

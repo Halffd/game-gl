@@ -1,5 +1,5 @@
 #include "Texture2D.h"
-#include "util/Util.h"
+#include "../util/Util.h"
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 

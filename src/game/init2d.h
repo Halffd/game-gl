@@ -9,8 +9,8 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "Game.h"
-#include "../Util.hpp"
-#include "../ResourceManager.h"
+#include "../util/Util.h"
+#include "../asset/ResourceManager.h"
 #include "../GameMode.h"
 
 // The Width of the screen

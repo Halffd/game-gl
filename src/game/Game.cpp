@@ -1,16 +1,16 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Game.h"
-#include "../ResourceManager.h"
+#include "./Game.h"
+#include "asset/ResourceManager.h"
 #include "SpriteRenderer.h"
 #include "GameObject.h"
 #include "BallObject.h"
-#include "../Util.hpp"
+#include "../util/Util.h"
 #include "root.h"
 #include <iostream>
-#include "../Gui.h"
-#include "../GameMode.h"
+#include "ui/Gui.h"
+#include "GameMode.h"
 #include "Particle.h"
 #include "irrKlang/irrKlang.h"
 
@@ -77,8 +77,8 @@ void Game::Init()
     };
 
     // Create SpriteRenderers
-    Renderer = new SpriteRenderer(ResourceManager::GetShader("sprite"), vertices);
-    Renderer2 = new SpriteRenderer(ResourceManager::GetShader("sprite"), verticesTriangle);
+    Renderer = std::make_unique<SpriteRenderer>(ResourceManager::GetShader("sprite"), vertices);
+    Renderer2 = std::make_unique<SpriteRenderer>(ResourceManager::GetShader("sprite"), verticesTriangle);
 
     // load textures
     ResourceManager::LoadTexture2D("awesomeface.png", "face");
@@ -104,7 +104,7 @@ void Game::Init()
     ResourceManager::LoadTexture2D("bg/wallhaven-qz7okl.png", "bg1");
     ResourceManager::LoadTexture2D("glasspaddle2_1.png", "paddle");
     ResourceManager::LoadTexture2D("particle.png",  "particle"); 
-    Particles = new ParticleGenerator(
+    Particles = std::make_unique<ParticleGenerator>(
         ResourceManager::GetShader("particle"), 
         ResourceManager::GetTexture2D("particle"), 
         500
@@ -187,9 +187,6 @@ void Game::Render()
         };
         glm::mat4 model = SpriteRenderer::Transform(glm::vec2(200.0f, 200.0f), glm::vec2(100.0f, 150.0f), 24.0f);
         glm::mat4 transformtion = model * mat2To4(trans);
-        logger.log("Model", model);
-        logger.log("Trana", transformtion);
-        //transformtion *= glm::vec4(4.0f,0.0f,0.0f,2.0f);
         Renderer->DrawSprite(ResourceManager::GetTexture2D("face"),
                             model, glm::vec3(0.0f, 1.0f, 0.0f));
         Renderer->DrawSprite(ResourceManager::GetTexture2D("face"),
@@ -260,7 +257,6 @@ void Game::Update(float dt) {
         this->ResetLevel();
         this->ResetPlayer();
     }
-
 }
 
 

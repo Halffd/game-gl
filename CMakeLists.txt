@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28.1)
 
 # Define project name and output executable name
-set(PROJECT_NAME "NeuroMonsters")
+set(PROJECT_NAME "GameEngine")
 set(EXECUTABLE_NAME "${PROJECT_NAME}")
 
 project(${PROJECT_NAME}
@@ -26,8 +26,10 @@ endif()
 # Option to control warning levels
 option(ENABLE_WARNINGS "Enable compiler warnings" ON)
 
-# Source files
-file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.c")
+# Source files - Use only the minimal main file for now
+set(SOURCE_FILES
+    src/main_minimal.cpp
+)
 
 # GLAD
 add_library(glad STATIC src/glad.c)

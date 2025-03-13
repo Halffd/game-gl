@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "GameObject.h"
-#include "../Texture2D.h"
+#include "../asset/Texture2D.h"
 
 
 // BallObject holds the state of the Ball object inheriting

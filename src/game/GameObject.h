@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 
-#include "../Texture2D.h"
+#include "../asset/Texture2D.h"
 #include "SpriteRenderer.h"
 
 
@@ -20,6 +20,7 @@ public:
     float       Rotation;
     bool        IsSolid;
     bool        Destroyed;
+    bool        Mirror = false;
     // render state
     Texture2D   Sprite;	
     // constructor(s)

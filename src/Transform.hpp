@@ -2,9 +2,10 @@
 #define TRANSFORM_H
 
 #include <glad/glad.h>
-#include "Shader.h"
-#include "Texture2D.h"
-#include "Util.hpp"
+#include "render/Shader.h"
+#include "asset/Texture2D.h"
+#include "util/Util.h"
+#include "render/Vertex.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <type_traits>

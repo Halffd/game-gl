@@ -2,7 +2,7 @@
 // Created by halff on 12/09/2024.
 //
 #include "init2d.h"
-#include "../Gui.h"
+#include "../ui/Gui.h"
 #include <setup.h>
 
 

@@ -2,6 +2,7 @@
 #define GAME_H
 #include "Level.h"
 #include "BallObject.h"
+#include "Particle.h"
 #include <glm/glm.hpp>
 #include <tuple>
 #include <memory>

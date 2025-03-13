@@ -20,12 +20,11 @@
 
 #include "setup.h"
 #include "types.h"
-#include "vertex.h"
+#include "render/Vertex.h"
 #include "Camera.hpp"
-#include "ResourceManager.h"
+#include "asset/ResourceManager.h"
 #include "Transform.hpp"
-#include "Util.hpp"
-#include "root_directory.h"
+#include "util/Util.h"
 
 #include "mesh/plane.h"
 #include "mesh/line_strip.h"
@@ -39,8 +38,7 @@
 #include "math.h"
 #include "game/init2d.h"
 #include "GameMode.h"
-#include "Gui.h"
-#include "model.h"
+#include "ui/Gui.h"
 
 // Function declarations
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);

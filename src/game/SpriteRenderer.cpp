@@ -7,7 +7,7 @@
 ** option) any later version.
 ******************************************************************/
 #include "SpriteRenderer.h"
-#include "../Util.hpp"
+#include "../util/Util.h"
 
 glm::mat4 mat2To4(const glm::mat2& mat2){
     return glm::mat4(

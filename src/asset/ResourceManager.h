@@ -23,8 +23,8 @@
 #include "Texture1D.h"
 #include "Texture2D.h"
 #include "Texture3D.h"
-#include "render/Shader.h"
-#include "util/Log.h"
+#include "../render/Shader.h"
+#include "../util/Log.h"
 
 #define BUFFER_SIZE 1024
 
