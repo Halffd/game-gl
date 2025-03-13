@@ -1,4 +1,4 @@
-#include "glad/glad.h"
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -17,6 +17,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <map>
 #include <glm/gtc/random.hpp>
+#include "util/Log.h"
+#include "root.h"
 
 #include "setup.h"
 #include "types.h"
@@ -25,20 +27,15 @@
 #include "asset/ResourceManager.h"
 #include "Transform.hpp"
 #include "util/Util.h"
-
-#include "mesh/plane.h"
-#include "mesh/line_strip.h"
-#include "mesh/sphere.h"
-#include "mesh/cube.h"
-#include "mesh/circle.h"
-#include "mesh/quad.h"
-#include "mesh/torus.h"
-#include "mesh/ring.h"
-#include "mesh/arc.h"
 #include "math.h"
 #include "game/init2d.h"
 #include "GameMode.h"
 #include "ui/Gui.h"
+#include "render/Model.h"
+
+// Add missing declarations
+Log logger;
+std::string logl_root = ".";
 
 // Function declarations
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
@@ -106,7 +103,7 @@ glm::vec3 cubePositions[CUBES+2];
 
 // Vertex data for the trapezium
 
-std::vector<math::vec3> vertices = {
+std::vector<glm::vec3> vertices = {
     // Front face
     {-0.5f, 0.5f, 0.5f},  // Top left
     {0.5f, 0.5f, 0.5f},   // Top right
@@ -120,7 +117,7 @@ std::vector<math::vec3> vertices = {
     {-0.3f, -0.5f, -0.5f}, // Bottom left
 };
 
-std::vector<math::vec2> uvs = {
+std::vector<glm::vec2> uvs = {
     // Front face
     {0.0f, 1.0f}, // Top left
     {1.0f, 1.0f}, // Top right
@@ -159,7 +156,7 @@ std::vector<uint32_t> indices = {
     3, 2, 6,
     3, 6, 7};
 
-std::vector<math::vec3> normals = {
+std::vector<glm::vec3> normals = {
     // Front face
     {0.0f, 0.0f, 1.0f}, // Top left
     {0.0f, 0.0f, 1.0f}, // Top right
@@ -177,22 +174,22 @@ std::vector<math::vec3> normals = {
 
 // Define the vertices, UVs, normals, and indices
 
-std::vector<math::vec3> verticest = {
-    math::vec3(-0.5f, 0.0f, 0.0f), // A
-    math::vec3(0.5f, 0.0f, 0.0f),  // B
-    math::vec3(0.0f, 0.5f, 0.0f)   // C
+std::vector<glm::vec3> verticest = {
+    glm::vec3(-0.5f, 0.0f, 0.0f), // A
+    glm::vec3(0.5f, 0.0f, 0.0f),  // B
+    glm::vec3(0.0f, 0.5f, 0.0f)   // C
 };
 
-std::vector<math::vec2> uvst = {
-    math::vec2(0.0f, 0.0f), // A
-    math::vec2(1.0f, 0.0f), // B
-    math::vec2(0.0f, 1.0f)  // C
+std::vector<glm::vec2> uvst = {
+    glm::vec2(0.0f, 0.0f), // A
+    glm::vec2(1.0f, 0.0f), // B
+    glm::vec2(0.0f, 1.0f)  // C
 };
 
-std::vector<math::vec3> normalst = {
-    math::vec3(0.0f, 0.0f, 1.0f), // A
-    math::vec3(0.0f, 0.0f, 1.0f), // B
-    math::vec3(0.0f, 0.0f, 1.0f)  // C
+std::vector<glm::vec3> normalst = {
+    glm::vec3(0.0f, 0.0f, 1.0f), // A
+    glm::vec3(0.0f, 0.0f, 1.0f), // B
+    glm::vec3(0.0f, 0.0f, 1.0f)  // C
 };
 
 std::vector<unsigned int> indicest = {
@@ -961,10 +958,10 @@ int game3d(int argc, char *argv[], std::string type)
     float endAngleRad = 360.0f * DEG_TO_RAD;
     
     // Cell::Cube mesh;
-    Engine::Plane mesh(20, 20);
+/*    Engine::Plane mesh(20, 20);
     // std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
     Engine::Mesh trap(vertices, indices, uvs, normals);
-    math::vec3 it = math::vec3();
+    glm::vec3 it = glm::vec3();
     Engine::Mesh triang(verticest, indicest, uvst, normalst);
     triang.Finalize();
     Engine::Cube cube;
@@ -973,14 +970,14 @@ int game3d(int argc, char *argv[], std::string type)
     Engine::Cube lightCube;
     shader.Use();
     Engine::Sphere sphere(30, 30);
-
+*/
     std::vector<VO::VAO *> meshes = {
-        &mesh,
+/*        &mesh,
         &trap,
         &cube,
         &lightCube,
         &sphere,
-        &triang,
+        &triang,*/
         &model
     };
 

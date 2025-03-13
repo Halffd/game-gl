@@ -26,10 +26,7 @@ endif()
 # Option to control warning levels
 option(ENABLE_WARNINGS "Enable compiler warnings" ON)
 
-# Source files - Use only the minimal main file for now
-set(SOURCE_FILES
-    src/main_minimal.cpp
-)
+file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "src/*.c")
 
 # GLAD
 add_library(glad STATIC src/glad.c)
