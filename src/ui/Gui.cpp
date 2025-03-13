@@ -108,9 +108,9 @@ void Gui::RenderPauseMenu(bool& isPaused, GameMode& gameMode)
     
     ImGui::Spacing();
     
-    if (ImGui::Button("Quit to Menu", ImVec2(180, 30))) {
-        gameMode = MENU;
+    if (ImGui::Button("Main Menu", ImVec2(180, 30))) {
         isPaused = false;
+        gameMode = PLANE;
     }
     
     if (ImGui::Button("Exit Game", ImVec2(180, 30))) {

@@ -1,64 +1,78 @@
-#ifndef GAME_H
-#define GAME_H
-#include "Level.h"
-#include "BallObject.h"
-#include "Particle.h"
-#include <glm/glm.hpp>
+#pragma once
+
+#include <vector>
 #include <tuple>
 #include <memory>
+#include <glm/glm.hpp>
+#include "render/SpriteRenderer.h"
+#include "effects/Particle.h"
+#include "game/GameObject.h"
+#include "game/Level.h"
 
-// Represents the current state of the game
+// Forward declarations
+class GameObject;
+class BallObject;
+class Particle;
+class Level;
+
+enum GameMode {
+    PLANE,
+    GAME
+};
+
 enum GameState {
     GAME_ACTIVE,
     GAME_MENU,
-    GAME_WIN,
-    GAME_PAUSED,
-    GAME_CREDITS
+    GAME_WIN
 };
 
-class Game
-{
-public:
-    enum Direction {
-        UP,
-        RIGHT,
-        DOWN,
-        LEFT
-    };    
-    typedef std::tuple<bool, Direction, glm::vec2> Collision;    
-    std::vector<GameLevel> Levels;
-    unsigned int           Level;
+enum Direction {
+    UP,
+    RIGHT,
+    DOWN,
+    LEFT
+};
 
-    // game state
-    GameState    State;
-    bool         Keys[1024];
+typedef std::tuple<bool, Direction, glm::vec2> Collision;
+
+class Game {
+public:
+    // Game state
+    GameState State;
+    bool Keys[1024];
     unsigned int Width, Height;
-    // constructor/destructor
+    std::vector<GameLevel> Levels;
+    unsigned int Level;
+
+    // Constructor/Destructor
     Game(unsigned int width, unsigned int height);
     ~Game();
-    // initialize game state (load all shaders/textures/levels)
+
+    // Initialize game state (load all shaders/textures/levels)
     void Init();
-    // game loop
+
+    // Game loop
     void ProcessInput(float dt);
     void Update(float dt);
     void Render();
-    void ResetPlayer();
+
+    // Reset
     void ResetLevel();
-    Direction VectorDirection(glm::vec2 target);
-    void Collisions();
+    void ResetPlayer();
+
+    // Collision
     bool CheckCollision(GameObject &one, GameObject &two);
     Collision CheckCollision(BallObject &one, GameObject &two);
-    
-protected:
-    // Performance monitoring
-    double lastTime;
-    int frameCount;
-    float fps;
+    Direction VectorDirection(glm::vec2 target);
+    void Collisions();
 
-    // Core systems
+private:
     std::unique_ptr<SpriteRenderer> Renderer;
     std::unique_ptr<SpriteRenderer> Renderer2;
     std::unique_ptr<ParticleGenerator> Particles;
-};
 
-#endif // GAME_H
+    // Timing variables for FPS calculation
+    double lastTime;
+    int frameCount;
+    float fps;
+};

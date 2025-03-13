@@ -11,8 +11,7 @@
 #include <iostream>
 #include "ui/Gui.h"
 #include "GameMode.h"
-#include "Particle.h"
-#include "irrKlang/irrKlang.h"
+#include "effects/Particle.h"
 
 // Initial size of the player paddle
 const glm::vec2 PLAYER_SIZE(200.0f, 40.0f);
@@ -20,6 +19,7 @@ const glm::vec2 PLAYER_SIZE(200.0f, 40.0f);
 const float PLAYER_VELOCITY(500.0f);
 
 GameObject *Player;
+GameMode mode = GAME; // Add the mode variable with default value
 
 // Initial velocity of the Ball
 const glm::vec2 INITIAL_BALL_VELOCITY(100.0f, -350.0f);
@@ -31,7 +31,11 @@ BallObject *Ball;
 Game::Game(unsigned int width, unsigned int height) 
     : State(GAME_ACTIVE), 
       Width(width), 
-      Height(height)
+      Height(height),
+      Level(0),
+      lastTime(0.0),
+      frameCount(0),
+      fps(0.0f)
 {
 }
 
@@ -133,25 +137,6 @@ void Game::Init()
     this->Levels.push_back(two);
     this->Levels.push_back(three);
     this->Levels.push_back(four);
-    this->Level = 0;
-    irrklang::ISoundEngine* engine = irrklang::createIrrKlangDevice();
-    if (!engine) {
-        // Error handling if the engine could not be created
-        return;
-    }
-
-    // Play a 440 Hz beep
-    engine->play2D((ResourceManager::root + "/audio/beep440.wav").c_str()); // Play the sound in a non-blocking way
-
-    // Keep the application running to allow the sound to play
-    // You can use a simple loop or sleep for a short duration
-//    engine->play2D("audio/beep440.wav", false); // Play the sound in a non-blocking way
-    //while (engine->getSoundCount() > 0) {
-        // Wait until the sound is finished playing
-    //}
-
-    // Clean up
-    //engine->drop(); // Delete the sound engine
 }
 
 void Game::Render()
@@ -279,13 +264,13 @@ void Game::ResetPlayer()
     Player->Position = glm::vec2(this->Width / 2.0f - PLAYER_SIZE.x / 2.0f, this->Height - PLAYER_SIZE.y);
     Ball->Reset(Player->Position + glm::vec2(PLAYER_SIZE.x / 2.0f - BALL_RADIUS, -(BALL_RADIUS * 2.0f)), INITIAL_BALL_VELOCITY);
 }
-Game::Direction Game::VectorDirection(glm::vec2 target)
+Direction Game::VectorDirection(glm::vec2 target)
 {
     glm::vec2 compass[] = {
-        glm::vec2(0.0f, 1.0f),	// up
-        glm::vec2(1.0f, 0.0f),	// right
-        glm::vec2(0.0f, -1.0f),	// down
-        glm::vec2(-1.0f, 0.0f)	// left
+        glm::vec2(0.0f, 1.0f),  // up
+        glm::vec2(1.0f, 0.0f),  // right
+        glm::vec2(0.0f, -1.0f), // down
+        glm::vec2(-1.0f, 0.0f)  // left
     };
     float max = 0.0f;
     unsigned int best_match = -1;
@@ -298,9 +283,10 @@ Game::Direction Game::VectorDirection(glm::vec2 target)
             best_match = i;
         }
     }
-    return (Direction)best_match;
-}    
-bool Game::CheckCollision(GameObject &one, GameObject &two) // AABB - AABB collision
+    return static_cast<Direction>(best_match);
+}
+
+bool Game::CheckCollision(GameObject &one, GameObject &two)
 {
     // collision x-axis?
     bool collisionX = one.Position.x + one.Size.x >= two.Position.x &&
@@ -310,11 +296,11 @@ bool Game::CheckCollision(GameObject &one, GameObject &two) // AABB - AABB colli
         two.Position.y + two.Size.y >= one.Position.y;
     // collision only if on both axes
     return collisionX && collisionY;
-}  
+}
 
-Game::Collision Game::CheckCollision(BallObject &one, GameObject &two) // AABB - AABB collision
+std::tuple<bool, Direction, glm::vec2> Game::CheckCollision(BallObject &one, GameObject &two)
 {
-   // get center point circle first 
+    // get center point circle first 
     glm::vec2 center(one.Position + one.Radius);
     // calculate AABB info (center, half-extents)
     glm::vec2 aabb_half_extents(two.Size.x / 2.0f, two.Size.y / 2.0f);
@@ -327,11 +313,12 @@ Game::Collision Game::CheckCollision(BallObject &one, GameObject &two) // AABB -
     // now retrieve vector between center circle and closest point AABB and check if length < radius
     difference = closest - center;
 
-    if (glm::length(difference) < one.Radius) // not <= since in that case a collision also occurs when object one exactly touches object two, which they are at the end of each collision resolution stage.
+    if (glm::length(difference) < one.Radius)
         return std::make_tuple(true, VectorDirection(difference), difference);
     else
         return std::make_tuple(false, UP, glm::vec2(0.0f, 0.0f));
-}  
+}
+
 void Game::Collisions()
 {
     for (GameObject &box : this->Levels[this->Level].Bricks)

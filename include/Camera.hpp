@@ -1,17 +1,18 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#pragma once
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-// Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
-enum Camera_Movement
-{
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT
+#include <vector>
+
+// Defines several possible options for camera movement.
+// Used as abstraction to stay away from window-system specific input methods
+enum Camera_Movement {
+    CAMERA_LEFT,
+    CAMERA_RIGHT,
+    CAMERA_FORWARD,
+    CAMERA_BACKWARD
 };
 
 // Default camera values
@@ -71,13 +72,13 @@ public:
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
-        if (direction == FORWARD)
+        if (direction == CAMERA_FORWARD)
             Position += Front * velocity;
-        if (direction == BACKWARD)
+        if (direction == CAMERA_BACKWARD)
             Position -= Front * velocity;
-        if (direction == LEFT)
+        if (direction == CAMERA_LEFT)
             Position -= Right * velocity;
-        if (direction == RIGHT)
+        if (direction == CAMERA_RIGHT)
             Position += Right * velocity;
     }
 
@@ -132,4 +133,3 @@ private:
         Up = glm::normalize(glm::cross(Right, Front));
     }
 };
-#endif

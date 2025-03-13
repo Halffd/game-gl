@@ -1,5 +1,4 @@
-#ifndef TRANSFORM_H
-#define TRANSFORM_H
+#pragma once
 
 #include <glad/glad.h>
 #include "render/Shader.h"
@@ -13,68 +12,102 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/quaternion.hpp> // Ensure this is included
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "util/common.h"
+
+// Helper function to check if a type is glm::vec3
+template<typename T>
+struct is_vec3 : std::false_type {};
+
+template<>
+struct is_vec3<glm::vec3> : std::true_type {};
+
+// Helper function to check if a type is glm::mat4
+template<typename T>
+struct is_mat4 : std::false_type {};
+
+template<>
+struct is_mat4<glm::mat4> : std::true_type {};
+
+// Helper function to get primitive type
+unsigned int getPrimitive(VO::TOPOLOGY topology)
+{
+    switch (topology)
+    {
+    case VO::POINTS:
+        return GL_POINTS;
+    case VO::LINES:
+        return GL_LINES;
+    case VO::LINE_STRIP:
+        return GL_LINE_STRIP;
+    case VO::LINE_LOOP:
+        return GL_LINE_LOOP;
+    case VO::TRIANGLES:
+        return GL_TRIANGLES;
+    case VO::TRIANGLE_STRIP:
+        return GL_TRIANGLE_STRIP;
+    case VO::TRIANGLE_FAN:
+        return GL_TRIANGLE_FAN;
+    default:
+        return GL_TRIANGLES;
+    }
+}
 
 template<typename V>
-void draw(Shader &shader, V &vao, const glm::mat4 &transform, int vertices = -1, VO::TOPOLOGY topology = VO::NONE) {
-    draw(shader, nullptr, 0, vao, transform, nullptr, nullptr, vertices, topology);
-}
-template<typename V>
-void draw(Shader &shader, Texture2D* textures, int texturesN, V &vao, const glm::mat4 &transform, Texture2D* diffuse = nullptr, Texture2D* specular = nullptr, int vertices = -1, VO::TOPOLOGY topology = VO::NONE)
+void draw(Shader &shader, Texture2D *texture, int textureUnit, V &vao, const glm::mat4 &model,
+          Texture2D *texture2 = nullptr, Texture2D *texture3 = nullptr, int numInstances = 1,
+          VO::TOPOLOGY topology = VO::NONE)
 {
     shader.Use();
-    shader.SetMatrix4("model", transform);
 
-    // Bind textures
-    if(texturesN > 1){
-        if(textures != nullptr) {
-            for (int i = 0; i < texturesN; ++i) {
-                textures[i].Bind();             // Activate texture unit
-                shader.SetInteger(("texture" + std::to_string(i + 1)).c_str(), i); // Set the uniform for the texture
-            }
-        }
-    } else if(texturesN == 1){
-        if(textures != nullptr) {
-            glActiveTexture(GL_TEXTURE0 + textures->ID);
-            textures->Bind();             // Activate texture unit
-            shader.SetInteger("texture1", textures->ID); // Set the uniform for the texture
-        }
-    }
-    if(diffuse != nullptr) {
-        glActiveTexture(GL_TEXTURE0 + diffuse->ID);
-        diffuse->Bind();
-        shader.SetInteger("material.diffuse", diffuse->ID);
-    }
-    if(specular != nullptr) {
-        glActiveTexture(GL_TEXTURE0 + specular->ID);
-        specular->Bind();
-        shader.SetInteger("material.specular", specular->ID);
-    }
-    int ind = vao->bind();
-    unsigned int drawTopology = (topology != VO::NONE) ? topology : getPrimitive(vao->Topology);
-        //lo << "Draw topology: " << drawTopology;
-        //lo << "Vertex count: " << (vertices > 0 ? vertices : vao.vertexCount);
-    if (ind > 0)
+    if (texture)
     {
-        glDrawElements(drawTopology, (vertices > 0 ? vertices : vao->vertexCount), GL_UNSIGNED_INT, 0);
+        glActiveTexture(GL_TEXTURE0 + textureUnit);
+        texture->Bind();
+        shader.SetInteger("texture1", textureUnit);
+    }
+
+    if (texture2)
+    {
+        glActiveTexture(GL_TEXTURE0 + textureUnit + 1);
+        texture2->Bind();
+        shader.SetInteger("texture2", textureUnit + 1);
+    }
+
+    if (texture3)
+    {
+        glActiveTexture(GL_TEXTURE0 + textureUnit + 2);
+        texture3->Bind();
+        shader.SetInteger("texture3", textureUnit + 2);
+    }
+
+    shader.SetMatrix4("model", model);
+
+    if constexpr (is_mat4<V>::value)
+    {
+        shader.SetMatrix4("transform", vao);
+    }
+    else if constexpr (is_vec3<V>::value)
+    {
+        shader.SetVector3f("color", vao);
     }
     else
     {
-        glDrawArrays(drawTopology, 0, (vertices > 0 ? vertices : vao->vertexCount));
+        vao->bind();
+        if (topology != VO::NONE)
+        {
+            vao->Topology = topology;
+        }
+        vao->Draw(shader);
+        vao->unbind();
     }
+
     glCheckError(__FILE__, __LINE__);
-}
-// Function to set up the transformation for an object
-glm::mat4 transform(float translateX, float translateY, float scaleX, float scaleY, float rotationAngle = 0.0f, glm::vec3 rotationAxis = glm::vec3(0.0f, 0.0f, 1.0f))
-{
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(translateX, translateY, 0.0f));
-    if (rotationAngle != 0.0f)
-    {
-        model = glm::rotate(model, rotationAngle, rotationAxis);
-    }
-    model = glm::scale(model, glm::vec3(scaleX, scaleY, 1.0f));
-    return model;
 }
 
 // Helper function to check if a type is glm::vec3
@@ -127,9 +160,9 @@ glm::mat4 transform(const T1& position, const T2& scale, const T3& rotation) {
         model *= glm::mat4_cast(rotation);
     }
 
-
     return model;
 }
+
 // Custom printing function for glm::vec
 template <typename T, glm::precision P, glm::length_t L>
 std::ostream &operator<<(std::ostream &os, const glm::vec<L, T, P> &v)
@@ -164,32 +197,7 @@ std::ostream &operator<<(std::ostream &os, const glm::mat<C, R, T, P> &m)
     return os;
 }
 
-template <typename T>
-T clamp(T value, T min, T max) {
-    return std::min(std::max(value, min), max);
-}
-// Function to scale the output of a given operation within specified ranges
-float clamp(const float value, float (*operation)(float),
-            float min = 0.1f, float max = 1.0f,
-            float minOpRange=-1.0f, float maxOpRange=1.0f) {
-    // Apply the operation
-    float opValue = operation(value);
-
-    // Scale the operation output from [minOpRange, maxOpRange] to [min, max]
-    float scaledValue = min + (opValue - minOpRange) / (maxOpRange - minOpRange) * (max - min);
-
-    // Clamp the final value
-    return clamp(scaledValue, min, max);
-}
-float clampSin(const float value, float (*operation)(float), const float min = 0.1f, const float max = 1.0f) {
-    return clamp(min + (operation(value) + 1.0f) * 0.5f * (max - min), min, max);
-}
-float lerp(float a, float b, float f)
-{
-    return a + f * (b - a);
-}
 // Custom printing function for glm::quat
-
 template <typename T, glm::precision P>
 std::ostream &operator<<(std::ostream &os, const glm::qua<T, P> &q)
 {
@@ -198,7 +206,7 @@ std::ostream &operator<<(std::ostream &os, const glm::qua<T, P> &q)
 }
 
 // Function to decompose a transformation matrix into position, scale, and rotation (in Euler angles)
-void printTransform(const glm::mat4 &transform)
+void decomposeTransformDetails(const glm::mat4 &transform)
 {
     glm::vec3 scale, translation, skew;
     glm::vec4 perspective;
@@ -218,5 +226,3 @@ void printTransform(const glm::mat4 &transform)
     std::cout << "Perspective: " << perspective << "\n";
     std::cout << "Skew: " << skew << "\n";
 }
-
-#endif

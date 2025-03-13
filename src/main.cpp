@@ -19,6 +19,8 @@
 #include <glm/gtc/random.hpp>
 #include "util/Log.h"
 #include "root.h"
+#include "util/common.h"
+#include "game/Game.h"
 
 #include "setup.h"
 #include "types.h"
@@ -42,6 +44,8 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 void framebufferSizeCallback(GLFWwindow *window, int width, int height);
+int game2d(int argc, char *argv[], const std::string& type);
+int game3d(int argc, char *argv[], const std::string& type);
 
 // Global variables
 int screenWidth = WIDTH;
@@ -308,8 +312,9 @@ void toggleCursor(GLFWwindow *window, bool &cursorEnabled)
 // ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
-    ImGuiIO &io = ImGui::GetIO();
-    if (!io.WantCaptureMouse && !cursor)
+    // Get the IO structure and check if ImGui wants to capture mouse input
+    bool wantCaptureMouse = ImGui::GetIO().WantCaptureMouse;
+    if (!wantCaptureMouse && !cursor)
     {
         // Handle scroll input here if ImGui is not capturing it
         camera.ProcessMouseScroll(static_cast<float>(yoffset));
@@ -325,8 +330,9 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 // -------------------------------------------------------
 void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
 {
-    ImGuiIO &io = ImGui::GetIO();
-    if (!io.WantCaptureMouse && !cursor)
+    // Get the IO structure and check if ImGui wants to capture mouse input
+    bool wantCaptureMouse = ImGui::GetIO().WantCaptureMouse;
+    if (!wantCaptureMouse && !cursor)
     {
         // Handle mouse input logic here
         float xpos = static_cast<float>(xposIn);
@@ -756,8 +762,9 @@ void processInput(GLFWwindow *window)
 {
     glfwPollEvents();
 
-    ImGuiIO &io = ImGui::GetIO();
-    if (!io.WantCaptureKeyboard)
+    // Get the IO structure and check if ImGui wants to capture keyboard input
+    bool wantCaptureKeyboard = ImGui::GetIO().WantCaptureKeyboard;
+    if (!wantCaptureKeyboard)
     {
         // Handle keyboard input logic here
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -801,7 +808,6 @@ void processInput(GLFWwindow *window)
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        float cameraSpeed = 2.5f * deltaTime;
 
         static bool alt = false;
         if (toggleKey(GLFW_KEY_LEFT_ALT, alt))
@@ -809,13 +815,13 @@ void processInput(GLFWwindow *window)
             toggleCursor(window, cursor);
         }
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            camera.ProcessKeyboard(FORWARD, deltaTime);
+            camera.ProcessKeyboard(Camera_Movement::CAMERA_FORWARD, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            camera.ProcessKeyboard(BACKWARD, deltaTime);
+            camera.ProcessKeyboard(Camera_Movement::CAMERA_BACKWARD, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            camera.ProcessKeyboard(LEFT, deltaTime);
+            camera.ProcessKeyboard(Camera_Movement::CAMERA_LEFT, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            camera.ProcessKeyboard(RIGHT, deltaTime);
+            camera.ProcessKeyboard(Camera_Movement::CAMERA_RIGHT, deltaTime);
     }
 }
 // Function to convert a string to lowercase
@@ -828,59 +834,24 @@ void toLowerCase(char *str)
 }
 int main(int argc, char *argv[])
 {
-    std::string root;
-    if (!web)
-    {
-        root = std::string(logl_root);
-    }
-    else
-    {
-        root = "";
-    }
-    ResourceManager::root = root;
-    logger.setDir(root);
-    if (argc > 1)
-    {
-        toLowerCase(argv[1]);
-
-        // Check the first argument for game type
-        if (includes(argv[1], "2"))
-        {
-            gameType = GAME2D;
-            gameTypeStr = "2D";
-        }
-        else if (includes(argv[1], "3"))
-        {
-            gameType = GAME3D;
-            gameTypeStr = "3D";
-        }
-        else
-        {
-            std::cout << "Unknown game type. Defaulting to 2D." << std::endl;
-        }
-    }
-    if (argc > 2)
-    {
-        toLowerCase(argv[2]);
-        gameTypeStr = argv[2];
-    }
-    
-    switch (gameType)
-    {
-    case GAME2D:
-        game2d(argc, argv, gameTypeStr);
-        break;
-    case GAME3D:
-        game3d(argc, argv, gameTypeStr);
-        break;
-    default:
-        game2d(argc, argv, gameTypeStr); // Default to 2D
-        break;
+    if (argc < 2) {
+        std::cout << "Usage: " << argv[0] << " <2d|3d> [type]" << std::endl;
+        return -1;
     }
 
-    return 0;
+    std::string mode = argv[1];
+    std::string type = argc > 2 ? argv[2] : "Default";
+
+    if (mode == "2d") {
+        return game2d(argc, argv, type);
+    } else if (mode == "3d") {
+        return game3d(argc, argv, type);
+    } else {
+        std::cout << "Invalid mode. Use 2d or 3d." << std::endl;
+        return -1;
+    }
 }
-int game3d(int argc, char *argv[], std::string type)
+int game3d(int argc, char *argv[], const std::string& type)
 {
     // Initialize GLFW
     // return vectortest();
@@ -1013,5 +984,55 @@ int game3d(int argc, char *argv[], std::string type)
     // Terminate GLFW
     glfwTerminate();
 
+    return 0;
+}
+
+void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
+int game2d(int argc, char *argv[], const std::string& type) {
+    // Initialize GLFW
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    // Create window
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Game Engine", NULL, NULL);
+    if (window == NULL) {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+
+    // Initialize GLAD
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    // Set viewport
+    glViewport(0, 0, 800, 600);
+    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+
+    // Game loop
+    while (!glfwWindowShouldClose(window)) {
+        // Process input
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            glfwSetWindowShouldClose(window, true);
+
+        // Render
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Swap buffers and poll events
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // Clean up
+    glfwTerminate();
     return 0;
 }

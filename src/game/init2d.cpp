@@ -13,7 +13,7 @@ const unsigned int SCREEN_HEIGHT = HEIGHT; // Example value
 // Define the Breakout variable
 Game Breakout(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-int game2d(int argc, char *argv[], std::string type)
+int game2d(int argc, char *argv[], const std::string& type)
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
