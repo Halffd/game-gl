@@ -17,6 +17,12 @@ extern float lastY;
 extern float deltaTime;
 extern float lastFrame;
 
+// Forward declare static functions
+static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
+static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+static void processInput(GLFWwindow* window);
+
 int game3d(int argc, char *argv[], const std::string& type) {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -100,7 +106,7 @@ int game3d(int argc, char *argv[], const std::string& type) {
     return 0;
 }
 
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
 
@@ -119,11 +125,11 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
     camera.ProcessMouseMovement(xoffset, yoffset, true);
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
-void processInput(GLFWwindow* window) {
+static void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
@@ -138,6 +144,6 @@ void processInput(GLFWwindow* window) {
 }
 
 // Add the missing framebufferSizeCallback function
-void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+static void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 } 

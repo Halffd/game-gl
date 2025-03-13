@@ -36,6 +36,9 @@ file(GLOB_RECURSE SOURCE_FILES
     src/asset/*.cpp
 )
 
+# Add glad.c explicitly
+set(GLAD_SOURCE src/glad.c)
+
 # ImGui files
 set(IMGUI_FILES
     include_libs/imgui/imgui.cpp
@@ -49,7 +52,7 @@ set(IMGUI_FILES
 )
 
 # Main executable
-add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${IMGUI_FILES})
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${IMGUI_FILES} ${GLAD_SOURCE})
 
 # Find required packages
 find_package(PkgConfig REQUIRED)

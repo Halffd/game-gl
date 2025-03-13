@@ -8,8 +8,4 @@
 #include <string>
 
 // Function declarations
-int game3d(int argc, char *argv[], const std::string& type);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow* window);
-void framebufferSizeCallback(GLFWwindow* window, int width, int height); 
+int game3d(int argc, char *argv[], const std::string& type); 

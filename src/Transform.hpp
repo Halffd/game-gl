@@ -35,7 +35,7 @@ template<>
 struct is_mat4<glm::mat4> : std::true_type {};
 
 // Helper function to get primitive type
-unsigned int getPrimitive(VO::TOPOLOGY topology)
+inline unsigned int getPrimitive(VO::TOPOLOGY topology)
 {
     switch (topology)
     {
@@ -206,7 +206,7 @@ std::ostream &operator<<(std::ostream &os, const glm::qua<T, P> &q)
 }
 
 // Function to decompose a transformation matrix into position, scale, and rotation (in Euler angles)
-void decomposeTransformDetails(const glm::mat4 &transform)
+inline void decomposeTransformDetails(const glm::mat4 &transform)
 {
     glm::vec3 scale, translation, skew;
     glm::vec4 perspective;

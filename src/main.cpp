@@ -36,16 +36,17 @@
 #include "render/Model.h"
 
 // Add missing declarations
-Log logger;
+extern Log logger;
 std::string logl_root = ".";
 
-// Function declarations
-void mouse_callback(GLFWwindow *window, double xpos, double ypos);
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
-void processInput(GLFWwindow *window);
-void framebufferSizeCallback(GLFWwindow *window, int width, int height);
-int game2d(int argc, char *argv[], const std::string& type);
-int game3d(int argc, char *argv[], const std::string& type);
+// Function declarations - make them static to avoid conflicts
+static void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+static void processInput(GLFWwindow *window);
+// These functions are defined in their respective files
+extern int game2d(int argc, char *argv[], const std::string& type);
+extern int game3d(int argc, char *argv[], const std::string& type);
+extern void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 
 // Global variables
 int screenWidth = WIDTH;
@@ -218,7 +219,8 @@ bool input = true;
 
 // camera
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+// Use extern for camera since it's defined in init3d.cpp
+extern Camera camera;
 
 bool firstMouse = true;
 
@@ -310,7 +312,7 @@ void toggleCursor(GLFWwindow *window, bool &cursorEnabled)
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 
 // ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
     // Get the IO structure and check if ImGui wants to capture mouse input
     bool wantCaptureMouse = ImGui::GetIO().WantCaptureMouse;
@@ -328,7 +330,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 
 // glfw: whenever the mouse moves, this callback is called
 // -------------------------------------------------------
-void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
+static void mouse_callback(GLFWwindow *window, double xposIn, double yposIn)
 {
     // Get the IO structure and check if ImGui wants to capture mouse input
     bool wantCaptureMouse = ImGui::GetIO().WantCaptureMouse;
@@ -758,7 +760,7 @@ bool toggleKey(int key, bool &toggleState)
 
     return false; // Indicate that the state was not toggled
 }
-void processInput(GLFWwindow *window)
+static void processInput(GLFWwindow *window)
 {
     glfwPollEvents();
 
@@ -850,189 +852,4 @@ int main(int argc, char *argv[])
         std::cout << "Invalid mode. Use 2d or 3d." << std::endl;
         return -1;
     }
-}
-int game3d(int argc, char *argv[], const std::string& type)
-{
-    // Initialize GLFW
-    // return vectortest();
-    if (!glfwInit())
-    {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
-        return -1;
-    }
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-    // Create a GLFW window
-    GLFWwindow *window = glfwCreateWindow(screenWidth, screenHeight, "OpenGL", nullptr, nullptr);
-    if (!window)
-    {
-        std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-
-    // Make the OpenGL context of the window the current one
-    glfwMakeContextCurrent(window);
-
-    // Load OpenGL function pointers with GLAD
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    // Initialization code
-    glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-    toggleCursor(window, cursor);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
-
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-    Gui::Init(window);
-
-    Shader shader = ResourceManager::LoadShader("vertex.glsl", "fragment.glsl", "main");
-    Shader light = ResourceManager::LoadShader("light/vertex.glsl", "light/fragment.glsl", "light");
-    Shader modelS = ResourceManager::LoadShader("model/vertex.glsl", "model/fragment.glsl", "model");
-
-    std::cout << shader.ID << "\n";
-    std::cout << light.ID << "\n";
-    shader.Use();
-
-    ResourceManager::LoadAllTexturesFromDirectory();
-    //std::string modelPath = ResourceManager::GetModelPath("backpack/obj/backpack.obj"); //"backpack";
-    //std::string modelPath = ResourceManager::GetModelPath("triangle-prism.glb"); //"backpack";
-    //std::string modelPath = ResourceManager::GetModelPath("n64/Toxic Can/7398.obj"); //"backpack";
-    std::string modelPath = ResourceManager::GetModelPath("n64/Starry Sky/sky.obj"); //"backpack";
-    modelS.Use();
-    m3D::Model model(modelPath.data());
-    shader.Use();
-    // Set up VAO, VBO, and EBO
-    const float DEG_TO_RAD = 3.14159265358979323846f / 180.0f;
-    float startAngleRad = 0.0f * DEG_TO_RAD;
-    float endAngleRad = 360.0f * DEG_TO_RAD;
-    
-    // Cell::Cube mesh;
-/*    Engine::Plane mesh(20, 20);
-    // std::cout << Cell::HUEtoRGB(0.5f) << std::endl;
-    Engine::Mesh trap(vertices, indices, uvs, normals);
-    glm::vec3 it = glm::vec3();
-    Engine::Mesh triang(verticest, indicest, uvst, normalst);
-    triang.Finalize();
-    Engine::Cube cube;
-    trap.Finalize();
-    light.Use();
-    Engine::Cube lightCube;
-    shader.Use();
-    Engine::Sphere sphere(30, 30);
-*/
-    std::vector<VO::VAO *> meshes = {
-/*        &mesh,
-        &trap,
-        &cube,
-        &lightCube,
-        &sphere,
-        &triang,*/
-        &model
-    };
-
-    // Set up transformations
-    aspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
-    //    projection = glm::ortho(-aspect, aspect, -1.0f, 1.0f, -1.0f, 1.0f);
-
-    /*view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
-           glm::vec3(0.0f, 0.0f, 0.0f),
-           glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
-    glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
-    */
-    double nextRenderTime = 0.0; // Store the time when the next render should occur
-    // Main loop
-    initCubePositions();
-    while (!glfwWindowShouldClose(window))
-    {
-        // Input
-        processInput(window);
-        if (!isPaused)
-        {
-            // Update your program state here
-            renderScene(window, meshes);
-        }
-    }
-    Gui::Clean();
-    glfwDestroyWindow(window);
-    // Terminate GLFW
-    glfwTerminate();
-
-    return 0;
-}
-
-void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-}
-
-int game2d(int argc, char *argv[], const std::string& type) {
-    // Initialize GLFW
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    // Create window
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Game Engine", NULL, NULL);
-    if (window == NULL) {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-
-    // Initialize GLAD
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-
-    // Set viewport
-    glViewport(0, 0, 800, 600);
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-
-    // Game loop
-    while (!glfwWindowShouldClose(window)) {
-        // Process input
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            glfwSetWindowShouldClose(window, true);
-
-        // Render
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // Swap buffers and poll events
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-
-    // Clean up
-    glfwTerminate();
-    return 0;
 }
