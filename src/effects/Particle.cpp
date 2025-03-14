@@ -7,6 +7,11 @@ ParticleGenerator::ParticleGenerator(Shader shader, Texture2D texture, unsigned 
     , amount(amount)
     , VAO(0)
 {
+    // Ensure Camera is initialized
+    if (!Camera::Instance) {
+        Camera::GetInstance(glm::vec2(0.0f, 0.0f), glm::vec2(800.0f, 600.0f));
+    }
+    
     init();
 }
 
@@ -45,7 +50,10 @@ void ParticleGenerator::Draw()
         {
             this->shader.SetVector2f("offset", particle.Position);
             this->shader.SetVector4f("color", particle.Color);
-            this->shader.SetMatrix4("view", Camera::Instance->GetViewMatrix());
+            
+            // Use identity matrix instead of Camera view matrix
+            this->shader.SetMatrix4("view", glm::mat4(1.0f));
+            
             this->texture.Bind();
             glBindVertexArray(this->VAO);
             glDrawArrays(GL_TRIANGLES, 0, 6);

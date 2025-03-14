@@ -92,6 +92,9 @@ int game3d(int argc, char *argv[], const std::string& type) {
         // Render game objects here
         // TODO: Add your 3D game rendering code
 
+        // Start ImGui frame
+        Gui::Start();
+        
         // Render ImGui
         Gui::Render();
 

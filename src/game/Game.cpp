@@ -12,6 +12,7 @@
 #include "ui/Gui.h"
 #include "GameMode.h"
 #include "effects/Particle.h"
+#include "Camera.h"
 
 // Initial size of the player paddle
 const glm::vec2 PLAYER_SIZE(200.0f, 40.0f);
@@ -46,6 +47,9 @@ Game::~Game() {
 
 void Game::Init()
 {
+    // Initialize the camera singleton first, before anything else
+    Camera::GetInstance(glm::vec2(0.0f, 0.0f), glm::vec2(this->Width, this->Height));
+    
     // Timing variables
     lastTime = glfwGetTime();
     frameCount = 0;
@@ -141,7 +145,9 @@ void Game::Init()
 
 void Game::Render()
 {
+    // Start ImGui frame
     Gui::Start();
+    
     // Calculate FPS
     double currentTime = glfwGetTime();
     frameCount++;
