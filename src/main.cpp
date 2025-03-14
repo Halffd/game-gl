@@ -836,9 +836,10 @@ void toLowerCase(char *str)
 }
 int main(int argc, char *argv[])
 {
+    // Auto-start in 3D mode if no arguments are provided
     if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <2d|3d> [type]" << std::endl;
-        return -1;
+        std::cout << "No mode specified, auto-starting in 3D mode..." << std::endl;
+        return game3d(argc, argv, "Default");
     }
 
     std::string mode = argv[1];

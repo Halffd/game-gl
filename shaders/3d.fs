@@ -5,12 +5,24 @@ in vec2 TexCoords;
 in vec3 Normal;
 in vec3 FragPos;
 
+// Define all possible texture samplers
 uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_specular1;
+uniform sampler2D texture_normal1;
+uniform sampler2D texture_height1;
+
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform vec3 lightColor;
 
 void main() {
+    // Sample the diffuse texture
+    vec4 texColor = texture(texture_diffuse1, TexCoords);
+    
+    // If the texture is completely transparent, discard the fragment
+    if(texColor.a < 0.1)
+        discard;
+    
     // Ambient
     float ambientStrength = 0.3;
     vec3 ambient = ambientStrength * lightColor;
@@ -29,6 +41,6 @@ void main() {
     vec3 specular = specularStrength * spec * lightColor;
 
     // Combine results
-    vec3 result = (ambient + diffuse + specular) * texture(texture_diffuse1, TexCoords).rgb;
-    FragColor = vec4(result, 1.0);
+    vec3 result = (ambient + diffuse + specular) * texColor.rgb;
+    FragColor = vec4(result, texColor.a);
 } 

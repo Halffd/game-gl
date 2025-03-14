@@ -6,18 +6,23 @@
 #include "../include/Camera.hpp"  // Include the 3D camera header
 #include <vector>
 #include <string>
+#include <map>
 
 // Define the dimensions
 const unsigned SCREEN_WIDTH = WIDTH;
 const unsigned SCREEN_HEIGHT = HEIGHT;
 
-// Create a Camera instance from Camera.hpp
-Camera camera(glm::vec3(0.0f, 0.0f, 10.0f));
+// Create a Camera instance from Camera.hpp - position it higher and further back
+Camera camera(glm::vec3(0.0f, 5.0f, 15.0f));
 extern bool firstMouse;
 extern float lastX;
 extern float lastY;
 extern float deltaTime;
 extern float lastFrame;
+
+// Add cursor control variables
+bool cursorEnabled = true;
+std::map<int, bool> keyWasPressed;
 
 // Model variables
 std::vector<m3D::Model*> models;
@@ -44,6 +49,8 @@ static void processInput(GLFWwindow* window);
 static void renderModelsWindow();
 static void setupGround();
 static void renderGround(Shader &shader);
+static bool toggleKey(int key, bool &toggleState);
+static void toggleCursor(GLFWwindow *window);
 
 int game3d(int argc, char *argv[], const std::string& type) {
     glfwInit();
@@ -80,6 +87,11 @@ int game3d(int argc, char *argv[], const std::string& type) {
 
     // Initialize ImGui
     Gui::Init(window);
+    
+    // Set initial cursor mode - start with cursor disabled for movement
+    cursorEnabled = false;
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    firstMouse = true;
 
     // Load shaders
     ResourceManager::LoadShader("shaders/3d.vs", "shaders/3d.fs", nullptr, "model");
@@ -88,45 +100,57 @@ int game3d(int argc, char *argv[], const std::string& type) {
     setupGround();
     
     // Load models
+    Shader shader = ResourceManager::GetShader("model");
+    
+    // Load backpack model
     try {
-        // Load backpack model
         models.push_back(new m3D::Model("models/backpack/backpack.obj"));
-        modelPositions.push_back(glm::vec3(0.0f, 1.0f, 0.0f));
+        modelPositions.push_back(glm::vec3(0.0f, 2.0f, 0.0f)); // Position above ground
         modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
         modelScales.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
-        
-        // Load mansion model
-        models.push_back(new m3D::Model("models/low_poly_mansion__house/scene.gltf"));
-        modelPositions.push_back(glm::vec3(5.0f, 0.0f, 0.0f));
-        modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        modelScales.push_back(glm::vec3(0.5f, 0.5f, 0.5f));
-        
-        // Load N64 Tiptup model
-        models.push_back(new m3D::Model("models/n64/Tiptup/ObjectTortRunner.obj"));
-        modelPositions.push_back(glm::vec3(-5.0f, 0.5f, 0.0f));
-        modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        modelScales.push_back(glm::vec3(0.1f, 0.1f, 0.1f));
-        
-        // Load N64 Terry model
-        models.push_back(new m3D::Model("models/n64/Terry/ObjectTerryboss.obj"));
-        modelPositions.push_back(glm::vec3(0.0f, 0.5f, 5.0f));
-        modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        modelScales.push_back(glm::vec3(0.1f, 0.1f, 0.1f));
-        
-        // Load N64 Toxic Can model
-        models.push_back(new m3D::Model("models/n64/Toxic Can/7398.obj"));
-        modelPositions.push_back(glm::vec3(0.0f, 0.5f, -5.0f));
-        modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        modelScales.push_back(glm::vec3(0.5f, 0.5f, 0.5f));
-        
-        std::cout << "Successfully loaded " << models.size() << " models" << std::endl;
     } catch (const std::exception& e) {
-        std::cerr << "Error loading models: " << e.what() << std::endl;
+        std::cout << "Failed to load backpack model: " << e.what() << std::endl;
     }
-
-    // Get shader
-    Shader shader = ResourceManager::GetShader("model");
-    shader.Use();
+    
+    // Load mansion model
+    try {
+        models.push_back(new m3D::Model("models/mansion/mansion.obj"));
+        modelPositions.push_back(glm::vec3(-10.0f, 0.0f, -10.0f)); // Position on ground
+        modelRotations.push_back(glm::vec3(0.0f, 45.0f, 0.0f));
+        modelScales.push_back(glm::vec3(0.1f, 0.1f, 0.1f));
+    } catch (const std::exception& e) {
+        std::cout << "Failed to load mansion model: " << e.what() << std::endl;
+    }
+    
+    // Load tiptup model
+    try {
+        models.push_back(new m3D::Model("models/tiptup/tiptup.obj"));
+        modelPositions.push_back(glm::vec3(5.0f, 0.5f, 5.0f)); // Position slightly above ground
+        modelRotations.push_back(glm::vec3(0.0f, 180.0f, 0.0f));
+        modelScales.push_back(glm::vec3(0.5f, 0.5f, 0.5f));
+    } catch (const std::exception& e) {
+        std::cout << "Failed to load tiptup model: " << e.what() << std::endl;
+    }
+    
+    // Load terry model
+    try {
+        models.push_back(new m3D::Model("models/terry/terry.obj"));
+        modelPositions.push_back(glm::vec3(-5.0f, 0.0f, 5.0f)); // Position on ground
+        modelRotations.push_back(glm::vec3(0.0f, 135.0f, 0.0f));
+        modelScales.push_back(glm::vec3(0.02f, 0.02f, 0.02f));
+    } catch (const std::exception& e) {
+        std::cout << "Failed to load terry model: " << e.what() << std::endl;
+    }
+    
+    // Load toxic can model
+    try {
+        models.push_back(new m3D::Model("models/toxic_can/toxic_can.obj"));
+        modelPositions.push_back(glm::vec3(10.0f, 0.0f, -5.0f)); // Position on ground
+        modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+        modelScales.push_back(glm::vec3(0.5f, 0.5f, 0.5f));
+    } catch (const std::exception& e) {
+        std::cout << "Failed to load toxic can model: " << e.what() << std::endl;
+    }
 
     // Game loop
     while (!glfwWindowShouldClose(window)) {
@@ -239,7 +263,7 @@ static void setupGround() {
     
     glBindVertexArray(0);
     
-    // Create a simple blue texture for the ground
+    // Create a dark blue texture for the ground
     unsigned char groundTextureData[] = {
         10, 20, 80, 255,  // Dark blue color (RGBA)
         10, 20, 80, 255,
@@ -280,35 +304,50 @@ static void renderGround(Shader &shader) {
 
 static void renderModelsWindow() {
     if (showModelsWindow) {
-        ImGui::Begin("3D Models", &showModelsWindow);
+        // Set window position and size
+        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
+        
+        ImGui::Begin("3D Scene Controls", &showModelsWindow, ImGuiWindowFlags_AlwaysAutoResize);
+        
+        // Add controls info
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Controls:");
+        ImGui::Text("WASD - Move camera");
+        ImGui::Text("QE - Move up/down");
+        ImGui::Text("Enter - Toggle cursor mode");
+        ImGui::Text("Escape - Exit");
+        ImGui::Separator();
         
         ImGui::Text("Models loaded: %zu", models.size());
         ImGui::Separator();
         
         // Model selection
-        const char* modelNames[] = {"Backpack", "Mansion", "Tiptup", "Terry", "Toxic Can"};
-        ImGui::Combo("Select Model", &selectedModel, modelNames, IM_ARRAYSIZE(modelNames));
-        
-        if (selectedModel >= 0 && selectedModel < models.size()) {
-            ImGui::Text("Model: %s", modelNames[selectedModel]);
+        if (models.size() > 0) {
+            const char* modelNames[] = {"Backpack", "Mansion", "Tiptup", "Terry", "Toxic Can"};
+            int maxModel = std::min(static_cast<int>(models.size()), static_cast<int>(IM_ARRAYSIZE(modelNames)));
+            ImGui::Combo("Select Model", &selectedModel, modelNames, maxModel);
             
-            // Position controls
-            ImGui::Text("Position");
-            ImGui::SliderFloat("X##Pos", &modelPositions[selectedModel].x, -20.0f, 20.0f);
-            ImGui::SliderFloat("Y##Pos", &modelPositions[selectedModel].y, -20.0f, 20.0f);
-            ImGui::SliderFloat("Z##Pos", &modelPositions[selectedModel].z, -20.0f, 20.0f);
-            
-            // Rotation controls
-            ImGui::Text("Rotation");
-            ImGui::SliderFloat("X##Rot", &modelRotations[selectedModel].x, 0.0f, 360.0f);
-            ImGui::SliderFloat("Y##Rot", &modelRotations[selectedModel].y, 0.0f, 360.0f);
-            ImGui::SliderFloat("Z##Rot", &modelRotations[selectedModel].z, 0.0f, 360.0f);
-            
-            // Scale controls
-            ImGui::Text("Scale");
-            ImGui::SliderFloat("X##Scale", &modelScales[selectedModel].x, 0.1f, 5.0f);
-            ImGui::SliderFloat("Y##Scale", &modelScales[selectedModel].y, 0.1f, 5.0f);
-            ImGui::SliderFloat("Z##Scale", &modelScales[selectedModel].z, 0.1f, 5.0f);
+            if (selectedModel >= 0 && selectedModel < models.size()) {
+                ImGui::Text("Model: %s", modelNames[selectedModel]);
+                
+                // Position controls
+                ImGui::Text("Position");
+                ImGui::SliderFloat("X##Pos", &modelPositions[selectedModel].x, -20.0f, 20.0f);
+                ImGui::SliderFloat("Y##Pos", &modelPositions[selectedModel].y, -20.0f, 20.0f);
+                ImGui::SliderFloat("Z##Pos", &modelPositions[selectedModel].z, -20.0f, 20.0f);
+                
+                // Rotation controls
+                ImGui::Text("Rotation");
+                ImGui::SliderFloat("X##Rot", &modelRotations[selectedModel].x, 0.0f, 360.0f);
+                ImGui::SliderFloat("Y##Rot", &modelRotations[selectedModel].y, 0.0f, 360.0f);
+                ImGui::SliderFloat("Z##Rot", &modelRotations[selectedModel].z, 0.0f, 360.0f);
+                
+                // Scale controls
+                ImGui::Text("Scale");
+                ImGui::SliderFloat("X##Scale", &modelScales[selectedModel].x, 0.1f, 5.0f);
+                ImGui::SliderFloat("Y##Scale", &modelScales[selectedModel].y, 0.1f, 5.0f);
+                ImGui::SliderFloat("Z##Scale", &modelScales[selectedModel].z, 0.1f, 5.0f);
+            }
         }
         
         ImGui::Separator();
@@ -324,7 +363,39 @@ static void renderModelsWindow() {
     }
 }
 
+static bool toggleKey(int key, bool &toggleState) {
+    bool keyCurrentlyPressed = glfwGetKey(glfwGetCurrentContext(), key) == GLFW_PRESS;
+
+    if (!keyWasPressed[key] && keyCurrentlyPressed) {
+        // Key was just pressed
+        toggleState = !toggleState; // Toggle the state
+        keyWasPressed[key] = true;  // Set the flag for this key
+        return true;                // Indicate that the state was toggled
+    } else if (keyWasPressed[key] && !keyCurrentlyPressed) {
+        // Key was just released
+        keyWasPressed[key] = false; // Reset the flag for this key
+    }
+
+    return false; // Indicate that the state was not toggled
+}
+
+static void toggleCursor(GLFWwindow *window) {
+    cursorEnabled = !cursorEnabled;
+    glfwSetInputMode(window, GLFW_CURSOR, cursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+    
+    if (!cursorEnabled) {
+        // When disabling cursor, reset firstMouse to recalculate reference position
+        firstMouse = true;
+    }
+}
+
 static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+    // Only process mouse movement if ImGui is not capturing the mouse
+    ImGuiIO &io = ImGui::GetIO();
+    if (io.WantCaptureMouse) {
+        return;
+    }
+    
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
 
@@ -340,34 +411,53 @@ static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
     lastX = xpos;
     lastY = ypos;
 
-    // Only process mouse movement if right mouse button is pressed
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+    // Process mouse movement if cursor is disabled
+    if (!cursorEnabled) {
         camera.ProcessMouseMovement(xoffset, yoffset, true);
     }
 }
 
 static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
+    // Only process scroll if ImGui is not capturing the mouse
+    ImGuiIO &io = ImGui::GetIO();
+    if (!io.WantCaptureMouse) {
+        camera.ProcessMouseScroll(static_cast<float>(yoffset));
+    }
 }
 
 static void processInput(GLFWwindow* window) {
+    // Check for ImGui keyboard capture
+    ImGuiIO &io = ImGui::GetIO();
+    
+    // Always process Escape and Enter keys regardless of ImGui focus
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(Camera_Movement::CAMERA_FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(Camera_Movement::CAMERA_BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(Camera_Movement::CAMERA_LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(Camera_Movement::CAMERA_RIGHT, deltaTime);
     
-    // Additional camera controls
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        camera.Position.y += camera.MovementSpeed * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        camera.Position.y -= camera.MovementSpeed * deltaTime;
+    // Toggle cursor with Enter key
+    static bool enterToggle = false;
+    if (toggleKey(GLFW_KEY_ENTER, enterToggle)) {
+        toggleCursor(window);
+        std::cout << "Cursor mode toggled: " << (cursorEnabled ? "Enabled" : "Disabled") << std::endl;
+    }
+
+    // Only process movement keys if ImGui is not capturing keyboard
+    if (!io.WantCaptureKeyboard) {
+        // Process movement keys
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            camera.ProcessKeyboard(Camera_Movement::CAMERA_FORWARD, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            camera.ProcessKeyboard(Camera_Movement::CAMERA_BACKWARD, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            camera.ProcessKeyboard(Camera_Movement::CAMERA_LEFT, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            camera.ProcessKeyboard(Camera_Movement::CAMERA_RIGHT, deltaTime);
+        
+        // Additional camera controls
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+            camera.Position.y += camera.MovementSpeed * deltaTime;
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+            camera.Position.y -= camera.MovementSpeed * deltaTime;
+    }
 }
 
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height) {

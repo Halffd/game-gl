@@ -67,13 +67,16 @@ namespace m3D {
             unsigned int normalNr   = 1;
             unsigned int heightNr   = 1;
 
-            cout << "Model Textures:\n";
+            // First, activate the shader
+            shader.Use();
+
+            // Then bind textures
             for(unsigned int i = 0; i < textures.size(); i++)
             {
                 glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
                 // retrieve texture number (the N in diffuse_textureN)
-                string number;
-                string name = textures[i].type;
+                std::string number;
+                std::string name = textures[i].type;
                 if(name == "texture_diffuse")
                     number = std::to_string(diffuseNr++);
                 else if(name == "texture_specular")
@@ -82,18 +85,17 @@ namespace m3D {
                     number = std::to_string(normalNr++); // transfer unsigned int to string
                 else if(name == "texture_height")
                     number = std::to_string(heightNr++); // transfer unsigned int to string
-                string texture = name + number;
+                std::string texture = name + number;
 
-                cout << i << " " << number << "\n";
-                cout << "Name: " << texture << "\n";
-                  // now set the sampler to the correct texture unit
-                shader.SetInteger((texture).c_str(), i);
-                // and finally bind the texture
-                cout << "ID: " << textures[i].id << "\n";
-                glBindTexture(GL_TEXTURE_2D, textures[i].id);
+                // Set the uniform only if the shader has the uniform
+                GLint location = glGetUniformLocation(shader.ID, texture.c_str());
+                if (location != -1) {
+                    shader.SetInteger(texture.c_str(), i);
+                    // and finally bind the texture
+                    glBindTexture(GL_TEXTURE_2D, textures[i].id);
+                }
             }
-            cout << "Drawing " << indices.size() << " indices\nVAO: ";
-            cout << VAO << "\n";
+            
             // draw mesh
             glBindVertexArray(VAO);
             glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
