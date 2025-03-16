@@ -49,11 +49,22 @@ struct SpotLight {
 
 // Light uniforms
 uniform DirLight dirLight;
-uniform PointLight pointLight;
+uniform PointLight pointLight; // Main point light
 uniform SpotLight spotLight;
 uniform bool useDirLight;
 uniform bool usePointLight;
 uniform bool useSpotLight;
+
+// Multiple point lights
+#define MAX_POINT_LIGHTS 20
+uniform PointLight randomPointLights[MAX_POINT_LIGHTS];
+uniform int numRandomPointLights;
+uniform bool useRandomPointLights;
+
+// Light brightness adjustment uniforms
+uniform float pointLightBrightness = 0.2; // Default: 20% of original (80% reduction)
+uniform float dirLightBrightness = 1.4;   // Default: 140% of original (40% increase)
+uniform float spotLightBrightness = 1.8;  // Default: 180% of original (80% increase)
 
 // Other uniforms
 uniform vec3 viewPos;
@@ -67,6 +78,34 @@ uniform float shininess;
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
+
+// Checkerboard normal function
+vec3 calculateCheckerboardNormal(vec2 position, float scale, float height) {
+    // Create a checkerboard pattern
+    float x = floor(position.x * scale);
+    float z = floor(position.y * scale);
+    bool isEven = mod(x + z, 2.0) < 1.0;
+    
+    // Create normal vector - pointing up for even squares, angled for odd squares
+    vec3 normal = vec3(0.0, 1.0, 0.0);
+    if (!isEven) {
+        // Calculate normal based on position within the checker
+        float fx = fract(position.x * scale);
+        float fz = fract(position.y * scale);
+        
+        // Create a bump in the center of each odd square
+        float dx = 0.5 - fx;
+        float dz = 0.5 - fz;
+        float dist = sqrt(dx * dx + dz * dz);
+        
+        if (dist < 0.4) {
+            // Create a dome-like normal
+            normal = normalize(vec3(dx * height, 0.5, dz * height));
+        }
+    }
+    
+    return normalize(normal);
+}
 
 void main() {
     // Sample the diffuse texture
@@ -91,13 +130,21 @@ void main() {
         specularColor = texture(texture_specular1, TexCoords).rgb;
     }
     
-    // Get normal from normal map or use the interpolated normal
+    // Get normal from normal map, use checkerboard for ground, or use the interpolated normal
     vec3 norm;
     if(useNormalMap) {
         norm = texture(texture_normal1, TexCoords).rgb;
         norm = normalize(norm * 2.0 - 1.0); // Transform from [0,1] to [-1,1]
     } else {
-        norm = normalize(Normal);
+        // Check if this is the ground plane (y-coordinate close to 0)
+        if (abs(FragPos.y) < 0.1) {
+            // Apply checkerboard normal for ground
+            norm = calculateCheckerboardNormal(FragPos.xz, 1.0, 0.255); // 255 lower (0.255 instead of 0.5)
+            // Transform to world space
+            norm = normalize(mat3(transpose(inverse(mat3(1.0)))) * norm);
+        } else {
+            norm = normalize(Normal);
+        }
     }
     
     // Calculate view direction
@@ -122,9 +169,16 @@ void main() {
         result += CalcDirLight(dirLight, norm, viewDir, diffuseColor, specularColor);
     }
     
-    // Point light
+    // Main point light
     if(usePointLight) {
         result += CalcPointLight(pointLight, norm, FragPos, viewDir, diffuseColor, specularColor);
+    }
+    
+    // Random point lights
+    if(useRandomPointLights) {
+        for(int i = 0; i < numRandomPointLights && i < MAX_POINT_LIGHTS; i++) {
+            result += CalcPointLight(randomPointLights[i], norm, FragPos, viewDir, diffuseColor, specularColor);
+        }
     }
     
     // Spot light
@@ -138,7 +192,7 @@ void main() {
     }
     
     // If no lights are enabled, use a basic ambient light
-    if(!useDirLight && !usePointLight && !useSpotLight) {
+    if(!useDirLight && !usePointLight && !useSpotLight && !useRandomPointLights) {
         result = diffuseColor * 0.3; // Basic ambient
     }
     
@@ -156,17 +210,22 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 diffuseColor, 
     
     // Diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
+    // Square the diffuse factor to increase intensity
+    diff = diff * diff;
     
     // Specular shading
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    // Square the specular factor to increase intensity
+    spec = spec * spec;
     
     // Combine results
     vec3 ambient = light.ambient * diffuseColor;
     vec3 diffuse = light.diffuse * diff * diffuseColor;
     vec3 specular = light.specular * spec * specularColor;
     
-    return (ambient + diffuse + specular);
+    // Apply directional light brightness adjustment using uniform
+    return (ambient + diffuse + specular) * dirLightBrightness;
 }
 
 // Calculates the color when using a point light
@@ -201,7 +260,8 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
     diffuse *= attenuation;
     specular *= attenuation;
     
-    return (ambient + diffuse + specular);
+    // Apply point light brightness adjustment using uniform
+    return (ambient + diffuse + specular) * pointLightBrightness;
 }
 
 // Calculates the color when using a spot light
@@ -241,5 +301,6 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec
     diffuse *= attenuation * intensity;
     specular *= attenuation * intensity;
     
-    return (ambient + diffuse + specular);
+    // Apply spot light brightness adjustment using uniform
+    return (ambient + diffuse + specular) * spotLightBrightness;
 } 

@@ -10,6 +10,8 @@
 #include <cstdio>
 #include <fstream>
 #include <unistd.h> // For getcwd
+#include <random>
+#include <ctime>
 
 // Define the dimensions
 const unsigned SCREEN_WIDTH = WIDTH;
@@ -75,12 +77,13 @@ struct SpotLight {
 // Light instances
 static DirLight dirLight = {
     glm::vec3(-0.2f, -1.0f, -0.3f),  // direction
-    glm::vec3(0.1f, 0.1f, 0.1f),     // ambient
-    glm::vec3(0.4f, 0.4f, 0.4f),     // diffuse
-    glm::vec3(0.5f, 0.5f, 0.5f),     // specular
+    glm::vec3(0.2f, 0.2f, 0.2f),     // ambient - increased from 0.1 to 0.2
+    glm::vec3(0.8f, 0.8f, 0.8f),     // diffuse - increased from 0.4 to 0.8
+    glm::vec3(1.0f, 1.0f, 1.0f),     // specular - already at max
     true                             // enabled
 };
 
+// Main point light (separate from random lights)
 static PointLight pointLight = {
     glm::vec3(1.2f, 1.0f, 2.0f),     // position
     1.0f,                            // constant
@@ -92,6 +95,7 @@ static PointLight pointLight = {
     true                             // enabled
 };
 
+// Update the spotlight to be enabled by default
 static SpotLight spotLight = {
     glm::vec3(0.0f, 5.0f, 0.0f),     // position
     glm::vec3(0.0f, -1.0f, 0.0f),    // direction
@@ -100,11 +104,16 @@ static SpotLight spotLight = {
     1.0f,                            // constant
     0.09f,                           // linear
     0.032f,                          // quadratic
-    glm::vec3(0.0f, 0.0f, 0.0f),     // ambient
-    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse
-    glm::vec3(1.0f, 1.0f, 1.0f),     // specular
-    false                            // enabled (off by default)
+    glm::vec3(0.0f, 0.0f, 0.0f),     // ambient - keep at 0
+    glm::vec3(2.0f, 2.0f, 2.0f),     // diffuse - doubled from 1.0 to 2.0
+    glm::vec3(2.0f, 2.0f, 2.0f),     // specular - doubled from 1.0 to 2.0
+    true                             // enabled (now true by default)
 };
+
+// Add random point lights
+const int MAX_POINT_LIGHTS = 20;
+std::vector<PointLight> randomPointLights;
+float MIN_DISTANCE_BETWEEN_LIGHTS = 10.0f; // Minimum distance between lights - now non-const
 
 // Material settings
 static float shininess = 32.0f;
@@ -119,6 +128,11 @@ unsigned int groundVBO = 0;
 unsigned int groundTexture = 0;
 unsigned int groundNormalTexture = 0;
 
+// Add these variables after the material settings
+static float pointLightBrightness = 0.002f; // 120% lower (0.2 - 0.12 = 0.08)
+static float dirLightBrightness = 0.6f;    // 40% higher
+static float spotLightBrightness = 4.5f;   // 80% higher
+
 // Forward declare static functions
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
@@ -130,6 +144,67 @@ static void setupGround();
 static void renderGround(Shader &shader);
 static bool toggleKey(int key, bool &toggleState);
 static void toggleCursor(GLFWwindow *window);
+
+// Function to generate random point lights
+void generateRandomPointLights() {
+    // Seed the random number generator
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    
+    // Define distributions for position, color, and attenuation
+    std::uniform_real_distribution<float> posDistX(-50.0f, 50.0f);
+    std::uniform_real_distribution<float> posDistY(0.5f, 10.0f);
+    std::uniform_real_distribution<float> posDistZ(-50.0f, 50.0f);
+    
+    std::uniform_real_distribution<float> colorDist(0.5f, 1.0f);
+    std::uniform_real_distribution<float> attenuationDist(0.001f, 0.01f);
+    
+    // Clear existing lights
+    randomPointLights.clear();
+    
+    // Try to generate MAX_POINT_LIGHTS lights
+    int attempts = 0;
+    const int maxAttempts = 1000; // Prevent infinite loop
+    
+    while (randomPointLights.size() < MAX_POINT_LIGHTS && attempts < maxAttempts) {
+        attempts++;
+        
+        // Generate random position
+        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        
+        // Check distance from existing lights
+        bool tooClose = false;
+        for (const auto& light : randomPointLights) {
+            if (glm::distance(position, light.position) < MIN_DISTANCE_BETWEEN_LIGHTS) {
+                tooClose = true;
+                break;
+            }
+        }
+        
+        if (!tooClose) {
+            // Generate random color
+            glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+            
+            // Create new point light
+            PointLight light = {
+                position,                   // position
+                1.0f,                       // constant
+                0.09f,                      // linear
+                attenuationDist(gen),       // quadratic - random for variety
+                color * 0.1f,               // ambient - 10% of color
+                color,                      // diffuse - full color
+                color,                      // specular - full color
+                true                        // enabled
+            };
+            
+            randomPointLights.push_back(light);
+            std::cout << "Added random point light at position: (" 
+                      << position.x << ", " << position.y << ", " << position.z << ")" << std::endl;
+        }
+    }
+    
+    std::cout << "Generated " << randomPointLights.size() << " random point lights" << std::endl;
+}
 
 int game3d(int argc, char *argv[], const std::string& type) {
     glfwInit();
@@ -273,6 +348,9 @@ int game3d(int argc, char *argv[], const std::string& type) {
     // Setup ground plane with improved textures
     setupGround();
     
+    // Generate random point lights
+    generateRandomPointLights();
+    
     // Load models with absolute paths
     std::string modelBasePath = std::string(cwd) + "/models";
     std::cout << "Model base path: " << modelBasePath << std::endl;
@@ -410,29 +488,6 @@ int game3d(int argc, char *argv[], const std::string& type) {
         std::cout << "Failed to load terry model: " << e.what() << std::endl;
     }
     
-    // Load toxic can model
-    try {
-        std::string toxicCanPath = findModelPath("n64/Toxic Can/7398.obj");
-        std::cout << "Attempting to load toxic can model from " << toxicCanPath << std::endl;
-        
-        // Check if file exists
-        std::ifstream toxicCanFile(toxicCanPath);
-        if (!toxicCanFile.good()) {
-            std::cout << "Toxic can model file does not exist or cannot be opened!" << std::endl;
-        } else {
-            std::cout << "Toxic can model file exists and can be opened." << std::endl;
-            toxicCanFile.close();
-            
-            models.push_back(new m3D::Model(toxicCanPath));
-            std::cout << "Successfully loaded toxic can model" << std::endl;
-            modelPositions.push_back(glm::vec3(10.0f, 0.0f, -5.0f)); // Position on ground
-            modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-            modelScales.push_back(glm::vec3(0.5f, 0.5f, 0.5f));
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Failed to load toxic can model: " << e.what() << std::endl;
-    }
-    
     std::cout << "Loaded " << models.size() << " models successfully" << std::endl;
 
     // Game loop
@@ -467,6 +522,11 @@ int game3d(int argc, char *argv[], const std::string& type) {
             shader.SetInteger("useDetailMap", useDetailMap ? 1 : 0);
             shader.SetInteger("useScatterMap", useScatterMap ? 1 : 0);
             
+            // Set light brightness adjustment uniforms
+            shader.SetFloat("pointLightBrightness", pointLightBrightness);
+            shader.SetFloat("dirLightBrightness", dirLightBrightness);
+            shader.SetFloat("spotLightBrightness", spotLightBrightness);
+            
             // Set camera position for lighting calculations
             shader.SetVector3f("viewPos", camera.Position);
             
@@ -477,7 +537,7 @@ int game3d(int argc, char *argv[], const std::string& type) {
             shader.SetVector3f("dirLight.specular", dirLight.specular);
             shader.SetInteger("useDirLight", dirLight.enabled ? 1 : 0);
             
-            // Set point light properties
+            // Set main point light properties
             shader.SetVector3f("pointLight.position", pointLight.position);
             shader.SetFloat("pointLight.constant", pointLight.constant);
             shader.SetFloat("pointLight.linear", pointLight.linear);
@@ -486,6 +546,21 @@ int game3d(int argc, char *argv[], const std::string& type) {
             shader.SetVector3f("pointLight.diffuse", pointLight.diffuse);
             shader.SetVector3f("pointLight.specular", pointLight.specular);
             shader.SetInteger("usePointLight", pointLight.enabled ? 1 : 0);
+            
+            // Set random point lights
+            shader.SetInteger("numRandomPointLights", static_cast<int>(randomPointLights.size()));
+            shader.SetInteger("useRandomPointLights", !randomPointLights.empty() ? 1 : 0);
+            
+            for (size_t i = 0; i < randomPointLights.size() && i < MAX_POINT_LIGHTS; i++) {
+                std::string prefix = "randomPointLights[" + std::to_string(i) + "].";
+                shader.SetVector3f((prefix + "position").c_str(), randomPointLights[i].position);
+                shader.SetFloat((prefix + "constant").c_str(), randomPointLights[i].constant);
+                shader.SetFloat((prefix + "linear").c_str(), randomPointLights[i].linear);
+                shader.SetFloat((prefix + "quadratic").c_str(), randomPointLights[i].quadratic);
+                shader.SetVector3f((prefix + "ambient").c_str(), randomPointLights[i].ambient);
+                shader.SetVector3f((prefix + "diffuse").c_str(), randomPointLights[i].diffuse);
+                shader.SetVector3f((prefix + "specular").c_str(), randomPointLights[i].specular);
+            }
             
             // Set spot light properties
             shader.SetVector3f("spotLight.position", spotLight.position);
@@ -620,12 +695,31 @@ static void setupGround() {
     
     glBindVertexArray(0);
     
-    // Create a dark blue texture for the ground
+    // Create a larger, more detailed ground texture (4x4 grid instead of 2x2)
     unsigned char groundTextureData[] = {
-        20, 40, 100, 255,  // Dark blue color (RGBA)
-        30, 50, 110, 255,
-        30, 50, 110, 255,
-        20, 40, 100, 255
+        // Row 1
+        20, 40, 100, 255,  30, 50, 110, 255,  30, 50, 110, 255,  20, 40, 100, 255,
+        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
+        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
+        20, 40, 100, 255,  30, 50, 110, 255,  30, 50, 110, 255,  20, 40, 100, 255,
+        
+        // Row 2
+        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
+        40, 60, 120, 255,  50, 70, 130, 255,  50, 70, 130, 255,  40, 60, 120, 255,
+        40, 60, 120, 255,  50, 70, 130, 255,  50, 70, 130, 255,  40, 60, 120, 255,
+        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
+        
+        // Row 3
+        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
+        40, 60, 120, 255,  50, 70, 130, 255,  50, 70, 130, 255,  40, 60, 120, 255,
+        40, 60, 120, 255,  50, 70, 130, 255,  50, 70, 130, 255,  40, 60, 120, 255,
+        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
+        
+        // Row 4
+        20, 40, 100, 255,  30, 50, 110, 255,  30, 50, 110, 255,  20, 40, 100, 255,
+        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
+        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
+        20, 40, 100, 255,  30, 50, 110, 255,  30, 50, 110, 255,  20, 40, 100, 255
     };
     
     // Generate and bind texture
@@ -635,19 +729,22 @@ static void setupGround() {
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Use mipmapping
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // Use linear filtering
     
     // Upload texture data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, groundTextureData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 16, 16, 0, GL_RGBA, GL_UNSIGNED_BYTE, groundTextureData);
+    glGenerateMipmap(GL_TEXTURE_2D); // Generate mipmaps to prevent flickering at distance
     
     // Create a normal map for the ground
-    unsigned char normalMapData[] = {
-        128, 128, 255, 255,  // Flat normal (RGB: 128, 128, 255)
-        128, 128, 255, 255,
-        128, 128, 255, 255,
-        128, 128, 255, 255
-    };
+    unsigned char normalMapData[16 * 16 * 4];
+    // Fill with flat normals (128, 128, 255, 255)
+    for (int i = 0; i < 16 * 16; i++) {
+        normalMapData[i * 4 + 0] = 128;
+        normalMapData[i * 4 + 1] = 128;
+        normalMapData[i * 4 + 2] = 255;
+        normalMapData[i * 4 + 3] = 255;
+    }
     
     // Generate and bind normal texture
     glGenTextures(1, &groundNormalTexture);
@@ -656,11 +753,12 @@ static void setupGround() {
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
     // Upload normal map data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, normalMapData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 16, 16, 0, GL_RGBA, GL_UNSIGNED_BYTE, normalMapData);
+    glGenerateMipmap(GL_TEXTURE_2D);
     
     glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -707,7 +805,7 @@ static void renderModelsWindow() {
         
         // Model selection
         if (models.size() > 0) {
-            const char* modelNames[] = {"Backpack", "Mansion", "Tiptup", "Terry", "Toxic Can"};
+            const char* modelNames[] = {"Backpack", "Mansion", "Tiptup", "Terry"};
             int maxModel = std::min(static_cast<int>(models.size()), static_cast<int>(IM_ARRAYSIZE(modelNames)));
             ImGui::Combo("Select Model", &selectedModel, modelNames, maxModel);
             
@@ -753,6 +851,13 @@ static void renderLightingWindow() {
         ImGui::Checkbox("Use Scatter Maps", &useScatterMap);
     }
     
+    // Light Brightness Adjustments
+    if (ImGui::CollapsingHeader("Light Brightness")) {
+        ImGui::SliderFloat("Point Light Brightness", &pointLightBrightness, 0.01f, 2.0f);
+        ImGui::SliderFloat("Directional Light Brightness", &dirLightBrightness, 0.1f, 3.0f);
+        ImGui::SliderFloat("Spot Light Brightness", &spotLightBrightness, 0.1f, 3.0f);
+    }
+    
     // Directional light
     if (ImGui::CollapsingHeader("Directional Light")) {
         ImGui::Checkbox("Enable##DirLight", &dirLight.enabled);
@@ -762,8 +867,8 @@ static void renderLightingWindow() {
         ImGui::ColorEdit3("Specular##Dir", &dirLight.specular[0]);
     }
     
-    // Point light
-    if (ImGui::CollapsingHeader("Point Light")) {
+    // Main point light
+    if (ImGui::CollapsingHeader("Main Point Light")) {
         ImGui::Checkbox("Enable##PointLight", &pointLight.enabled);
         ImGui::SliderFloat3("Position##Point", &pointLight.position[0], -20.0f, 20.0f);
         ImGui::ColorEdit3("Ambient##Point", &pointLight.ambient[0]);
@@ -772,6 +877,26 @@ static void renderLightingWindow() {
         ImGui::SliderFloat("Constant", &pointLight.constant, 0.1f, 2.0f);
         ImGui::SliderFloat("Linear", &pointLight.linear, 0.001f, 0.5f);
         ImGui::SliderFloat("Quadratic", &pointLight.quadratic, 0.0001f, 0.1f);
+    }
+    
+    // Random point lights
+    if (ImGui::CollapsingHeader("Random Point Lights")) {
+        static bool useRandomLights = !randomPointLights.empty();
+        if (ImGui::Checkbox("Enable Random Lights", &useRandomLights)) {
+            if (useRandomLights && randomPointLights.empty()) {
+                generateRandomPointLights();
+            } else if (!useRandomLights) {
+                randomPointLights.clear();
+            }
+        }
+        
+        ImGui::Text("Random Lights: %zu", randomPointLights.size());
+        
+        if (ImGui::Button("Regenerate Random Lights")) {
+            generateRandomPointLights();
+        }
+        
+        ImGui::SliderFloat("Min Distance", &MIN_DISTANCE_BETWEEN_LIGHTS, 5.0f, 30.0f);
     }
     
     // Spot light

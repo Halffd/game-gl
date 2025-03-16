@@ -35,3 +35,5 @@ assimp
 glfw
 imgui
 irrklang
+include_libs/imgui
+include_libs/windows/irrklang-proxy
