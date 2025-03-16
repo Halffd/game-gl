@@ -296,7 +296,8 @@ void generatePrimitiveShapes() {
         std::cout << "Creating sphere " << i << ": " << name << std::endl;
         
         try {
-            auto sphere = std::make_shared<m3D::Sphere>(name, position, rotation, glm::vec3(scale), color);
+            // Use higher resolution for spheres (48 segments and rings)
+            auto sphere = std::make_shared<m3D::Sphere>(name, position, rotation, glm::vec3(scale), color, 48, 48);
             primitiveShapes.push_back(sphere);
             scene.AddObject(sphere);
             
@@ -305,6 +306,32 @@ void generatePrimitiveShapes() {
             std::cout << "Sphere " << i << " created successfully" << std::endl;
         } catch (const std::exception& e) {
             std::cout << "Error creating sphere " << i << ": " << e.what() << std::endl;
+        }
+    }
+    
+    std::cout << "Generating 3 high-quality spheres..." << std::endl;
+    
+    // Generate 3 high-quality spheres
+    for (int i = 0; i < 3; i++) {
+        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
+        float scale = scaleDist(gen) * 1.5f; // Make them a bit larger
+        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+        
+        std::string name = "HQSphere_" + std::to_string(i);
+        std::cout << "Creating high-quality sphere " << i << ": " << name << std::endl;
+        
+        try {
+            // Create a high-quality sphere with 64 segments and rings
+            auto sphere = std::make_shared<m3D::HighQualitySphere>(name, position, rotation, glm::vec3(scale), color);
+            primitiveShapes.push_back(sphere);
+            scene.AddObject(sphere);
+            
+            // Add slower rotation speed for better visualization
+            rotationSpeeds.push_back(glm::vec3(speedDist(gen) * 0.5f, speedDist(gen) * 0.5f, speedDist(gen) * 0.5f));
+            std::cout << "High-quality sphere " << i << " created successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "Error creating high-quality sphere " << i << ": " << e.what() << std::endl;
         }
     }
     

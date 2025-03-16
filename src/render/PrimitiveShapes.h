@@ -187,8 +187,8 @@ public:
            const glm::vec3& rotation = glm::vec3(0.0f),
            const glm::vec3& scale = glm::vec3(1.0f),
            const glm::vec3& color = glm::vec3(0.2f, 0.6f, 1.0f),
-           unsigned int segments = 16,
-           unsigned int rings = 16) 
+           unsigned int segments = 32,
+           unsigned int rings = 32) 
         : PrimitiveShape(name, position, rotation, scale) {
         
         std::cout << "Creating Sphere: " << name << " at position (" 
@@ -202,23 +202,37 @@ public:
             for (unsigned int x = 0; x <= segments; ++x) {
                 float xSegment = (float)x / (float)segments;
                 float ySegment = (float)y / (float)rings;
-                float xPos = std::cos(xSegment * 2.0f * glm::pi<float>()) * std::sin(ySegment * glm::pi<float>());
-                float yPos = std::cos(ySegment * glm::pi<float>());
-                float zPos = std::sin(xSegment * 2.0f * glm::pi<float>()) * std::sin(ySegment * glm::pi<float>());
+                
+                // Calculate the spherical coordinates
+                float theta = xSegment * 2.0f * glm::pi<float>();  // Azimuthal angle (around y-axis)
+                float phi = ySegment * glm::pi<float>();           // Polar angle (from top to bottom)
+                
+                // Convert spherical coordinates to Cartesian coordinates
+                float xPos = std::sin(phi) * std::cos(theta);
+                float yPos = std::cos(phi);
+                float zPos = std::sin(phi) * std::sin(theta);
                 
                 Vertex vertex;
                 vertex.Position = glm::vec3(xPos * 0.5f, yPos * 0.5f, zPos * 0.5f);
+                
+                // For a sphere, the normal is simply the normalized position vector
                 vertex.Normal = glm::normalize(glm::vec3(xPos, yPos, zPos));
+                
+                // Texture coordinates
                 vertex.TexCoords = glm::vec2(xSegment, ySegment);
                 
                 // Calculate tangent and bitangent
-                glm::vec3 tangent;
-                if (std::abs(vertex.Normal.y) < 0.999f) {
-                    tangent = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), vertex.Normal));
-                } else {
-                    tangent = glm::normalize(glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), vertex.Normal));
+                // Tangent is perpendicular to normal and points along increasing theta
+                glm::vec3 tangent = glm::normalize(glm::vec3(-std::sin(theta), 0.0f, std::cos(theta)));
+                
+                // If we're at the poles, we need a different tangent
+                if (std::abs(yPos) > 0.999f) {
+                    tangent = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f));
                 }
+                
                 vertex.Tangent = tangent;
+                
+                // Bitangent is perpendicular to both normal and tangent
                 vertex.Bitangent = glm::normalize(glm::cross(vertex.Normal, tangent));
                 
                 // Initialize bone weights to 0
@@ -234,13 +248,21 @@ public:
         // Generate sphere indices
         for (unsigned int y = 0; y < rings; ++y) {
             for (unsigned int x = 0; x < segments; ++x) {
-                indices.push_back((y + 1) * (segments + 1) + x);
-                indices.push_back(y * (segments + 1) + x);
-                indices.push_back(y * (segments + 1) + x + 1);
+                // Get the indices of the quad's vertices
+                unsigned int topLeft = y * (segments + 1) + x;
+                unsigned int topRight = topLeft + 1;
+                unsigned int bottomLeft = (y + 1) * (segments + 1) + x;
+                unsigned int bottomRight = bottomLeft + 1;
                 
-                indices.push_back((y + 1) * (segments + 1) + x);
-                indices.push_back(y * (segments + 1) + x + 1);
-                indices.push_back((y + 1) * (segments + 1) + x + 1);
+                // First triangle (top-right, bottom-right, bottom-left)
+                indices.push_back(topRight);
+                indices.push_back(bottomRight);
+                indices.push_back(bottomLeft);
+                
+                // Second triangle (top-right, bottom-left, top-left)
+                indices.push_back(topRight);
+                indices.push_back(bottomLeft);
+                indices.push_back(topLeft);
             }
         }
         
@@ -357,6 +379,108 @@ public:
         // Create the mesh
         mesh = std::make_shared<Mesh>(vertices, indices, textures);
         std::cout << "Prism mesh created successfully" << std::endl;
+    }
+};
+
+// High-quality sphere shape with smooth shading
+class HighQualitySphere : public PrimitiveShape {
+public:
+    HighQualitySphere(const std::string& name, 
+                     const glm::vec3& position = glm::vec3(0.0f),
+                     const glm::vec3& rotation = glm::vec3(0.0f),
+                     const glm::vec3& scale = glm::vec3(1.0f),
+                     const glm::vec3& color = glm::vec3(0.2f, 0.6f, 1.0f),
+                     unsigned int segments = 64,
+                     unsigned int rings = 64) 
+        : PrimitiveShape(name, position, rotation, scale) {
+        
+        std::cout << "Creating High-Quality Sphere: " << name << " at position (" 
+                  << position.x << ", " << position.y << ", " << position.z << ")" << std::endl;
+        
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        
+        // Generate sphere vertices with higher precision
+        for (unsigned int y = 0; y <= rings; ++y) {
+            for (unsigned int x = 0; x <= segments; ++x) {
+                float xSegment = (float)x / (float)segments;
+                float ySegment = (float)y / (float)rings;
+                
+                // Calculate the spherical coordinates
+                float theta = xSegment * 2.0f * glm::pi<float>();
+                float phi = ySegment * glm::pi<float>();
+                
+                // Convert spherical coordinates to Cartesian coordinates
+                float xPos = std::sin(phi) * std::cos(theta);
+                float yPos = std::cos(phi);
+                float zPos = std::sin(phi) * std::sin(theta);
+                
+                Vertex vertex;
+                vertex.Position = glm::vec3(xPos * 0.5f, yPos * 0.5f, zPos * 0.5f);
+                vertex.Normal = glm::normalize(glm::vec3(xPos, yPos, zPos));
+                
+                // Improved texture mapping for spheres
+                // This mapping reduces distortion at the poles
+                vertex.TexCoords = glm::vec2(xSegment, ySegment);
+                
+                // Calculate tangent and bitangent for proper normal mapping
+                glm::vec3 tangent;
+                if (std::abs(yPos) < 0.999f) {
+                    // For most of the sphere, tangent is perpendicular to normal in the theta direction
+                    tangent = glm::normalize(glm::vec3(-std::sin(theta), 0.0f, std::cos(theta)));
+                } else {
+                    // At the poles, we need a special case
+                    tangent = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f));
+                }
+                
+                vertex.Tangent = tangent;
+                vertex.Bitangent = glm::normalize(glm::cross(vertex.Normal, tangent));
+                
+                // Initialize bone weights to 0
+                for (int i = 0; i < MAX_BONE_INFLUENCE; i++) {
+                    vertex.m_BoneIDs[i] = 0;
+                    vertex.m_Weights[i] = 0.0f;
+                }
+                
+                vertices.push_back(vertex);
+            }
+        }
+        
+        // Generate sphere indices with optimal triangle orientation
+        for (unsigned int y = 0; y < rings; ++y) {
+            for (unsigned int x = 0; x < segments; ++x) {
+                // Get the indices of the quad's vertices
+                unsigned int topLeft = y * (segments + 1) + x;
+                unsigned int topRight = topLeft + 1;
+                unsigned int bottomLeft = (y + 1) * (segments + 1) + x;
+                unsigned int bottomRight = bottomLeft + 1;
+                
+                // First triangle (top-right, bottom-right, bottom-left)
+                indices.push_back(topRight);
+                indices.push_back(bottomRight);
+                indices.push_back(bottomLeft);
+                
+                // Second triangle (top-right, bottom-left, top-left)
+                indices.push_back(topRight);
+                indices.push_back(bottomLeft);
+                indices.push_back(topLeft);
+            }
+        }
+        
+        // Create a texture with the specified color
+        std::vector<Texture> textures;
+        Texture texture;
+        texture.id = createColorTexture(color.r, color.g, color.b);
+        texture.type = "texture_diffuse";
+        texture.path = "generated_color";
+        textures.push_back(texture);
+        
+        std::cout << "Creating high-quality sphere mesh with " << vertices.size() << " vertices and " 
+                  << indices.size() << " indices" << std::endl;
+        
+        // Create the mesh
+        mesh = std::make_shared<Mesh>(vertices, indices, textures);
+        std::cout << "High-quality sphere mesh created successfully" << std::endl;
     }
 };
 
