@@ -36,13 +36,88 @@ bool showModelsWindow = true;
 int selectedModel = 0;
 
 // Light variables - make them static to avoid linker errors
-static glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
-static glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+// Directional light
+struct DirLight {
+    glm::vec3 direction;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    bool enabled;
+};
+
+// Point light
+struct PointLight {
+    glm::vec3 position;
+    float constant;
+    float linear;
+    float quadratic;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    bool enabled;
+};
+
+// Spot light
+struct SpotLight {
+    glm::vec3 position;
+    glm::vec3 direction;
+    float cutOff;
+    float outerCutOff;
+    float constant;
+    float linear;
+    float quadratic;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    bool enabled;
+};
+
+// Light instances
+static DirLight dirLight = {
+    glm::vec3(-0.2f, -1.0f, -0.3f),  // direction
+    glm::vec3(0.1f, 0.1f, 0.1f),     // ambient
+    glm::vec3(0.4f, 0.4f, 0.4f),     // diffuse
+    glm::vec3(0.5f, 0.5f, 0.5f),     // specular
+    true                             // enabled
+};
+
+static PointLight pointLight = {
+    glm::vec3(1.2f, 1.0f, 2.0f),     // position
+    1.0f,                            // constant
+    0.09f,                           // linear
+    0.032f,                          // quadratic
+    glm::vec3(0.1f, 0.1f, 0.1f),     // ambient
+    glm::vec3(0.8f, 0.8f, 0.8f),     // diffuse
+    glm::vec3(1.0f, 1.0f, 1.0f),     // specular
+    true                             // enabled
+};
+
+static SpotLight spotLight = {
+    glm::vec3(0.0f, 5.0f, 0.0f),     // position
+    glm::vec3(0.0f, -1.0f, 0.0f),    // direction
+    glm::cos(glm::radians(12.5f)),   // cutOff
+    glm::cos(glm::radians(17.5f)),   // outerCutOff
+    1.0f,                            // constant
+    0.09f,                           // linear
+    0.032f,                          // quadratic
+    glm::vec3(0.0f, 0.0f, 0.0f),     // ambient
+    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse
+    glm::vec3(1.0f, 1.0f, 1.0f),     // specular
+    false                            // enabled (off by default)
+};
+
+// Material settings
+static float shininess = 32.0f;
+static bool useNormalMap = true;
+static bool useSpecularMap = true;
+static bool useDetailMap = false;
+static bool useScatterMap = false;
 
 // Ground plane variables
 unsigned int groundVAO = 0;
 unsigned int groundVBO = 0;
 unsigned int groundTexture = 0;
+unsigned int groundNormalTexture = 0;
 
 // Forward declare static functions
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -50,6 +125,7 @@ static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 static void processInput(GLFWwindow* window);
 static void renderModelsWindow();
+static void renderLightingWindow();
 static void setupGround();
 static void renderGround(Shader &shader);
 static bool toggleKey(int key, bool &toggleState);
@@ -194,7 +270,7 @@ int game3d(int argc, char *argv[], const std::string& type) {
         // Continue anyway to see if we can at least render something
     }
     
-    // Setup ground plane
+    // Setup ground plane with improved textures
     setupGround();
     
     // Load models with absolute paths
@@ -375,23 +451,70 @@ int game3d(int argc, char *argv[], const std::string& type) {
         
         // Render models window
         renderModelsWindow();
+        
+        // Render lighting window
+        renderLightingWindow();
 
         // Get the shader and activate it once before setting all uniforms
         try {
             Shader shader = ResourceManager::GetShader("model");
             shader.Use();
 
-            // Set lighting properties
-            shader.SetVector3f("lightPos", lightPos);
+            // Set material properties
+            shader.SetFloat("shininess", shininess);
+            shader.SetInteger("useNormalMap", useNormalMap ? 1 : 0);
+            shader.SetInteger("useSpecularMap", useSpecularMap ? 1 : 0);
+            shader.SetInteger("useDetailMap", useDetailMap ? 1 : 0);
+            shader.SetInteger("useScatterMap", useScatterMap ? 1 : 0);
+            
+            // Set camera position for lighting calculations
             shader.SetVector3f("viewPos", camera.Position);
-            shader.SetVector3f("lightColor", lightColor);
+            
+            // Set directional light properties
+            shader.SetVector3f("dirLight.direction", dirLight.direction);
+            shader.SetVector3f("dirLight.ambient", dirLight.ambient);
+            shader.SetVector3f("dirLight.diffuse", dirLight.diffuse);
+            shader.SetVector3f("dirLight.specular", dirLight.specular);
+            shader.SetInteger("useDirLight", dirLight.enabled ? 1 : 0);
+            
+            // Set point light properties
+            shader.SetVector3f("pointLight.position", pointLight.position);
+            shader.SetFloat("pointLight.constant", pointLight.constant);
+            shader.SetFloat("pointLight.linear", pointLight.linear);
+            shader.SetFloat("pointLight.quadratic", pointLight.quadratic);
+            shader.SetVector3f("pointLight.ambient", pointLight.ambient);
+            shader.SetVector3f("pointLight.diffuse", pointLight.diffuse);
+            shader.SetVector3f("pointLight.specular", pointLight.specular);
+            shader.SetInteger("usePointLight", pointLight.enabled ? 1 : 0);
+            
+            // Set spot light properties
+            shader.SetVector3f("spotLight.position", spotLight.position);
+            shader.SetVector3f("spotLight.direction", spotLight.direction);
+            shader.SetFloat("spotLight.cutOff", spotLight.cutOff);
+            shader.SetFloat("spotLight.outerCutOff", spotLight.outerCutOff);
+            shader.SetFloat("spotLight.constant", spotLight.constant);
+            shader.SetFloat("spotLight.linear", spotLight.linear);
+            shader.SetFloat("spotLight.quadratic", spotLight.quadratic);
+            shader.SetVector3f("spotLight.ambient", spotLight.ambient);
+            shader.SetVector3f("spotLight.diffuse", spotLight.diffuse);
+            shader.SetVector3f("spotLight.specular", spotLight.specular);
+            shader.SetInteger("useSpotLight", spotLight.enabled ? 1 : 0);
+            
+            // For normal mapping in vertex shader
+            shader.SetVector3f("lightPos", pointLight.position);
             
             // Only log every 100 frames to avoid spamming the console
             static int frameCount = 0;
             if (frameCount % 100 == 0) {
-                std::cout << "Rendering with light position: (" << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << ")" << std::endl;
-                std::cout << "Light color: (" << lightColor.x << ", " << lightColor.y << ", " << lightColor.z << ")" << std::endl;
-                std::cout << "Camera position: (" << camera.Position.x << ", " << camera.Position.y << ", " << camera.Position.z << ")" << std::endl;
+                std::cout << "Rendering with point light position: (" 
+                          << pointLight.position.x << ", " 
+                          << pointLight.position.y << ", " 
+                          << pointLight.position.z << ")" << std::endl;
+                          
+                std::cout << "Camera position: (" 
+                          << camera.Position.x << ", " 
+                          << camera.Position.y << ", " 
+                          << camera.Position.z << ")" << std::endl;
             }
             frameCount++;
 
@@ -457,14 +580,14 @@ int game3d(int argc, char *argv[], const std::string& type) {
 static void setupGround() {
     // Create a large ground plane
     float groundVertices[] = {
-        // positions          // normals           // texture coords
-        -50.0f, 0.0f, -50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-         50.0f, 0.0f, -50.0f, 0.0f, 1.0f, 0.0f, 50.0f, 0.0f,
-         50.0f, 0.0f,  50.0f, 0.0f, 1.0f, 0.0f, 50.0f, 50.0f,
+        // positions          // normals           // texture coords  // tangent                // bitangent
+        -50.0f, 0.0f, -50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 0.0f,       1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
+         50.0f, 0.0f, -50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 0.0f,      1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
+         50.0f, 0.0f,  50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 50.0f,     1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
          
-        -50.0f, 0.0f, -50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-         50.0f, 0.0f,  50.0f, 0.0f, 1.0f, 0.0f, 50.0f, 50.0f,
-        -50.0f, 0.0f,  50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 50.0f
+        -50.0f, 0.0f, -50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 0.0f,       1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
+         50.0f, 0.0f,  50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 50.0f,     1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
+        -50.0f, 0.0f,  50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 50.0f,      1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f
     };
     
     // Generate and bind VAO and VBO
@@ -477,24 +600,32 @@ static void setupGround() {
     
     // Position attribute
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
     
     // Normal attribute
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
     
     // Texture coords attribute
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+    
+    // Tangent attribute
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+    
+    // Bitangent attribute
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
     
     glBindVertexArray(0);
     
     // Create a dark blue texture for the ground
     unsigned char groundTextureData[] = {
-        10, 20, 80, 255,  // Dark blue color (RGBA)
-        10, 20, 80, 255,
-        10, 20, 80, 255,
-        10, 20, 80, 255
+        20, 40, 100, 255,  // Dark blue color (RGBA)
+        30, 50, 110, 255,
+        30, 50, 110, 255,
+        20, 40, 100, 255
     };
     
     // Generate and bind texture
@@ -510,6 +641,27 @@ static void setupGround() {
     // Upload texture data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, groundTextureData);
     
+    // Create a normal map for the ground
+    unsigned char normalMapData[] = {
+        128, 128, 255, 255,  // Flat normal (RGB: 128, 128, 255)
+        128, 128, 255, 255,
+        128, 128, 255, 255,
+        128, 128, 255, 255
+    };
+    
+    // Generate and bind normal texture
+    glGenTextures(1, &groundNormalTexture);
+    glBindTexture(GL_TEXTURE_2D, groundNormalTexture);
+    
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    // Upload normal map data
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, normalMapData);
+    
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -518,12 +670,15 @@ static void renderGround(Shader &shader) {
     glm::mat4 model = glm::mat4(1.0f);
     shader.SetMatrix4("model", model);
     
-    // Bind ground texture
+    // Bind ground diffuse texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, groundTexture);
-    
-    // Set the texture uniform
     shader.SetInteger("texture_diffuse1", 0);
+    
+    // Bind ground normal texture
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, groundNormalTexture);
+    shader.SetInteger("texture_normal1", 1);
     
     // Draw ground
     glBindVertexArray(groundVAO);
@@ -579,17 +734,73 @@ static void renderModelsWindow() {
             }
         }
         
-        ImGui::Separator();
-        
-        // Light controls
-        ImGui::Text("Light");
-        ImGui::SliderFloat("Light X", &lightPos.x, -20.0f, 20.0f);
-        ImGui::SliderFloat("Light Y", &lightPos.y, -20.0f, 20.0f);
-        ImGui::SliderFloat("Light Z", &lightPos.z, -20.0f, 20.0f);
-        ImGui::ColorEdit3("Light Color", &lightColor[0]);
-        
         ImGui::End();
     }
+}
+
+static void renderLightingWindow() {
+    ImGui::SetNextWindowPos(ImVec2(SCREEN_WIDTH - 310, 10), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
+    
+    ImGui::Begin("Lighting Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    
+    // Material settings
+    if (ImGui::CollapsingHeader("Material Settings")) {
+        ImGui::SliderFloat("Shininess", &shininess, 1.0f, 256.0f);
+        ImGui::Checkbox("Use Normal Maps", &useNormalMap);
+        ImGui::Checkbox("Use Specular Maps", &useSpecularMap);
+        ImGui::Checkbox("Use Detail Maps", &useDetailMap);
+        ImGui::Checkbox("Use Scatter Maps", &useScatterMap);
+    }
+    
+    // Directional light
+    if (ImGui::CollapsingHeader("Directional Light")) {
+        ImGui::Checkbox("Enable##DirLight", &dirLight.enabled);
+        ImGui::SliderFloat3("Direction", &dirLight.direction[0], -1.0f, 1.0f);
+        ImGui::ColorEdit3("Ambient##Dir", &dirLight.ambient[0]);
+        ImGui::ColorEdit3("Diffuse##Dir", &dirLight.diffuse[0]);
+        ImGui::ColorEdit3("Specular##Dir", &dirLight.specular[0]);
+    }
+    
+    // Point light
+    if (ImGui::CollapsingHeader("Point Light")) {
+        ImGui::Checkbox("Enable##PointLight", &pointLight.enabled);
+        ImGui::SliderFloat3("Position##Point", &pointLight.position[0], -20.0f, 20.0f);
+        ImGui::ColorEdit3("Ambient##Point", &pointLight.ambient[0]);
+        ImGui::ColorEdit3("Diffuse##Point", &pointLight.diffuse[0]);
+        ImGui::ColorEdit3("Specular##Point", &pointLight.specular[0]);
+        ImGui::SliderFloat("Constant", &pointLight.constant, 0.1f, 2.0f);
+        ImGui::SliderFloat("Linear", &pointLight.linear, 0.001f, 0.5f);
+        ImGui::SliderFloat("Quadratic", &pointLight.quadratic, 0.0001f, 0.1f);
+    }
+    
+    // Spot light
+    if (ImGui::CollapsingHeader("Spot Light")) {
+        ImGui::Checkbox("Enable##SpotLight", &spotLight.enabled);
+        ImGui::SliderFloat3("Position##Spot", &spotLight.position[0], -20.0f, 20.0f);
+        ImGui::SliderFloat3("Direction##Spot", &spotLight.direction[0], -1.0f, 1.0f);
+        ImGui::ColorEdit3("Ambient##Spot", &spotLight.ambient[0]);
+        ImGui::ColorEdit3("Diffuse##Spot", &spotLight.diffuse[0]);
+        ImGui::ColorEdit3("Specular##Spot", &spotLight.specular[0]);
+        
+        // Convert cutOff angles from cosine to degrees for the UI
+        float cutOffDegrees = glm::degrees(glm::acos(spotLight.cutOff));
+        float outerCutOffDegrees = glm::degrees(glm::acos(spotLight.outerCutOff));
+        
+        if (ImGui::SliderFloat("Inner Cutoff", &cutOffDegrees, 0.0f, 90.0f)) {
+            spotLight.cutOff = glm::cos(glm::radians(cutOffDegrees));
+        }
+        
+        if (ImGui::SliderFloat("Outer Cutoff", &outerCutOffDegrees, 0.0f, 90.0f)) {
+            spotLight.outerCutOff = glm::cos(glm::radians(outerCutOffDegrees));
+        }
+        
+        ImGui::SliderFloat("Constant##Spot", &spotLight.constant, 0.1f, 2.0f);
+        ImGui::SliderFloat("Linear##Spot", &spotLight.linear, 0.001f, 0.5f);
+        ImGui::SliderFloat("Quadratic##Spot", &spotLight.quadratic, 0.0001f, 0.1f);
+    }
+    
+    ImGui::End();
 }
 
 static bool toggleKey(int key, bool &toggleState) {
