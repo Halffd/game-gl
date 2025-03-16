@@ -317,6 +317,147 @@ void generatePrimitiveShapes(Scene& scene,
         }
     }
     
+    // Generate octahedrons
+    std::cout << "Generating 2 octahedrons..." << std::endl;
+    for (int i = 0; i < 2; i++) {
+        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
+        float scale = scaleDist(gen);
+        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+        
+        std::string name = "Octahedron_" + std::to_string(i);
+        std::cout << "Creating octahedron " << i << ": " << name << std::endl;
+        
+        try {
+            auto octahedron = std::make_shared<Octahedron>(name, position, rotation, glm::vec3(scale), color);
+            primitiveShapes.push_back(octahedron);
+            scene.AddObject(octahedron);
+            
+            // Add random rotation speed
+            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
+            std::cout << "Octahedron " << i << " created successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "Error creating octahedron " << i << ": " << e.what() << std::endl;
+        }
+    }
+    
+    // Generate dodecahedrons
+    std::cout << "Generating 2 dodecahedrons..." << std::endl;
+    for (int i = 0; i < 2; i++) {
+        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
+        float scale = scaleDist(gen);
+        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+        
+        std::string name = "Dodecahedron_" + std::to_string(i);
+        std::cout << "Creating dodecahedron " << i << ": " << name << std::endl;
+        
+        try {
+            auto dodecahedron = std::make_shared<Dodecahedron>(name, position, rotation, glm::vec3(scale), color);
+            primitiveShapes.push_back(dodecahedron);
+            scene.AddObject(dodecahedron);
+            
+            // Add random rotation speed
+            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
+            std::cout << "Dodecahedron " << i << " created successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "Error creating dodecahedron " << i << ": " << e.what() << std::endl;
+        }
+    }
+    
+    // Generate square pyramids
+    std::cout << "Generating 2 square pyramids..." << std::endl;
+    for (int i = 0; i < 2; i++) {
+        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
+        float scale = scaleDist(gen);
+        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+        
+        // Vary the height
+        float height = 1.0f + i * 0.5f;
+        
+        std::string name = "SquarePyramid_" + std::to_string(i);
+        std::cout << "Creating square pyramid " << i << ": " << name << " with height " << height << std::endl;
+        
+        try {
+            auto pyramid = std::make_shared<SquarePyramid>(name, position, rotation, glm::vec3(scale), color, height);
+            primitiveShapes.push_back(pyramid);
+            scene.AddObject(pyramid);
+            
+            // Add random rotation speed
+            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
+            std::cout << "Square pyramid " << i << " created successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "Error creating square pyramid " << i << ": " << e.what() << std::endl;
+        }
+    }
+    
+    // Generate tori
+    std::cout << "Generating 2 tori..." << std::endl;
+    for (int i = 0; i < 2; i++) {
+        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
+        float scale = scaleDist(gen);
+        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+        
+        // Vary the radii
+        float majorRadius = 0.35f + i * 0.05f;
+        float minorRadius = 0.15f + i * 0.05f;
+        
+        std::string name = "Torus_" + std::to_string(i);
+        std::cout << "Creating torus " << i << ": " << name << " with major radius " << majorRadius 
+                  << " and minor radius " << minorRadius << std::endl;
+        
+        try {
+            auto torus = std::make_shared<Torus>(name, position, rotation, glm::vec3(scale), color, 
+                                                majorRadius, minorRadius);
+            primitiveShapes.push_back(torus);
+            scene.AddObject(torus);
+            
+            // Add random rotation speed
+            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
+            std::cout << "Torus " << i << " created successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "Error creating torus " << i << ": " << e.what() << std::endl;
+        }
+    }
+    
+    // Generate parametric curves
+    std::cout << "Generating 4 parametric curves..." << std::endl;
+    
+    // Different curve types
+    std::vector<std::pair<ParametricCurve::ParametricFunction, std::string>> curveTypes = {
+        {&ParametricCurve::helix, "Helix"},
+        {&ParametricCurve::trefoilKnot, "TrefoilKnot"},
+        {&ParametricCurve::torusKnot, "TorusKnot"},
+        {&ParametricCurve::lissajous, "Lissajous"}
+    };
+    
+    for (int i = 0; i < 4; i++) {
+        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
+        float scale = scaleDist(gen);
+        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+        
+        auto& [curveFunc, curveTypeName] = curveTypes[i];
+        
+        std::string name = "ParametricCurve_" + curveTypeName;
+        std::cout << "Creating parametric curve: " << name << std::endl;
+        
+        try {
+            auto curve = std::make_shared<ParametricCurve>(name, position, rotation, glm::vec3(scale), color, 
+                                                         curveFunc, 0.05f, 100, 8, 0.0f, 6.0f * glm::pi<float>());
+            primitiveShapes.push_back(curve);
+            scene.AddObject(curve);
+            
+            // Add random rotation speed
+            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
+            std::cout << "Parametric curve " << name << " created successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "Error creating parametric curve " << name << ": " << e.what() << std::endl;
+        }
+    }
+    
     std::cout << "\nGenerated " << primitiveShapes.size() << " primitive shapes in total\n" << std::endl;
 }
 

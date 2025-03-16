@@ -15,6 +15,8 @@
 #include "curved/HighQualitySphere.h"
 #include "curved/Cylinder.h"
 #include "curved/Cone.h"
+#include "curved/Torus.h"
+#include "curved/ParametricCurve.h"
 
 // Prisms
 #include "prisms/TriangularPrism.h"
@@ -25,6 +27,9 @@
 // Polyhedra
 #include "polyhedra/Tetrahedron.h"
 #include "polyhedra/Icosphere.h"
+#include "polyhedra/Octahedron.h"
+#include "polyhedra/Dodecahedron.h"
+#include "polyhedra/SquarePyramid.h"
 
 namespace m3D {
 
