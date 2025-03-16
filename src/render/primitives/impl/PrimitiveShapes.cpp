@@ -461,4 +461,207 @@ void generatePrimitiveShapes(Scene& scene,
     std::cout << "\nGenerated " << primitiveShapes.size() << " primitive shapes in total\n" << std::endl;
 }
 
+// Function to generate dynamic shapes with mathematical transformations
+void generateDynamicShapes(Scene& scene,
+                          std::vector<std::shared_ptr<PrimitiveShape>>& primitiveShapes,
+                          std::vector<std::shared_ptr<DynamicTransform>>& dynamicTransforms) {
+    // Clear existing shapes and dynamic transforms
+    primitiveShapes.clear();
+    dynamicTransforms.clear();
+    
+    // Create a fixed CartesianPlane with colored grid (no dynamic transform)
+    auto cartesianPlane = std::make_shared<CartesianPlane>(
+        "FixedCartesianPlane",
+        glm::vec3(0.0f),  // Position at origin
+        glm::vec3(0.0f),  // No rotation
+        glm::vec3(1.5f),  // Increased scale (1.5x larger)
+        30.0f,            // Increased grid magnitude (from 20 to 30)
+        0.05f,            // Thicker line width
+        false             // Use colored grid (not white)
+    );
+    
+    // Add the CartesianPlane to the scene (but not to dynamic shapes)
+    scene.AddObject(cartesianPlane);
+    
+    // Create a white gridded cube version of CartesianPlane (also fixed)
+    auto whiteGridCube = std::make_shared<CartesianPlane>(
+        "FixedWhiteGridCube",
+        glm::vec3(60.0f, 0.0f, 0.0f),  // Position offset to the right
+        glm::vec3(0.0f),               // No rotation
+        glm::vec3(1.5f),               // Increased scale (1.5x larger)
+        30.0f,                         // Increased grid magnitude (from 20 to 30)
+        0.03f,                         // Line width
+        true                           // Use white grid
+    );
+    
+    // Add the white grid cube to the scene (but not to dynamic shapes)
+    scene.AddObject(whiteGridCube);
+    
+    // Create other dynamic shapes with different transform modes
+    // Random number generation for positions, rotations, colors, etc.
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    
+    // Position distributions
+    std::uniform_real_distribution<float> posDistX(-50.0f, 50.0f);
+    std::uniform_real_distribution<float> posDistY(-50.0f, 50.0f);
+    std::uniform_real_distribution<float> posDistZ(-50.0f, 50.0f);
+    
+    // Rotation distribution
+    std::uniform_real_distribution<float> rotDist(0.0f, 360.0f);
+    
+    // Scale distribution
+    std::uniform_real_distribution<float> scaleDist(0.5f, 2.0f);
+    
+    // Color distribution
+    std::uniform_real_distribution<float> colorDist(0.2f, 1.0f);
+    
+    // Quantity distribution
+    std::uniform_int_distribution<int> quantityDist(2, 5);
+    
+    // Transform mode distribution
+    std::uniform_int_distribution<int> modeDist(0, 3); // 0=STANDARD, 1=WAVE, 2=ORBIT, 3=SPIRAL
+    
+    // Shape types and their quantities
+    struct ShapeInfo {
+        std::string name;
+        int quantity;
+    };
+    
+    std::vector<ShapeInfo> shapeTypes = {
+        {"Cube", quantityDist(gen)},
+        {"Sphere", quantityDist(gen)},
+        {"HighQualitySphere", quantityDist(gen)},
+        {"Icosphere", quantityDist(gen)},
+        {"TriangularPrism", quantityDist(gen)},
+        {"RectangularPrism", quantityDist(gen)},
+        {"PentagonalPrism", quantityDist(gen)},
+        {"HexagonalPrism", quantityDist(gen)},
+        {"Cylinder", quantityDist(gen)},
+        {"Cone", quantityDist(gen)},
+        {"Tetrahedron", quantityDist(gen)},
+        {"Octahedron", quantityDist(gen)},
+        {"Dodecahedron", quantityDist(gen)},
+        {"SquarePyramid", quantityDist(gen)},
+        {"Torus", quantityDist(gen)},
+        {"ParametricCurve", quantityDist(gen)}
+    };
+    
+    int totalShapes = 0;
+    
+    // Generate shapes of each type
+    for (const auto& shapeInfo : shapeTypes) {
+        std::cout << "Generating " << shapeInfo.quantity << " " << shapeInfo.name << " shapes..." << std::endl;
+        
+        for (int i = 0; i < shapeInfo.quantity; i++) {
+            // Generate random base values
+            glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+            glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
+            float scale = scaleDist(gen);
+            glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+            
+            // Generate random color gradient
+            glm::vec3 colorGradient(colorDist(gen), colorDist(gen), colorDist(gen));
+            
+            // Create dynamic transform
+            auto transform = std::make_shared<DynamicTransform>(
+                position, rotation, glm::vec3(scale), color, colorGradient
+            );
+            
+            // Create shape based on type
+            std::shared_ptr<PrimitiveShape> shape;
+            std::string name = shapeInfo.name + "_Dynamic_" + std::to_string(i);
+            
+            try {
+                if (shapeInfo.name == "Cube") {
+                    shape = std::make_shared<Cube>(name, position, rotation, glm::vec3(scale), color);
+                }
+                else if (shapeInfo.name == "Sphere") {
+                    float roundness = 0.7f + 0.3f * colorDist(gen);
+                    shape = std::make_shared<Sphere>(name, position, rotation, glm::vec3(scale), color, roundness);
+                }
+                else if (shapeInfo.name == "HighQualitySphere") {
+                    float roundness = 0.7f + 0.3f * colorDist(gen);
+                    shape = std::make_shared<HighQualitySphere>(name, position, rotation, glm::vec3(scale), color, roundness);
+                }
+                else if (shapeInfo.name == "Icosphere") {
+                    int subdivisions = 2 + static_cast<int>(colorDist(gen) * 3);
+                    shape = std::make_shared<IcosphereShape>(name, position, rotation, glm::vec3(scale), color, subdivisions);
+                }
+                else if (shapeInfo.name == "TriangularPrism") {
+                    shape = std::make_shared<TriangularPrism>(name, position, rotation, glm::vec3(scale), color);
+                }
+                else if (shapeInfo.name == "RectangularPrism") {
+                    glm::vec3 dimensions(0.5f + colorDist(gen), 0.5f + colorDist(gen), 0.5f + colorDist(gen));
+                    shape = std::make_shared<RectangularPrism>(name, position, rotation, glm::vec3(scale), color, dimensions);
+                }
+                else if (shapeInfo.name == "PentagonalPrism") {
+                    shape = std::make_shared<PentagonalPrism>(name, position, rotation, glm::vec3(scale), color);
+                }
+                else if (shapeInfo.name == "HexagonalPrism") {
+                    shape = std::make_shared<HexagonalPrism>(name, position, rotation, glm::vec3(scale), color);
+                }
+                else if (shapeInfo.name == "Cylinder") {
+                    unsigned int segments = 16 + static_cast<int>(colorDist(gen) * 16);
+                    shape = std::make_shared<Cylinder>(name, position, rotation, glm::vec3(scale), color, segments);
+                }
+                else if (shapeInfo.name == "Cone") {
+                    unsigned int segments = 16 + static_cast<int>(colorDist(gen) * 16);
+                    shape = std::make_shared<Cone>(name, position, rotation, glm::vec3(scale), color, segments);
+                }
+                else if (shapeInfo.name == "Tetrahedron") {
+                    shape = std::make_shared<Tetrahedron>(name, position, rotation, glm::vec3(scale), color);
+                }
+                else if (shapeInfo.name == "Octahedron") {
+                    shape = std::make_shared<Octahedron>(name, position, rotation, glm::vec3(scale), color);
+                }
+                else if (shapeInfo.name == "Dodecahedron") {
+                    shape = std::make_shared<Dodecahedron>(name, position, rotation, glm::vec3(scale), color);
+                }
+                else if (shapeInfo.name == "SquarePyramid") {
+                    float height = 1.0f + colorDist(gen);
+                    shape = std::make_shared<SquarePyramid>(name, position, rotation, glm::vec3(scale), color, height);
+                }
+                else if (shapeInfo.name == "Torus") {
+                    float majorRadius = 0.3f + 0.2f * colorDist(gen);
+                    float minorRadius = 0.1f + 0.1f * colorDist(gen);
+                    shape = std::make_shared<Torus>(name, position, rotation, glm::vec3(scale), color, majorRadius, minorRadius);
+                }
+                else if (shapeInfo.name == "ParametricCurve") {
+                    // Choose a random parametric function
+                    std::vector<std::pair<ParametricCurve::ParametricFunction, std::string>> curveFunctions = {
+                        {&ParametricCurve::helix, "Helix"},
+                        {&ParametricCurve::trefoilKnot, "TrefoilKnot"},
+                        {&ParametricCurve::torusKnot, "TorusKnot"},
+                        {&ParametricCurve::lissajous, "Lissajous"}
+                    };
+                    
+                    int funcIndex = static_cast<int>(colorDist(gen) * curveFunctions.size()) % curveFunctions.size();
+                    auto& [curveFunc, curveTypeName] = curveFunctions[funcIndex];
+                    
+                    float thickness = 0.03f + 0.04f * colorDist(gen);
+                    unsigned int segments = 50 + static_cast<int>(colorDist(gen) * 50);
+                    
+                    shape = std::make_shared<ParametricCurve>(
+                        name + "_" + curveTypeName, position, rotation, glm::vec3(scale), color,
+                        curveFunc, thickness, segments, 8, 0.0f, 6.0f * glm::pi<float>()
+                    );
+                }
+                
+                if (shape) {
+                    primitiveShapes.push_back(shape);
+                    scene.AddObject(shape);
+                    dynamicTransforms.push_back(transform);
+                    std::cout << "Created " << name << " successfully" << std::endl;
+                    totalShapes++;
+                }
+            } catch (const std::exception& e) {
+                std::cout << "Error creating " << name << ": " << e.what() << std::endl;
+            }
+        }
+    }
+    
+    std::cout << "\nGenerated " << totalShapes << " dynamic shapes with mathematical transformations\n" << std::endl;
+}
+
 } // namespace m3D 

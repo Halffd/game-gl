@@ -9,6 +9,7 @@
 
 // Basic shapes
 #include "basic/Cube.h"
+#include "basic/CartesianPlane.h"
 
 // Curved shapes
 #include "curved/Sphere.h"
@@ -31,12 +32,20 @@
 #include "polyhedra/Dodecahedron.h"
 #include "polyhedra/SquarePyramid.h"
 
+// Dynamic transformations
+#include "util/DynamicTransform.h"
+
 namespace m3D {
 
 // Function to generate primitive shapes
 void generatePrimitiveShapes(Scene& scene, 
                             std::vector<std::shared_ptr<PrimitiveShape>>& primitiveShapes,
                             std::vector<glm::vec3>& rotationSpeeds);
+
+// Function to generate dynamic shapes with mathematical transformations
+void generateDynamicShapes(Scene& scene,
+                          std::vector<std::shared_ptr<PrimitiveShape>>& primitiveShapes,
+                          std::vector<std::shared_ptr<DynamicTransform>>& dynamicTransforms);
 
 } // namespace m3D
 

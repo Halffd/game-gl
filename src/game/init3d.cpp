@@ -153,6 +153,12 @@ static float spotLightBrightness = 1.0f;  // Increased from 2.5 to 4.0
 std::vector<std::shared_ptr<m3D::PrimitiveShape>> primitiveShapes;
 std::vector<glm::vec3> rotationSpeeds; // Store rotation speeds for each primitive
 
+// Dynamic shapes with mathematical transformations
+std::vector<std::shared_ptr<m3D::PrimitiveShape>> dynamicShapes;
+std::vector<std::shared_ptr<m3D::DynamicTransform>> dynamicTransforms;
+bool useDynamicShapes = true;
+bool showDynamicShapesWindow = true;
+
 // Forward declare static functions
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
@@ -258,6 +264,60 @@ void updatePrimitiveRotations(float deltaTime) {
             primitiveShapes[i]->rotation.z = fmod(primitiveShapes[i]->rotation.z, 360.0f);
         }
     }
+}
+
+// Function to generate dynamic shapes with mathematical transformations
+void generateDynamicShapes() {
+    // Call the function from the PrimitiveShapes.h file
+    m3D::generateDynamicShapes(scene, dynamicShapes, dynamicTransforms);
+}
+
+// Function to update dynamic shapes based on time
+void updateDynamicShapes(float time) {
+    if (!useDynamicShapes) return;
+    
+    for (size_t i = 0; i < dynamicShapes.size(); i++) {
+        if (i < dynamicTransforms.size() && dynamicShapes[i]) {
+            // Update the dynamic transform based on time
+            dynamicTransforms[i]->update(time);
+            
+            // Apply the updated transform to the shape
+            dynamicShapes[i]->position = dynamicTransforms[i]->getPosition();
+            dynamicShapes[i]->rotation = dynamicTransforms[i]->getRotation() * 57.2958f; // Convert to degrees (radians * 180/PI)
+            dynamicShapes[i]->scale = dynamicTransforms[i]->getScale();
+            
+            // Update material properties
+            dynamicShapes[i]->SetColor(dynamicTransforms[i]->getColor());
+            
+            // Update shader parameters for material properties
+            // These will be applied when the shape is drawn
+            dynamicShapes[i]->SetMaterialProperty("diffuse", dynamicTransforms[i]->getDiffuse());
+            dynamicShapes[i]->SetMaterialProperty("ambient", dynamicTransforms[i]->getAmbient());
+            dynamicShapes[i]->SetMaterialProperty("specular", dynamicTransforms[i]->getSpecular());
+        }
+    }
+}
+
+// Function to render dynamic shapes control window
+static void renderDynamicShapesWindow() {
+    if (!showDynamicShapesWindow) return;
+    
+    ImGui::Begin("Dynamic Shapes", &showDynamicShapesWindow);
+    
+    ImGui::Checkbox("Enable Dynamic Shapes", &useDynamicShapes);
+    
+    if (ImGui::Button("Regenerate Dynamic Shapes")) {
+        // Clear existing dynamic shapes
+        dynamicShapes.clear();
+        dynamicTransforms.clear();
+        
+        // Generate new dynamic shapes
+        generateDynamicShapes();
+    }
+    
+    ImGui::Text("Total Dynamic Shapes: %zu", dynamicShapes.size());
+    
+    ImGui::End();
 }
 
 // Function to load models using the Scene class
@@ -562,6 +622,12 @@ int game3d(int argc, char *argv[], const std::string& type) {
     // Load models using the Scene class
     loadModels(currentDir, std::string(cwd) + "/bin/models");
     
+    // Generate primitive shapes
+    generatePrimitiveShapes();
+    
+    // Generate dynamic shapes with mathematical transformations
+    generateDynamicShapes();
+    
     // Game loop
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -582,8 +648,14 @@ int game3d(int argc, char *argv[], const std::string& type) {
         // Render lighting window
         renderLightingWindow();
         
+        // Render dynamic shapes window
+        renderDynamicShapesWindow();
+        
         // Update primitive rotations
         updatePrimitiveRotations(deltaTime);
+        
+        // Update dynamic shapes based on time
+        updateDynamicShapes(currentFrame);
 
         // Get the shader and activate it once before setting all uniforms
         try {

@@ -43,14 +43,20 @@ class PrimitiveShape : public SceneObject {
 protected:
     std::shared_ptr<Mesh> mesh;
     glm::vec3 color;
+    std::map<std::string, float> materialProperties;
     
 public:
     PrimitiveShape(const std::string& name, 
                   const glm::vec3& position = glm::vec3(0.0f),
                   const glm::vec3& rotation = glm::vec3(0.0f),
                   const glm::vec3& scale = glm::vec3(1.0f),
-                  const glm::vec3& color = glm::vec3(1.0f, 1.0f, 1.0f))
+                  const glm::vec3& color = glm::vec3(1.0f))
         : SceneObject(name, position, rotation, scale), color(color) {
+        // Initialize default material properties
+        materialProperties["ambient"] = 0.2f;
+        materialProperties["diffuse"] = 0.8f;
+        materialProperties["specular"] = 0.5f;
+        materialProperties["shininess"] = 32.0f;
         std::cout << "Creating PrimitiveShape: " << name << std::endl;
     }
     
@@ -64,6 +70,13 @@ public:
         
         // Set model matrix
         shader.SetMatrix4("model", GetModelMatrix());
+        
+        // Set material properties
+        shader.SetVector3f("material.color", color);
+        shader.SetFloat("material.ambient", GetMaterialProperty("ambient"));
+        shader.SetFloat("material.diffuse", GetMaterialProperty("diffuse"));
+        shader.SetFloat("material.specular", GetMaterialProperty("specular"));
+        shader.SetFloat("material.shininess", GetMaterialProperty("shininess"));
         
         // Draw the mesh
         mesh->Draw(shader);
@@ -113,6 +126,24 @@ public:
         indices.push_back(v2);
         indices.push_back(v3);
     }
+    
+    // Set a material property
+    void SetMaterialProperty(const std::string& property, float value) {
+        materialProperties[property] = value;
+    }
+    
+    // Get a material property
+    float GetMaterialProperty(const std::string& property) const {
+        auto it = materialProperties.find(property);
+        if (it != materialProperties.end()) {
+            return it->second;
+        }
+        return 0.0f; // Default value if property not found
+    }
+    
+    // Getter and setter for color
+    glm::vec3 GetColor() const { return color; }
+    void SetColor(const glm::vec3& newColor) { color = newColor; }
 };
 
 } // namespace m3D
