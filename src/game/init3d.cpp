@@ -159,6 +159,12 @@ std::vector<std::shared_ptr<m3D::DynamicTransform>> dynamicTransforms;
 bool useDynamicShapes = true;
 bool showDynamicShapesWindow = true;
 
+// Global variables for keyboard controls
+bool showCartesianPlane = false; // Hidden by default
+bool showTriangleContours = false;
+bool runMode = true; // Default to run mode
+float baseMovementSpeed = 2.5f; // Default movement speed
+
 // Forward declare static functions
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
@@ -166,10 +172,13 @@ static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 static void processInput(GLFWwindow* window);
 static void renderModelsWindow();
 static void renderLightingWindow();
+static void renderDynamicShapesWindow();
 static void setupGround();
 static void renderGround(Shader &shader);
 static bool toggleKey(int key, bool &toggleState);
 static void toggleCursor(GLFWwindow *window);
+static void renderScene(Shader &shader);
+static void setLightingUniforms(Shader &shader);
 
 // Function to generate random point lights
 void generateRandomPointLights() {
@@ -649,97 +658,30 @@ int game3d(int argc, char *argv[], const std::string& type) {
         renderLightingWindow();
         
         // Render dynamic shapes window
-        renderDynamicShapesWindow();
-        
-        // Update primitive rotations
-        updatePrimitiveRotations(deltaTime);
-        
-        // Update dynamic shapes based on time
-        updateDynamicShapes(currentFrame);
-
-        // Get the shader and activate it once before setting all uniforms
-        try {
-            Shader shader = ResourceManager::GetShader("model");
-            shader.Use();
-
-            // Set projection matrix
-            float aspectRatio = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
-            glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), aspectRatio, 0.1f, 100.0f);
-            shader.SetMatrix4("projection", projection);
-            
-            // Set view matrix
-            glm::mat4 view = camera.GetViewMatrix();
-            shader.SetMatrix4("view", view);
-
-            // Set material properties
-            shader.SetFloat("shininess", shininess);
-            shader.SetInteger("useNormalMap", useNormalMap ? 1 : 0);
-            shader.SetInteger("useSpecularMap", useSpecularMap ? 1 : 0);
-            shader.SetInteger("useDetailMap", useDetailMap ? 1 : 0);
-            shader.SetInteger("useScatterMap", useScatterMap ? 1 : 0);
-            
-            // Set light brightness adjustment uniforms
-            shader.SetFloat("pointLightBrightness", pointLightBrightness);
-            shader.SetFloat("dirLightBrightness", dirLightBrightness);
-            shader.SetFloat("spotLightBrightness", spotLightBrightness);
-            
-            // Set camera position for lighting calculations
-            shader.SetVector3f("viewPos", camera.Position);
-            
-            // Set directional light properties
-            shader.SetVector3f("dirLight.direction", dirLight.direction);
-            shader.SetVector3f("dirLight.ambient", dirLight.ambient);
-            shader.SetVector3f("dirLight.diffuse", dirLight.diffuse);
-            shader.SetVector3f("dirLight.specular", dirLight.specular);
-            shader.SetInteger("useDirLight", dirLight.enabled ? 1 : 0);
-            
-            // Set main point light properties
-            shader.SetVector3f("pointLight.position", pointLight.position);
-            shader.SetFloat("pointLight.constant", pointLight.constant);
-            shader.SetFloat("pointLight.linear", pointLight.linear);
-            shader.SetFloat("pointLight.quadratic", pointLight.quadratic);
-            shader.SetVector3f("pointLight.ambient", pointLight.ambient);
-            shader.SetVector3f("pointLight.diffuse", pointLight.diffuse);
-            shader.SetVector3f("pointLight.specular", pointLight.specular);
-            shader.SetInteger("usePointLight", pointLight.enabled ? 1 : 0);
-            
-            // Set spotlight properties
-            shader.SetVector3f("spotLight.position", spotLight.position);
-            shader.SetVector3f("spotLight.direction", spotLight.direction);
-            shader.SetFloat("spotLight.cutOff", spotLight.cutOff);
-            shader.SetFloat("spotLight.outerCutOff", spotLight.outerCutOff);
-            shader.SetFloat("spotLight.constant", spotLight.constant);
-            shader.SetFloat("spotLight.linear", spotLight.linear);
-            shader.SetFloat("spotLight.quadratic", spotLight.quadratic);
-            shader.SetVector3f("spotLight.ambient", spotLight.ambient);
-            shader.SetVector3f("spotLight.diffuse", spotLight.diffuse);
-            shader.SetVector3f("spotLight.specular", spotLight.specular);
-            shader.SetInteger("useSpotLight", spotLight.enabled ? 1 : 0);
-            
-            // Set random point lights
-            shader.SetInteger("numRandomPointLights", static_cast<int>(randomPointLights.size()));
-            shader.SetInteger("useRandomPointLights", useRandomPointLights ? 1 : 0);
-            
-            for (size_t i = 0; i < randomPointLights.size() && i < MAX_POINT_LIGHTS; i++) {
-                std::string index = std::to_string(i);
-                shader.SetVector3f(("randomPointLights[" + index + "].position").c_str(), randomPointLights[i].position);
-                shader.SetFloat(("randomPointLights[" + index + "].constant").c_str(), randomPointLights[i].constant);
-                shader.SetFloat(("randomPointLights[" + index + "].linear").c_str(), randomPointLights[i].linear);
-                shader.SetFloat(("randomPointLights[" + index + "].quadratic").c_str(), randomPointLights[i].quadratic);
-                shader.SetVector3f(("randomPointLights[" + index + "].ambient").c_str(), randomPointLights[i].ambient);
-                shader.SetVector3f(("randomPointLights[" + index + "].diffuse").c_str(), randomPointLights[i].diffuse);
-                shader.SetVector3f(("randomPointLights[" + index + "].specular").c_str(), randomPointLights[i].specular);
-            }
-            
-            // Draw the ground
-            renderGround(shader);
-            
-            // Draw all scene objects
-            scene.Draw(shader);
-            
-        } catch (const std::exception& e) {
-            std::cout << "Error in render loop: " << e.what() << std::endl;
+        if (showDynamicShapesWindow) {
+            renderDynamicShapesWindow();
         }
+        
+        // Update dynamic shapes
+        if (useDynamicShapes) {
+            updateDynamicShapes(currentFrame);
+        }
+        
+        // Configure shader for rendering
+        Shader shader = ResourceManager::GetShader("model");
+        shader.Use();
+        
+        // Set camera uniforms
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        shader.SetMatrix4("projection", projection);
+        shader.SetMatrix4("view", view);
+        
+        // Set lighting uniforms
+        setLightingUniforms(shader);
+        
+        // Render the scene
+        renderScene(shader);
         
         // Render ImGui
         Gui::Render();
@@ -1090,23 +1032,211 @@ static void processInput(GLFWwindow* window) {
         toggleCursor(window);
         std::cout << "Cursor mode toggled: " << (cursorEnabled ? "Enabled" : "Disabled") << std::endl;
     }
-       // Process movement keys
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            camera.ProcessKeyboard(Camera_Movement::CAMERA_FORWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            camera.ProcessKeyboard(Camera_Movement::CAMERA_BACKWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            camera.ProcessKeyboard(Camera_Movement::CAMERA_LEFT, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            camera.ProcessKeyboard(Camera_Movement::CAMERA_RIGHT, deltaTime);
-        
-        // Additional camera controls
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-            camera.Position.y += camera.MovementSpeed * deltaTime;
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-            camera.Position.y -= camera.MovementSpeed * deltaTime;
+    
+    // Toggle Cartesian plane visibility with P key
+    static bool pToggle = false;
+    if (toggleKey(GLFW_KEY_P, pToggle)) {
+        showCartesianPlane = !showCartesianPlane;
+        std::cout << "Cartesian plane visibility: " << (showCartesianPlane ? "Shown" : "Hidden") << std::endl;
+    }
+    
+    // Toggle triangle contours with G key
+    static bool gToggle = false;
+    if (toggleKey(GLFW_KEY_G, gToggle)) {
+        showTriangleContours = !showTriangleContours;
+        if (showTriangleContours) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Show wireframe
+            std::cout << "Triangle contours: Shown" << std::endl;
+        } else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Show filled polygons
+            std::cout << "Triangle contours: Hidden" << std::endl;
+        }
+    }
+    
+    // Toggle run/walk mode with / key
+    static bool slashToggle = false;
+    if (toggleKey(GLFW_KEY_SLASH, slashToggle)) {
+        runMode = !runMode;
+        if (runMode) {
+            camera.MovementSpeed = baseMovementSpeed;
+            std::cout << "Movement mode: Run (Speed: " << camera.MovementSpeed << ")" << std::endl;
+        } else {
+            camera.MovementSpeed = baseMovementSpeed * 0.5f;
+            std::cout << "Movement mode: Walk (Speed: " << camera.MovementSpeed << ")" << std::endl;
+        }
+    }
+    
+    // Manually increase speed with ] key
+    static bool rightBracketToggle = false;
+    if (toggleKey(GLFW_KEY_RIGHT_BRACKET, rightBracketToggle)) {
+        baseMovementSpeed += 0.5f;
+        if (runMode) {
+            camera.MovementSpeed = baseMovementSpeed;
+        } else {
+            camera.MovementSpeed = baseMovementSpeed * 0.5f;
+        }
+        std::cout << "Movement speed increased to: " << camera.MovementSpeed << std::endl;
+    }
+    
+    // Manually decrease speed with [ key
+    static bool leftBracketToggle = false;
+    if (toggleKey(GLFW_KEY_LEFT_BRACKET, leftBracketToggle)) {
+        baseMovementSpeed = std::max(0.5f, baseMovementSpeed - 0.5f);
+        if (runMode) {
+            camera.MovementSpeed = baseMovementSpeed;
+        } else {
+            camera.MovementSpeed = baseMovementSpeed * 0.5f;
+        }
+        std::cout << "Movement speed decreased to: " << camera.MovementSpeed << std::endl;
+    }
+    
+    // Zoom in with = key
+    static bool equalToggle = false;
+    if (toggleKey(GLFW_KEY_EQUAL, equalToggle)) {
+        camera.Zoom = std::max(1.0f, camera.Zoom - 1.0f);
+        std::cout << "Zoom level: " << camera.Zoom << std::endl;
+    }
+    
+    // Zoom out with - key
+    static bool minusToggle = false;
+    if (toggleKey(GLFW_KEY_MINUS, minusToggle)) {
+        camera.Zoom = std::min(45.0f, camera.Zoom + 1.0f);
+        std::cout << "Zoom level: " << camera.Zoom << std::endl;
+    }
+    
+    // Check for shift key (faster movement)
+    float speedMultiplier = 1.0f;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || 
+        glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+        speedMultiplier = 2.0f; // Double speed when shift is pressed
+    }
+    
+    // Check for ctrl key (slower movement)
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || 
+        glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+        speedMultiplier = 0.5f; // Half speed when ctrl is pressed
+    }
+    
+    // Apply speed multiplier to camera
+    float originalSpeed = camera.MovementSpeed;
+    camera.MovementSpeed *= speedMultiplier;
+    
+    // Process movement keys
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.ProcessKeyboard(Camera_Movement::CAMERA_FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.ProcessKeyboard(Camera_Movement::CAMERA_BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.ProcessKeyboard(Camera_Movement::CAMERA_LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.ProcessKeyboard(Camera_Movement::CAMERA_RIGHT, deltaTime);
+    
+    // Additional camera controls
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        camera.Position.y += camera.MovementSpeed * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        camera.Position.y -= camera.MovementSpeed * deltaTime;
+    
+    // Reset camera speed to original value
+    camera.MovementSpeed = originalSpeed;
 }
 
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+}
+
+// Function to render the scene with the CartesianPlane visibility check
+void renderScene(Shader &shader) {
+    // Render the ground
+    renderGround(shader);
+    
+    // Render models
+    for (auto& model : models) {
+        model->Draw(shader);
+    }
+    
+    // Render primitive shapes
+    for (auto& shape : primitiveShapes) {
+        if (shape) {
+            shape->Draw(shader);
+        }
+    }
+    
+    // Render dynamic shapes
+    if (useDynamicShapes) {
+        for (auto& shape : dynamicShapes) {
+            // Skip CartesianPlane objects if they should be hidden
+            std::string name = shape->name;
+            if (!showCartesianPlane && 
+                (name.find("CartesianPlane") != std::string::npos || 
+                 name.find("WhiteGridCube") != std::string::npos)) {
+                continue; // Skip rendering this shape
+            }
+            
+            shape->Draw(shader);
+        }
+    }
+}
+
+// Function to set lighting uniforms
+void setLightingUniforms(Shader &shader) {
+    // Set material properties
+    shader.SetFloat("shininess", shininess);
+    shader.SetInteger("useNormalMap", useNormalMap ? 1 : 0);
+    shader.SetInteger("useSpecularMap", useSpecularMap ? 1 : 0);
+    shader.SetInteger("useDetailMap", useDetailMap ? 1 : 0);
+    shader.SetInteger("useScatterMap", useScatterMap ? 1 : 0);
+    
+    // Set light brightness adjustment uniforms
+    shader.SetFloat("pointLightBrightness", pointLightBrightness);
+    shader.SetFloat("dirLightBrightness", dirLightBrightness);
+    shader.SetFloat("spotLightBrightness", spotLightBrightness);
+    
+    // Set camera position for lighting calculations
+    shader.SetVector3f("viewPos", camera.Position);
+    
+    // Set directional light properties
+    shader.SetVector3f("dirLight.direction", dirLight.direction);
+    shader.SetVector3f("dirLight.ambient", dirLight.ambient);
+    shader.SetVector3f("dirLight.diffuse", dirLight.diffuse);
+    shader.SetVector3f("dirLight.specular", dirLight.specular);
+    shader.SetInteger("useDirLight", dirLight.enabled ? 1 : 0);
+    
+    // Set main point light properties
+    shader.SetVector3f("pointLight.position", pointLight.position);
+    shader.SetFloat("pointLight.constant", pointLight.constant);
+    shader.SetFloat("pointLight.linear", pointLight.linear);
+    shader.SetFloat("pointLight.quadratic", pointLight.quadratic);
+    shader.SetVector3f("pointLight.ambient", pointLight.ambient);
+    shader.SetVector3f("pointLight.diffuse", pointLight.diffuse);
+    shader.SetVector3f("pointLight.specular", pointLight.specular);
+    shader.SetInteger("usePointLight", pointLight.enabled ? 1 : 0);
+    
+    // Set spotlight properties
+    shader.SetVector3f("spotLight.position", spotLight.position);
+    shader.SetVector3f("spotLight.direction", spotLight.direction);
+    shader.SetFloat("spotLight.cutOff", spotLight.cutOff);
+    shader.SetFloat("spotLight.outerCutOff", spotLight.outerCutOff);
+    shader.SetFloat("spotLight.constant", spotLight.constant);
+    shader.SetFloat("spotLight.linear", spotLight.linear);
+    shader.SetFloat("spotLight.quadratic", spotLight.quadratic);
+    shader.SetVector3f("spotLight.ambient", spotLight.ambient);
+    shader.SetVector3f("spotLight.diffuse", spotLight.diffuse);
+    shader.SetVector3f("spotLight.specular", spotLight.specular);
+    shader.SetInteger("useSpotLight", spotLight.enabled ? 1 : 0);
+    
+    // Set random point lights
+    shader.SetInteger("numRandomPointLights", static_cast<int>(randomPointLights.size()));
+    shader.SetInteger("useRandomPointLights", useRandomPointLights ? 1 : 0);
+    
+    for (size_t i = 0; i < randomPointLights.size() && i < MAX_POINT_LIGHTS; i++) {
+        std::string index = std::to_string(i);
+        shader.SetVector3f(("randomPointLights[" + index + "].position").c_str(), randomPointLights[i].position);
+        shader.SetFloat(("randomPointLights[" + index + "].constant").c_str(), randomPointLights[i].constant);
+        shader.SetFloat(("randomPointLights[" + index + "].linear").c_str(), randomPointLights[i].linear);
+        shader.SetFloat(("randomPointLights[" + index + "].quadratic").c_str(), randomPointLights[i].quadratic);
+        shader.SetVector3f(("randomPointLights[" + index + "].ambient").c_str(), randomPointLights[i].ambient);
+        shader.SetVector3f(("randomPointLights[" + index + "].diffuse").c_str(), randomPointLights[i].diffuse);
+        shader.SetVector3f(("randomPointLights[" + index + "].specular").c_str(), randomPointLights[i].specular);
+    }
 } 
