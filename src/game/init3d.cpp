@@ -12,6 +12,8 @@
 #include <unistd.h> // For getcwd
 #include <random>
 #include <ctime>
+#include "../render/Scene.h"
+#include "../render/ModelObject.h"
 
 // Define the dimensions
 const unsigned SCREEN_WIDTH = WIDTH;
@@ -36,6 +38,10 @@ std::vector<glm::vec3> modelRotations;
 std::vector<glm::vec3> modelScales;
 bool showModelsWindow = true;
 int selectedModel = 0;
+
+// Scene management
+Scene scene;
+std::vector<std::string> modelNames;
 
 // Light variables - make them static to avoid linker errors
 // Directional light
@@ -77,8 +83,8 @@ struct SpotLight {
 // Light instances
 static DirLight dirLight = {
     glm::vec3(-0.2f, -1.0f, -0.3f),  // direction
-    glm::vec3(0.2f, 0.2f, 0.2f),     // ambient - increased from 0.1 to 0.2
-    glm::vec3(0.8f, 0.8f, 0.8f),     // diffuse - increased from 0.4 to 0.8
+    glm::vec3(0.4f, 0.4f, 0.4f),     // ambient - increased from 0.2 to 0.4
+    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse - increased from 0.8 to 1.0
     glm::vec3(1.0f, 1.0f, 1.0f),     // specular - already at max
     true                             // enabled
 };
@@ -89,24 +95,24 @@ static PointLight pointLight = {
     1.0f,                            // constant
     0.09f,                           // linear
     0.032f,                          // quadratic
-    glm::vec3(0.1f, 0.1f, 0.1f),     // ambient
-    glm::vec3(0.8f, 0.8f, 0.8f),     // diffuse
-    glm::vec3(1.0f, 1.0f, 1.0f),     // specular
+    glm::vec3(0.2f, 0.2f, 0.2f),     // ambient - increased from 0.1 to 0.2
+    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse - increased from 0.8 to 1.0
+    glm::vec3(1.0f, 1.0f, 1.0f),     // specular - already at max
     true                             // enabled
 };
 
-// Update the spotlight to be enabled by default
+// Update the spotlight to be enabled by default and increase brightness
 static SpotLight spotLight = {
-    glm::vec3(0.0f, 5.0f, 0.0f),     // position
-    glm::vec3(0.0f, -1.0f, 0.0f),    // direction
-    glm::cos(glm::radians(12.5f)),   // cutOff
-    glm::cos(glm::radians(17.5f)),   // outerCutOff
+    glm::vec3(0.0f, 10.0f, 0.0f),     // position - raised higher for better coverage
+    glm::vec3(0.0f, -1.0f, 0.0f),    // direction - pointing straight down
+    glm::cos(glm::radians(15.0f)),   // cutOff - slightly wider beam
+    glm::cos(glm::radians(20.0f)),   // outerCutOff - slightly wider outer beam
     1.0f,                            // constant
-    0.09f,                           // linear
-    0.032f,                          // quadratic
+    0.01f,                           // linear - decreased further for less attenuation
+    0.001f,                          // quadratic - decreased further for less attenuation
     glm::vec3(0.0f, 0.0f, 0.0f),     // ambient - keep at 0
-    glm::vec3(2.0f, 2.0f, 2.0f),     // diffuse - doubled from 1.0 to 2.0
-    glm::vec3(2.0f, 2.0f, 2.0f),     // specular - doubled from 1.0 to 2.0
+    glm::vec3(5.0f, 5.0f, 5.0f),     // diffuse - increased significantly
+    glm::vec3(5.0f, 5.0f, 5.0f),     // specular - increased significantly
     true                             // enabled (now true by default)
 };
 
@@ -114,6 +120,7 @@ static SpotLight spotLight = {
 const int MAX_POINT_LIGHTS = 20;
 std::vector<PointLight> randomPointLights;
 float MIN_DISTANCE_BETWEEN_LIGHTS = 10.0f; // Minimum distance between lights - now non-const
+bool useRandomPointLights = true; // Enable random point lights by default
 
 // Material settings
 static float shininess = 32.0f;
@@ -129,9 +136,9 @@ unsigned int groundTexture = 0;
 unsigned int groundNormalTexture = 0;
 
 // Add these variables after the material settings
-static float pointLightBrightness = 0.002f; // 120% lower (0.2 - 0.12 = 0.08)
-static float dirLightBrightness = 0.6f;    // 40% higher
-static float spotLightBrightness = 4.5f;   // 80% higher
+static float pointLightBrightness = 0.05f; // Increased from 0.5 to 0.8
+static float dirLightBrightness = 1.7f;   // Increased from 2.0 to 2.5
+static float spotLightBrightness = 1.0f;  // Increased from 2.5 to 4.0
 
 // Forward declare static functions
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -147,63 +154,223 @@ static void toggleCursor(GLFWwindow *window);
 
 // Function to generate random point lights
 void generateRandomPointLights() {
-    // Seed the random number generator
+    // Clear existing random lights
+    randomPointLights.clear();
+    
+    // If random lights are disabled, return early
+    if (!useRandomPointLights) {
+        return;
+    }
+    
+    // Random number generation
     std::random_device rd;
     std::mt19937 gen(rd());
     
-    // Define distributions for position, color, and attenuation
-    std::uniform_real_distribution<float> posDistX(-50.0f, 50.0f);
+    // Position distributions
+    std::uniform_real_distribution<float> posDistX(-20.0f, 20.0f);
     std::uniform_real_distribution<float> posDistY(0.5f, 10.0f);
-    std::uniform_real_distribution<float> posDistZ(-50.0f, 50.0f);
+    std::uniform_real_distribution<float> posDistZ(-20.0f, 20.0f);
     
+    // Color distribution
     std::uniform_real_distribution<float> colorDist(0.5f, 1.0f);
-    std::uniform_real_distribution<float> attenuationDist(0.001f, 0.01f);
     
-    // Clear existing lights
-    randomPointLights.clear();
+    // Attenuation distributions
+    std::uniform_real_distribution<float> constantDist(0.5f, 1.0f);
+    std::uniform_real_distribution<float> linearDist(0.01f, 0.1f);
+    std::uniform_real_distribution<float> quadraticDist(0.001f, 0.01f);
     
-    // Try to generate MAX_POINT_LIGHTS lights
-    int attempts = 0;
-    const int maxAttempts = 1000; // Prevent infinite loop
+    // Number of lights to generate
+    const int NUM_LIGHTS = 10;
     
-    while (randomPointLights.size() < MAX_POINT_LIGHTS && attempts < maxAttempts) {
-        attempts++;
-        
-        // Generate random position
+    // Generate random lights
+    for (int i = 0; i < NUM_LIGHTS; i++) {
+        // Generate a random position
         glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
         
-        // Check distance from existing lights
-        bool tooClose = false;
+        // Check if this position is far enough from existing lights
+        bool validPosition = true;
         for (const auto& light : randomPointLights) {
-            if (glm::distance(position, light.position) < MIN_DISTANCE_BETWEEN_LIGHTS) {
-                tooClose = true;
+            float distance = glm::length(position - light.position);
+            if (distance < MIN_DISTANCE_BETWEEN_LIGHTS) {
+                validPosition = false;
                 break;
             }
         }
         
-        if (!tooClose) {
-            // Generate random color
-            glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
-            
-            // Create new point light
-            PointLight light = {
-                position,                   // position
-                1.0f,                       // constant
-                0.09f,                      // linear
-                attenuationDist(gen),       // quadratic - random for variety
-                color * 0.1f,               // ambient - 10% of color
-                color,                      // diffuse - full color
-                color,                      // specular - full color
-                true                        // enabled
-            };
-            
-            randomPointLights.push_back(light);
-            std::cout << "Added random point light at position: (" 
-                      << position.x << ", " << position.y << ", " << position.z << ")" << std::endl;
+        // If position is not valid, try again
+        if (!validPosition) {
+            i--; // Retry this iteration
+            continue;
         }
+        
+        // Generate a random color
+        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+        
+        // Create the light
+        PointLight light;
+        light.position = position;
+        light.ambient = color * 0.1f;
+        light.diffuse = color;
+        light.specular = color;
+        light.constant = constantDist(gen);
+        light.linear = linearDist(gen);
+        light.quadratic = quadraticDist(gen);
+        light.enabled = true;
+        
+        // Add to the list
+        randomPointLights.push_back(light);
     }
     
     std::cout << "Generated " << randomPointLights.size() << " random point lights" << std::endl;
+}
+
+// Function to load models using the Scene class
+void loadModels(const std::string& modelBasePath, const std::string& binModelBasePath) {
+    std::cout << "Starting to load models using Scene class..." << std::endl;
+    
+    // Function to check both regular and bin paths for models
+    auto findModelPath = [&](const std::string& relativePath) -> std::string {
+        std::string regularPath = modelBasePath + "/" + relativePath;
+        std::string binPath = binModelBasePath + "/" + relativePath;
+        
+        std::ifstream regularFile(regularPath);
+        if (regularFile.good()) {
+            std::cout << "Found model at: " << regularPath << std::endl;
+            return regularPath;
+        }
+        
+        std::ifstream binFile(binPath);
+        if (binFile.good()) {
+            std::cout << "Found model at bin path: " << binPath << std::endl;
+            return binPath;
+        }
+        
+        std::cout << "Model not found at either path: " << regularPath << " or " << binPath << std::endl;
+        return regularPath; // Return regular path anyway, will fail with proper error
+    };
+    
+    // Load backpack model
+    try {
+        std::string backpackPath = findModelPath("backpack/backpack.obj");
+        std::cout << "Attempting to load backpack model from " << backpackPath << std::endl;
+        
+        // Check if file exists
+        std::ifstream backpackFile(backpackPath);
+        if (!backpackFile.good()) {
+            std::cout << "Backpack model file does not exist or cannot be opened!" << std::endl;
+        } else {
+            std::cout << "Backpack model file exists and can be opened." << std::endl;
+            backpackFile.close();
+            
+            auto backpackObj = scene.CreateModelObject(
+                "Backpack", 
+                backpackPath, 
+                glm::vec3(0.0f, 1.5f, 0.0f),  // Position above ground (adjusted for lowered ground)
+                glm::vec3(0.0f, 0.0f, 0.0f),  // No rotation
+                glm::vec3(1.0f, 1.0f, 1.0f)   // Normal scale
+            );
+            
+            if (backpackObj) {
+                modelNames.push_back("Backpack");
+                std::cout << "Successfully loaded backpack model" << std::endl;
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cout << "Failed to load backpack model: " << e.what() << std::endl;
+    }
+    
+    // Load mansion model
+    try {
+        std::string mansionPath = findModelPath("low_poly_mansion__house/scene.gltf");
+        std::cout << "Attempting to load mansion model from " << mansionPath << std::endl;
+        
+        // Check if file exists
+        std::ifstream mansionFile(mansionPath);
+        if (!mansionFile.good()) {
+            std::cout << "Mansion model file does not exist or cannot be opened!" << std::endl;
+        } else {
+            std::cout << "Mansion model file exists and can be opened." << std::endl;
+            mansionFile.close();
+            
+            // Use a much smaller scale for the mansion (0.00625 instead of 0.05, 800% smaller)
+            auto mansionObj = scene.CreateModelObject(
+                "Mansion", 
+                mansionPath, 
+                glm::vec3(-10.0f, -0.5f, -10.0f),  // Position on ground (adjusted for lowered ground)
+                glm::vec3(0.0f, 45.0f, 0.0f),     // Rotate 45 degrees
+                glm::vec3(0.00625f, 0.00625f, 0.00625f)    // 800% smaller scale
+            );
+            
+            if (mansionObj) {
+                modelNames.push_back("Mansion");
+                std::cout << "Successfully loaded mansion model" << std::endl;
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cout << "Failed to load mansion model: " << e.what() << std::endl;
+    }
+    
+    // Load tiptup model
+    try {
+        std::string tiptupPath = findModelPath("n64/Tiptup/ObjectTortRunner.obj");
+        std::cout << "Attempting to load tiptup model from " << tiptupPath << std::endl;
+        
+        // Check if file exists
+        std::ifstream tiptupFile(tiptupPath);
+        if (!tiptupFile.good()) {
+            std::cout << "Tiptup model file does not exist or cannot be opened!" << std::endl;
+        } else {
+            std::cout << "Tiptup model file exists and can be opened." << std::endl;
+            tiptupFile.close();
+            
+            auto tiptupObj = scene.CreateModelObject(
+                "Tiptup", 
+                tiptupPath, 
+                glm::vec3(5.0f, 0.0f, 5.0f),      // Position on ground (adjusted for lowered ground)
+                glm::vec3(0.0f, 180.0f, 0.0f),    // Rotate 180 degrees
+                glm::vec3(0.5f, 0.5f, 0.5f)       // Half scale
+            );
+            
+            if (tiptupObj) {
+                modelNames.push_back("Tiptup");
+                std::cout << "Successfully loaded tiptup model" << std::endl;
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cout << "Failed to load tiptup model: " << e.what() << std::endl;
+    }
+    
+    // Load terry model
+    try {
+        std::string terryPath = findModelPath("n64/Terry/ObjectTerryboss.obj");
+        std::cout << "Attempting to load terry model from " << terryPath << std::endl;
+        
+        // Check if file exists
+        std::ifstream terryFile(terryPath);
+        if (!terryFile.good()) {
+            std::cout << "Terry model file does not exist or cannot be opened!" << std::endl;
+        } else {
+            std::cout << "Terry model file exists and can be opened." << std::endl;
+            terryFile.close();
+            
+            auto terryObj = scene.CreateModelObject(
+                "Terry", 
+                terryPath, 
+                glm::vec3(-5.0f, -0.5f, 5.0f),     // Position on ground (adjusted for lowered ground)
+                glm::vec3(0.0f, 135.0f, 0.0f),    // Rotate 135 degrees
+                glm::vec3(0.02f, 0.02f, 0.02f)    // Very small scale
+            );
+            
+            if (terryObj) {
+                modelNames.push_back("Terry");
+                std::cout << "Successfully loaded terry model" << std::endl;
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cout << "Failed to load terry model: " << e.what() << std::endl;
+    }
+    
+    std::cout << "Loaded " << scene.GetObjectCount() << " models successfully" << std::endl;
 }
 
 int game3d(int argc, char *argv[], const std::string& type) {
@@ -348,148 +515,12 @@ int game3d(int argc, char *argv[], const std::string& type) {
     // Setup ground plane with improved textures
     setupGround();
     
-    // Generate random point lights
-    generateRandomPointLights();
+    // Initialize random point lights
+    useRandomPointLights = false; // Start with random lights disabled
     
-    // Load models with absolute paths
-    std::string modelBasePath = std::string(cwd) + "/models";
-    std::cout << "Model base path: " << modelBasePath << std::endl;
+    // Load models using the Scene class
+    loadModels(currentDir, std::string(cwd) + "/bin/models");
     
-    // Also check bin/models directory
-    std::string binModelBasePath = std::string(cwd) + "/bin/models";
-    std::cout << "Checking bin model path: " << binModelBasePath << std::endl;
-    
-    // Log the contents of both model directories
-    std::cout << "\n=== Contents of models directory ===\n";
-    system("find models -type f -name \"*.obj\" -o -name \"*.gltf\" 2>/dev/null || echo 'No model files found'");
-    
-    std::cout << "\n=== Contents of bin/models directory ===\n";
-    system("find bin/models -type f -name \"*.obj\" -o -name \"*.gltf\" 2>/dev/null || echo 'No model files found'");
-    
-    try {
-        Shader shader = ResourceManager::GetShader("model");
-        std::cout << "Shader ID: " << shader.ID << std::endl;
-    } catch (const std::exception& e) {
-        std::cout << "Failed to get model shader: " << e.what() << std::endl;
-    }
-    
-    std::cout << "Starting to load models..." << std::endl;
-    
-    // Function to check both regular and bin paths for models
-    auto findModelPath = [&](const std::string& relativePath) -> std::string {
-        std::string regularPath = modelBasePath + "/" + relativePath;
-        std::string binPath = binModelBasePath + "/" + relativePath;
-        
-        std::ifstream regularFile(regularPath);
-        if (regularFile.good()) {
-            std::cout << "Found model at: " << regularPath << std::endl;
-            return regularPath;
-        }
-        
-        std::ifstream binFile(binPath);
-        if (binFile.good()) {
-            std::cout << "Found model at bin path: " << binPath << std::endl;
-            return binPath;
-        }
-        
-        std::cout << "Model not found at either path: " << regularPath << " or " << binPath << std::endl;
-        return regularPath; // Return regular path anyway, will fail with proper error
-    };
-    
-    // Load backpack model
-    try {
-        std::string backpackPath = findModelPath("backpack/backpack.obj");
-        std::cout << "Attempting to load backpack model from " << backpackPath << std::endl;
-        
-        // Check if file exists
-        std::ifstream backpackFile(backpackPath);
-        if (!backpackFile.good()) {
-            std::cout << "Backpack model file does not exist or cannot be opened!" << std::endl;
-        } else {
-            std::cout << "Backpack model file exists and can be opened." << std::endl;
-            backpackFile.close();
-            
-            models.push_back(new m3D::Model(backpackPath));
-            std::cout << "Successfully loaded backpack model" << std::endl;
-            modelPositions.push_back(glm::vec3(0.0f, 2.0f, 0.0f)); // Position above ground
-            modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-            modelScales.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Failed to load backpack model: " << e.what() << std::endl;
-    }
-    
-    // Load mansion model
-    try {
-        std::string mansionPath = findModelPath("low_poly_mansion__house/scene.gltf");
-        std::cout << "Attempting to load mansion model from " << mansionPath << std::endl;
-        
-        // Check if file exists
-        std::ifstream mansionFile(mansionPath);
-        if (!mansionFile.good()) {
-            std::cout << "Mansion model file does not exist or cannot be opened!" << std::endl;
-        } else {
-            std::cout << "Mansion model file exists and can be opened." << std::endl;
-            mansionFile.close();
-            
-            models.push_back(new m3D::Model(mansionPath));
-            std::cout << "Successfully loaded mansion model" << std::endl;
-            modelPositions.push_back(glm::vec3(-10.0f, 0.0f, -10.0f)); // Position on ground
-            modelRotations.push_back(glm::vec3(0.0f, 45.0f, 0.0f));
-            modelScales.push_back(glm::vec3(0.1f, 0.1f, 0.1f));
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Failed to load mansion model: " << e.what() << std::endl;
-    }
-    
-    // Load tiptup model
-    try {
-        std::string tiptupPath = findModelPath("n64/Tiptup/ObjectTortRunner.obj");
-        std::cout << "Attempting to load tiptup model from " << tiptupPath << std::endl;
-        
-        // Check if file exists
-        std::ifstream tiptupFile(tiptupPath);
-        if (!tiptupFile.good()) {
-            std::cout << "Tiptup model file does not exist or cannot be opened!" << std::endl;
-        } else {
-            std::cout << "Tiptup model file exists and can be opened." << std::endl;
-            tiptupFile.close();
-            
-            models.push_back(new m3D::Model(tiptupPath));
-            std::cout << "Successfully loaded tiptup model" << std::endl;
-            modelPositions.push_back(glm::vec3(5.0f, 0.5f, 5.0f)); // Position slightly above ground
-            modelRotations.push_back(glm::vec3(0.0f, 180.0f, 0.0f));
-            modelScales.push_back(glm::vec3(0.5f, 0.5f, 0.5f));
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Failed to load tiptup model: " << e.what() << std::endl;
-    }
-    
-    // Load terry model
-    try {
-        std::string terryPath = findModelPath("n64/Terry/ObjectTerryboss.obj");
-        std::cout << "Attempting to load terry model from " << terryPath << std::endl;
-        
-        // Check if file exists
-        std::ifstream terryFile(terryPath);
-        if (!terryFile.good()) {
-            std::cout << "Terry model file does not exist or cannot be opened!" << std::endl;
-        } else {
-            std::cout << "Terry model file exists and can be opened." << std::endl;
-            terryFile.close();
-            
-            models.push_back(new m3D::Model(terryPath));
-            std::cout << "Successfully loaded terry model" << std::endl;
-            modelPositions.push_back(glm::vec3(-5.0f, 0.0f, 5.0f)); // Position on ground
-            modelRotations.push_back(glm::vec3(0.0f, 135.0f, 0.0f));
-            modelScales.push_back(glm::vec3(0.02f, 0.02f, 0.02f));
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Failed to load terry model: " << e.what() << std::endl;
-    }
-    
-    std::cout << "Loaded " << models.size() << " models successfully" << std::endl;
-
     // Game loop
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -514,6 +545,15 @@ int game3d(int argc, char *argv[], const std::string& type) {
         try {
             Shader shader = ResourceManager::GetShader("model");
             shader.Use();
+
+            // Set projection matrix
+            float aspectRatio = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
+            glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), aspectRatio, 0.1f, 100.0f);
+            shader.SetMatrix4("projection", projection);
+            
+            // Set view matrix
+            glm::mat4 view = camera.GetViewMatrix();
+            shader.SetMatrix4("view", view);
 
             // Set material properties
             shader.SetFloat("shininess", shininess);
@@ -547,22 +587,7 @@ int game3d(int argc, char *argv[], const std::string& type) {
             shader.SetVector3f("pointLight.specular", pointLight.specular);
             shader.SetInteger("usePointLight", pointLight.enabled ? 1 : 0);
             
-            // Set random point lights
-            shader.SetInteger("numRandomPointLights", static_cast<int>(randomPointLights.size()));
-            shader.SetInteger("useRandomPointLights", !randomPointLights.empty() ? 1 : 0);
-            
-            for (size_t i = 0; i < randomPointLights.size() && i < MAX_POINT_LIGHTS; i++) {
-                std::string prefix = "randomPointLights[" + std::to_string(i) + "].";
-                shader.SetVector3f((prefix + "position").c_str(), randomPointLights[i].position);
-                shader.SetFloat((prefix + "constant").c_str(), randomPointLights[i].constant);
-                shader.SetFloat((prefix + "linear").c_str(), randomPointLights[i].linear);
-                shader.SetFloat((prefix + "quadratic").c_str(), randomPointLights[i].quadratic);
-                shader.SetVector3f((prefix + "ambient").c_str(), randomPointLights[i].ambient);
-                shader.SetVector3f((prefix + "diffuse").c_str(), randomPointLights[i].diffuse);
-                shader.SetVector3f((prefix + "specular").c_str(), randomPointLights[i].specular);
-            }
-            
-            // Set spot light properties
+            // Set spotlight properties
             shader.SetVector3f("spotLight.position", spotLight.position);
             shader.SetVector3f("spotLight.direction", spotLight.direction);
             shader.SetFloat("spotLight.cutOff", spotLight.cutOff);
@@ -575,54 +600,27 @@ int game3d(int argc, char *argv[], const std::string& type) {
             shader.SetVector3f("spotLight.specular", spotLight.specular);
             shader.SetInteger("useSpotLight", spotLight.enabled ? 1 : 0);
             
-            // For normal mapping in vertex shader
-            shader.SetVector3f("lightPos", pointLight.position);
+            // Set random point lights
+            shader.SetInteger("numRandomPointLights", static_cast<int>(randomPointLights.size()));
+            shader.SetInteger("useRandomPointLights", useRandomPointLights ? 1 : 0);
             
-            // Only log every 100 frames to avoid spamming the console
-            static int frameCount = 0;
-            if (frameCount % 100 == 0) {
-                std::cout << "Rendering with point light position: (" 
-                          << pointLight.position.x << ", " 
-                          << pointLight.position.y << ", " 
-                          << pointLight.position.z << ")" << std::endl;
-                          
-                std::cout << "Camera position: (" 
-                          << camera.Position.x << ", " 
-                          << camera.Position.y << ", " 
-                          << camera.Position.z << ")" << std::endl;
+            for (size_t i = 0; i < randomPointLights.size() && i < MAX_POINT_LIGHTS; i++) {
+                std::string index = std::to_string(i);
+                shader.SetVector3f(("randomPointLights[" + index + "].position").c_str(), randomPointLights[i].position);
+                shader.SetFloat(("randomPointLights[" + index + "].constant").c_str(), randomPointLights[i].constant);
+                shader.SetFloat(("randomPointLights[" + index + "].linear").c_str(), randomPointLights[i].linear);
+                shader.SetFloat(("randomPointLights[" + index + "].quadratic").c_str(), randomPointLights[i].quadratic);
+                shader.SetVector3f(("randomPointLights[" + index + "].ambient").c_str(), randomPointLights[i].ambient);
+                shader.SetVector3f(("randomPointLights[" + index + "].diffuse").c_str(), randomPointLights[i].diffuse);
+                shader.SetVector3f(("randomPointLights[" + index + "].specular").c_str(), randomPointLights[i].specular);
             }
-            frameCount++;
-
-            // Pass projection matrix
-            glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 
-                (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
-            shader.SetMatrix4("projection", projection);
-
-            // Camera/view transformation
-            glm::mat4 view = camera.GetViewMatrix();
-            shader.SetMatrix4("view", view);
-
-            // Render ground
+            
+            // Draw the ground
             renderGround(shader);
             
-            // Render models
-            for (size_t i = 0; i < models.size(); i++) {
-                // Calculate model matrix
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, modelPositions[i]);
-                model = glm::rotate(model, glm::radians(modelRotations[i].x), glm::vec3(1.0f, 0.0f, 0.0f));
-                model = glm::rotate(model, glm::radians(modelRotations[i].y), glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::rotate(model, glm::radians(modelRotations[i].z), glm::vec3(0.0f, 0.0f, 1.0f));
-                model = glm::scale(model, modelScales[i]);
-                shader.SetMatrix4("model", model);
-                
-                // Draw the model
-                try {
-                    models[i]->Draw(shader);
-                } catch (const std::exception& e) {
-                    std::cout << "Error drawing model " << i << ": " << e.what() << std::endl;
-                }
-            }
+            // Draw all scene objects
+            scene.Draw(shader);
+            
         } catch (const std::exception& e) {
             std::cout << "Error in render loop: " << e.what() << std::endl;
         }
@@ -630,15 +628,23 @@ int game3d(int argc, char *argv[], const std::string& type) {
         // Render ImGui
         Gui::Render();
 
+        // Check if random lights need to be updated
+        static bool prevRandomLightsState = useRandomPointLights;
+        if (useRandomPointLights != prevRandomLightsState) {
+            if (useRandomPointLights) {
+                generateRandomPointLights();
+            } else {
+                randomPointLights.clear();
+            }
+            prevRandomLightsState = useRandomPointLights;
+        }
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     // Cleanup
-    for (auto model : models) {
-        delete model;
-    }
-    models.clear();
+    scene.Clear();
     
     // Clean up ground resources
     if (groundVAO) {
@@ -653,16 +659,16 @@ int game3d(int argc, char *argv[], const std::string& type) {
 }
 
 static void setupGround() {
-    // Create a large ground plane
+    // Create a large ground plane - lowered by 50% (y = -0.5f instead of 0.0f)
     float groundVertices[] = {
         // positions          // normals           // texture coords  // tangent                // bitangent
-        -50.0f, 0.0f, -50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 0.0f,       1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
-         50.0f, 0.0f, -50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 0.0f,      1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
-         50.0f, 0.0f,  50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 50.0f,     1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
+        -50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 0.0f,       1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
+         50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 0.0f,      1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
+         50.0f, -0.5f,  50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 50.0f,     1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
          
-        -50.0f, 0.0f, -50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 0.0f,       1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
-         50.0f, 0.0f,  50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 50.0f,     1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
-        -50.0f, 0.0f,  50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 50.0f,      1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f
+        -50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 0.0f,       1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
+         50.0f, -0.5f,  50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 50.0f,     1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
+        -50.0f, -0.5f,  50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 50.0f,      1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f
     };
     
     // Generate and bind VAO and VBO
@@ -786,49 +792,44 @@ static void renderGround(Shader &shader) {
 
 static void renderModelsWindow() {
     if (showModelsWindow) {
-        // Set window position and size
-        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Models", &showModelsWindow);
         
-        ImGui::Begin("3D Scene Controls", &showModelsWindow, ImGuiWindowFlags_AlwaysAutoResize);
-        
-        // Add controls info
-        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Controls:");
-        ImGui::Text("WASD - Move camera");
-        ImGui::Text("QE - Move up/down");
-        ImGui::Text("Enter - Toggle cursor mode");
-        ImGui::Text("Escape - Exit");
-        ImGui::Separator();
-        
-        ImGui::Text("Models loaded: %zu", models.size());
-        ImGui::Separator();
-        
-        // Model selection
-        if (models.size() > 0) {
-            const char* modelNames[] = {"Backpack", "Mansion", "Tiptup", "Terry"};
-            int maxModel = std::min(static_cast<int>(models.size()), static_cast<int>(IM_ARRAYSIZE(modelNames)));
-            ImGui::Combo("Select Model", &selectedModel, modelNames, maxModel);
+        if (scene.GetObjectCount() > 0) {
+            const char* items[modelNames.size()];
+            for (size_t i = 0; i < modelNames.size(); i++) {
+                items[i] = modelNames[i].c_str();
+            }
             
-            if (selectedModel >= 0 && selectedModel < models.size()) {
-                ImGui::Text("Model: %s", modelNames[selectedModel]);
+            ImGui::Combo("Select Model", &selectedModel, items, modelNames.size());
+            
+            if (selectedModel >= 0 && selectedModel < modelNames.size()) {
+                std::string modelName = modelNames[selectedModel];
+                auto modelObj = scene.GetModelObject(modelName);
                 
-                // Position controls
-                ImGui::Text("Position");
-                ImGui::SliderFloat("X##Pos", &modelPositions[selectedModel].x, -20.0f, 20.0f);
-                ImGui::SliderFloat("Y##Pos", &modelPositions[selectedModel].y, -20.0f, 20.0f);
-                ImGui::SliderFloat("Z##Pos", &modelPositions[selectedModel].z, -20.0f, 20.0f);
-                
-                // Rotation controls
-                ImGui::Text("Rotation");
-                ImGui::SliderFloat("X##Rot", &modelRotations[selectedModel].x, 0.0f, 360.0f);
-                ImGui::SliderFloat("Y##Rot", &modelRotations[selectedModel].y, 0.0f, 360.0f);
-                ImGui::SliderFloat("Z##Rot", &modelRotations[selectedModel].z, 0.0f, 360.0f);
-                
-                // Scale controls
-                ImGui::Text("Scale");
-                ImGui::SliderFloat("X##Scale", &modelScales[selectedModel].x, 0.1f, 5.0f);
-                ImGui::SliderFloat("Y##Scale", &modelScales[selectedModel].y, 0.1f, 5.0f);
-                ImGui::SliderFloat("Z##Scale", &modelScales[selectedModel].z, 0.1f, 5.0f);
+                if (modelObj) {
+                    ImGui::Text("Model: %s", modelName.c_str());
+                    
+                    // Position controls
+                    ImGui::Text("Position");
+                    ImGui::SliderFloat("X##Pos", &modelObj->position.x, -20.0f, 20.0f);
+                    ImGui::SliderFloat("Y##Pos", &modelObj->position.y, -20.0f, 20.0f);
+                    ImGui::SliderFloat("Z##Pos", &modelObj->position.z, -20.0f, 20.0f);
+                    
+                    // Rotation controls
+                    ImGui::Text("Rotation");
+                    ImGui::SliderFloat("X##Rot", &modelObj->rotation.x, 0.0f, 360.0f);
+                    ImGui::SliderFloat("Y##Rot", &modelObj->rotation.y, 0.0f, 360.0f);
+                    ImGui::SliderFloat("Z##Rot", &modelObj->rotation.z, 0.0f, 360.0f);
+                    
+                    // Scale controls
+                    ImGui::Text("Scale");
+                    ImGui::SliderFloat("X##Scale", &modelObj->scale.x, 0.01f, 5.0f);
+                    ImGui::SliderFloat("Y##Scale", &modelObj->scale.y, 0.01f, 5.0f);
+                    ImGui::SliderFloat("Z##Scale", &modelObj->scale.z, 0.01f, 5.0f);
+                    
+                    // Visibility toggle
+                    ImGui::Checkbox("Visible", &modelObj->visible);
+                }
             }
         }
         
@@ -837,94 +838,71 @@ static void renderModelsWindow() {
 }
 
 static void renderLightingWindow() {
-    ImGui::SetNextWindowPos(ImVec2(SCREEN_WIDTH - 310, 10), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(300, 400), ImGuiCond_FirstUseEver);
-    
-    ImGui::Begin("Lighting Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    
-    // Material settings
-    if (ImGui::CollapsingHeader("Material Settings")) {
+    if (ImGui::Begin("Lighting", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        // Material settings
+        ImGui::Text("Material Settings");
         ImGui::SliderFloat("Shininess", &shininess, 1.0f, 256.0f);
-        ImGui::Checkbox("Use Normal Maps", &useNormalMap);
-        ImGui::Checkbox("Use Specular Maps", &useSpecularMap);
-        ImGui::Checkbox("Use Detail Maps", &useDetailMap);
-        ImGui::Checkbox("Use Scatter Maps", &useScatterMap);
-    }
-    
-    // Light Brightness Adjustments
-    if (ImGui::CollapsingHeader("Light Brightness")) {
-        ImGui::SliderFloat("Point Light Brightness", &pointLightBrightness, 0.01f, 2.0f);
-        ImGui::SliderFloat("Directional Light Brightness", &dirLightBrightness, 0.1f, 3.0f);
-        ImGui::SliderFloat("Spot Light Brightness", &spotLightBrightness, 0.1f, 3.0f);
-    }
-    
-    // Directional light
-    if (ImGui::CollapsingHeader("Directional Light")) {
+        ImGui::Checkbox("Use Normal Map", &useNormalMap);
+        ImGui::Checkbox("Use Specular Map", &useSpecularMap);
+        ImGui::Checkbox("Use Detail Map", &useDetailMap);
+        ImGui::Checkbox("Use Scatter Map", &useScatterMap);
+        ImGui::Separator();
+        
+        // Light brightness adjustments
+        ImGui::Text("Light Brightness Adjustments");
+        ImGui::SliderFloat("Point Light Brightness", &pointLightBrightness, 0.1f, 5.0f);
+        ImGui::SliderFloat("Directional Light Brightness", &dirLightBrightness, 0.1f, 5.0f);
+        ImGui::SliderFloat("Spot Light Brightness", &spotLightBrightness, 0.1f, 5.0f);
+        ImGui::Separator();
+        
+        // Directional light
+        ImGui::Text("Directional Light");
         ImGui::Checkbox("Enable##DirLight", &dirLight.enabled);
-        ImGui::SliderFloat3("Direction", &dirLight.direction[0], -1.0f, 1.0f);
-        ImGui::ColorEdit3("Ambient##Dir", &dirLight.ambient[0]);
-        ImGui::ColorEdit3("Diffuse##Dir", &dirLight.diffuse[0]);
-        ImGui::ColorEdit3("Specular##Dir", &dirLight.specular[0]);
-    }
-    
-    // Main point light
-    if (ImGui::CollapsingHeader("Main Point Light")) {
+        ImGui::ColorEdit3("Ambient##DirLight", (float*)&dirLight.ambient);
+        ImGui::ColorEdit3("Diffuse##DirLight", (float*)&dirLight.diffuse);
+        ImGui::ColorEdit3("Specular##DirLight", (float*)&dirLight.specular);
+        ImGui::SliderFloat3("Direction##DirLight", (float*)&dirLight.direction, -1.0f, 1.0f);
+        ImGui::Separator();
+        
+        // Point light
+        ImGui::Text("Point Light");
         ImGui::Checkbox("Enable##PointLight", &pointLight.enabled);
-        ImGui::SliderFloat3("Position##Point", &pointLight.position[0], -20.0f, 20.0f);
-        ImGui::ColorEdit3("Ambient##Point", &pointLight.ambient[0]);
-        ImGui::ColorEdit3("Diffuse##Point", &pointLight.diffuse[0]);
-        ImGui::ColorEdit3("Specular##Point", &pointLight.specular[0]);
-        ImGui::SliderFloat("Constant", &pointLight.constant, 0.1f, 2.0f);
-        ImGui::SliderFloat("Linear", &pointLight.linear, 0.001f, 0.5f);
-        ImGui::SliderFloat("Quadratic", &pointLight.quadratic, 0.0001f, 0.1f);
-    }
-    
-    // Random point lights
-    if (ImGui::CollapsingHeader("Random Point Lights")) {
-        static bool useRandomLights = !randomPointLights.empty();
-        if (ImGui::Checkbox("Enable Random Lights", &useRandomLights)) {
-            if (useRandomLights && randomPointLights.empty()) {
-                generateRandomPointLights();
-            } else if (!useRandomLights) {
-                randomPointLights.clear();
-            }
-        }
+        ImGui::ColorEdit3("Ambient##PointLight", (float*)&pointLight.ambient);
+        ImGui::ColorEdit3("Diffuse##PointLight", (float*)&pointLight.diffuse);
+        ImGui::ColorEdit3("Specular##PointLight", (float*)&pointLight.specular);
+        ImGui::SliderFloat3("Position##PointLight", (float*)&pointLight.position, -20.0f, 20.0f);
+        ImGui::SliderFloat("Constant##PointLight", &pointLight.constant, 0.0f, 1.0f);
+        ImGui::SliderFloat("Linear##PointLight", &pointLight.linear, 0.0f, 1.0f);
+        ImGui::SliderFloat("Quadratic##PointLight", &pointLight.quadratic, 0.0f, 1.0f);
+        ImGui::Separator();
+        
+        // Spot light
+        ImGui::Text("Spot Light");
+        ImGui::Checkbox("Enable##SpotLight", &spotLight.enabled);
+        ImGui::ColorEdit3("Ambient##SpotLight", (float*)&spotLight.ambient);
+        ImGui::ColorEdit3("Diffuse##SpotLight", (float*)&spotLight.diffuse);
+        ImGui::ColorEdit3("Specular##SpotLight", (float*)&spotLight.specular);
+        ImGui::SliderFloat3("Position##SpotLight", (float*)&spotLight.position, -20.0f, 20.0f);
+        ImGui::SliderFloat3("Direction##SpotLight", (float*)&spotLight.direction, -1.0f, 1.0f);
+        ImGui::SliderFloat("Cut Off##SpotLight", &spotLight.cutOff, 0.0f, 1.0f);
+        ImGui::SliderFloat("Outer Cut Off##SpotLight", &spotLight.outerCutOff, 0.0f, 1.0f);
+        ImGui::SliderFloat("Constant##SpotLight", &spotLight.constant, 0.0f, 1.0f);
+        ImGui::SliderFloat("Linear##SpotLight", &spotLight.linear, 0.0f, 1.0f);
+        ImGui::SliderFloat("Quadratic##SpotLight", &spotLight.quadratic, 0.0f, 1.0f);
+        ImGui::Separator();
+        
+        // Random Point Lights
+        ImGui::Text("Random Point Lights");
+        ImGui::Checkbox("Enable Random Lights", &useRandomPointLights);
         
         ImGui::Text("Random Lights: %zu", randomPointLights.size());
         
-        if (ImGui::Button("Regenerate Random Lights")) {
+        if (ImGui::Button("Regenerate Random Lights", ImVec2(200, 0))) {
             generateRandomPointLights();
         }
         
-        ImGui::SliderFloat("Min Distance", &MIN_DISTANCE_BETWEEN_LIGHTS, 5.0f, 30.0f);
+        ImGui::SliderFloat("Min Distance Between Lights", &MIN_DISTANCE_BETWEEN_LIGHTS, 5.0f, 30.0f);
     }
-    
-    // Spot light
-    if (ImGui::CollapsingHeader("Spot Light")) {
-        ImGui::Checkbox("Enable##SpotLight", &spotLight.enabled);
-        ImGui::SliderFloat3("Position##Spot", &spotLight.position[0], -20.0f, 20.0f);
-        ImGui::SliderFloat3("Direction##Spot", &spotLight.direction[0], -1.0f, 1.0f);
-        ImGui::ColorEdit3("Ambient##Spot", &spotLight.ambient[0]);
-        ImGui::ColorEdit3("Diffuse##Spot", &spotLight.diffuse[0]);
-        ImGui::ColorEdit3("Specular##Spot", &spotLight.specular[0]);
-        
-        // Convert cutOff angles from cosine to degrees for the UI
-        float cutOffDegrees = glm::degrees(glm::acos(spotLight.cutOff));
-        float outerCutOffDegrees = glm::degrees(glm::acos(spotLight.outerCutOff));
-        
-        if (ImGui::SliderFloat("Inner Cutoff", &cutOffDegrees, 0.0f, 90.0f)) {
-            spotLight.cutOff = glm::cos(glm::radians(cutOffDegrees));
-        }
-        
-        if (ImGui::SliderFloat("Outer Cutoff", &outerCutOffDegrees, 0.0f, 90.0f)) {
-            spotLight.outerCutOff = glm::cos(glm::radians(outerCutOffDegrees));
-        }
-        
-        ImGui::SliderFloat("Constant##Spot", &spotLight.constant, 0.1f, 2.0f);
-        ImGui::SliderFloat("Linear##Spot", &spotLight.linear, 0.001f, 0.5f);
-        ImGui::SliderFloat("Quadratic##Spot", &spotLight.quadratic, 0.0001f, 0.1f);
-    }
-    
     ImGui::End();
 }
 

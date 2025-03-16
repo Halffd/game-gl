@@ -30,6 +30,7 @@ namespace m3D
         void processNode(aiNode *node, const aiScene *scene); // Process node function
         Mesh processMesh(aiMesh *mesh, const aiScene *scene); // Process mesh function
         std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, const std::string &typeName); // Load material textures
+        unsigned int createColorTexture(float r, float g, float b); // Create a texture from a color
     };
 }
 

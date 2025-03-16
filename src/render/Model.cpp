@@ -35,8 +35,23 @@ namespace m3D
     {
         std::cout << "Starting Assimp import for: " << path << std::endl;
         
+        // Check if this is a GLTF file
+        bool isGltf = path.find(".gltf") != std::string::npos || path.find(".glb") != std::string::npos;
+        
+        // Set up import flags
+        unsigned int importFlags = aiProcess_Triangulate | 
+                                  aiProcess_GenSmoothNormals | 
+                                  aiProcess_FlipUVs | 
+                                  aiProcess_CalcTangentSpace;
+        
+        // For GLTF files, add additional processing flags
+        if (isGltf) {
+            std::cout << "Detected GLTF format, applying special processing" << std::endl;
+            importFlags |= aiProcess_PreTransformVertices; // Pre-transform vertices
+        }
+        
         Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+        const aiScene* scene = importer.ReadFile(path, importFlags);
         
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         {
@@ -46,6 +61,31 @@ namespace m3D
 
         directory = path.substr(0, path.find_last_of('/'));
         std::cout << "Model directory set to: " << directory << std::endl;
+        
+        // For GLTF files, check for embedded textures
+        if (isGltf) {
+            std::cout << "Checking for embedded textures in GLTF file..." << std::endl;
+            if (scene->HasTextures()) {
+                std::cout << "Found " << scene->mNumTextures << " embedded textures in GLTF file" << std::endl;
+            } else {
+                std::cout << "No embedded textures found in GLTF file" << std::endl;
+            }
+            
+            // Check for materials
+            std::cout << "Model has " << scene->mNumMaterials << " materials" << std::endl;
+            for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
+                aiMaterial* material = scene->mMaterials[i];
+                aiString name;
+                if (material->Get(AI_MATKEY_NAME, name) == AI_SUCCESS) {
+                    std::cout << "Material " << i << " name: " << name.C_Str() << std::endl;
+                }
+                
+                // Print texture counts by type
+                std::cout << "  Diffuse textures: " << material->GetTextureCount(aiTextureType_DIFFUSE) << std::endl;
+                std::cout << "  Specular textures: " << material->GetTextureCount(aiTextureType_SPECULAR) << std::endl;
+                std::cout << "  Normal textures: " << material->GetTextureCount(aiTextureType_HEIGHT) << std::endl;
+            }
+        }
         
         std::cout << "Processing model nodes..." << std::endl;
         processNode(scene->mRootNode, scene);
@@ -70,6 +110,8 @@ namespace m3D
         vector<Vertex> vertices;
         vector<unsigned int> indices;
         vector<Texture> textures;
+
+        std::cout << "Processing mesh: " << mesh->mName.C_Str() << " with " << mesh->mNumVertices << " vertices" << std::endl;
 
         for (unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
@@ -100,19 +142,31 @@ namespace m3D
                 vertex.TexCoords = vec;
 
                 // Tangents
-                vector.x = mesh->mTangents[i].x;
-                vector.y = mesh->mTangents[i].y;
-                vector.z = mesh->mTangents[i].z;
-                vertex.Tangent = vector;
+                if (mesh->HasTangentsAndBitangents()) {
+                    vector.x = mesh->mTangents[i].x;
+                    vector.y = mesh->mTangents[i].y;
+                    vector.z = mesh->mTangents[i].z;
+                    vertex.Tangent = vector;
 
-                // Bitangents
-                vector.x = mesh->mBitangents[i].x;
-                vector.y = mesh->mBitangents[i].y;
-                vector.z = mesh->mBitangents[i].z;
-                vertex.Bitangent = vector;
+                    // Bitangents
+                    vector.x = mesh->mBitangents[i].x;
+                    vector.y = mesh->mBitangents[i].y;
+                    vector.z = mesh->mBitangents[i].z;
+                    vertex.Bitangent = vector;
+                } else {
+                    // Generate default tangent space if not available
+                    vertex.Tangent = glm::vec3(1.0f, 0.0f, 0.0f);
+                    vertex.Bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
+                    std::cout << "Mesh doesn't have tangents/bitangents, using defaults" << std::endl;
+                }
             }
             else
+            {
                 vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+                // Generate default tangent space
+                vertex.Tangent = glm::vec3(1.0f, 0.0f, 0.0f);
+                vertex.Bitangent = glm::vec3(0.0f, 1.0f, 0.0f);
+            }
 
             vertices.push_back(vertex);
         }
@@ -124,16 +178,57 @@ namespace m3D
                 indices.push_back(face.mIndices[j]);        
         }
 
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-        vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-        textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-        vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-        textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-        std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
-        textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-        std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
-        textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+        // Process material
+        if (mesh->mMaterialIndex >= 0)
+        {
+            aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+            
+            // Get material name
+            aiString matName;
+            if (material->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS) {
+                std::cout << "Processing material: " << matName.C_Str() << std::endl;
+            }
+            
+            // Extract material colors if available
+            aiColor4D diffuseColor;
+            bool hasDiffuseColor = false;
+            if (material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor) == AI_SUCCESS) {
+                std::cout << "Material has diffuse color: " << diffuseColor.r << ", " 
+                          << diffuseColor.g << ", " << diffuseColor.b << std::endl;
+                hasDiffuseColor = true;
+            }
+            
+            // Load textures
+            vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+            textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+            
+            // If no diffuse textures but has diffuse color, create a texture from the color
+            if (diffuseMaps.empty() && hasDiffuseColor) {
+                std::cout << "Creating texture from diffuse color" << std::endl;
+                Texture colorTexture;
+                colorTexture.id = createColorTexture(diffuseColor.r, diffuseColor.g, diffuseColor.b);
+                colorTexture.type = "texture_diffuse";
+                colorTexture.path = "generated_color";
+                textures.push_back(colorTexture);
+                textures_loaded.push_back(colorTexture);
+            }
+            
+            // Load other texture types
+            vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+            textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+            
+            // Try both HEIGHT and NORMALS for normal maps (GLTF often uses NORMALS)
+            std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+            if (normalMaps.empty()) {
+                normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
+            }
+            textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+            
+            std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+            textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+        }
         
+        std::cout << "Mesh processed with " << textures.size() << " textures" << std::endl;
         return Mesh(vertices, indices, textures);
     }
 
@@ -170,15 +265,67 @@ namespace m3D
     unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma)
     {
         string filename = string(path);
-        filename = directory + '/' + filename;
+        
+        // Handle both relative and embedded/absolute paths
+        if (filename.find('/') == 0 || filename.find(':') != string::npos) {
+            // Absolute path or URI - use as is
+            std::cout << "Using absolute texture path: " << filename << std::endl;
+        } else {
+            // Relative path - prepend directory
+            filename = directory + '/' + filename;
+            std::cout << "Using relative texture path: " << filename << std::endl;
+        }
 
+        // Special handling for GLTF embedded textures (data URIs)
+        if (filename.find("data:") == 0) {
+            std::cout << "Detected embedded texture data URI, creating placeholder texture" << std::endl;
+            
+            unsigned int textureID;
+            glGenTextures(1, &textureID);
+            glBindTexture(GL_TEXTURE_2D, textureID);
+            
+            // Create a simple colored texture as placeholder for embedded textures
+            unsigned char embeddedTexture[] = {
+                200, 200, 200, 255,  180, 180, 180, 255,
+                180, 180, 180, 255,  200, 200, 200, 255
+            };
+            
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, embeddedTexture);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            
+            return textureID;
+        }
+        
         std::cout << "Loading texture: " << filename << std::endl;
         
         // Check if the texture file exists
         std::ifstream fileCheck(filename.c_str());
         if (!fileCheck.good()) {
             std::cout << "ERROR: Texture file does not exist: " << filename << std::endl;
-            // We'll continue and create a default texture
+            
+            // Try alternative paths for GLTF models
+            std::string altPath = directory + "/textures/" + string(path);
+            std::ifstream altFileCheck(altPath.c_str());
+            if (altFileCheck.good()) {
+                std::cout << "Found texture in alternative path: " << altPath << std::endl;
+                filename = altPath;
+                altFileCheck.close();
+            } else {
+                // Try bin directory
+                std::string binPath = directory + "/bin/" + string(path);
+                std::ifstream binFileCheck(binPath.c_str());
+                if (binFileCheck.good()) {
+                    std::cout << "Found texture in bin path: " << binPath << std::endl;
+                    filename = binPath;
+                    binFileCheck.close();
+                } else {
+                    // We'll continue and create a default texture
+                    std::cout << "No alternative paths found, using fallback texture" << std::endl;
+                }
+            }
         } else {
             fileCheck.close();
         }
@@ -217,20 +364,32 @@ namespace m3D
             glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(GL_TEXTURE_2D);
 
+            // Adjust texture parameters for better quality
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            
+            // Enable anisotropic filtering if available
+            // Note: These constants might not be available in all OpenGL implementations
+            // so we'll check if they're defined before using them
+#ifdef GL_MAX_TEXTURE_MAX_ANISOTROPY
+            float aniso = 0.0f;
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &aniso);
+            if (aniso > 0.0f) {
+                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, aniso);
+            }
+#endif
 
             stbi_image_free(data);
         }
         else
         {
             cout << "Texture failed to load at path: " << filename << " - Error: " << stbi_failure_reason() << endl;
-            // Create a default texture (pink checkerboard) to indicate missing texture
+            // Create a default texture (checkerboard) to indicate missing texture
             unsigned char checkerboard[] = {
-                255, 0, 255, 255,  0, 0, 0, 255,
-                0, 0, 0, 255,  255, 0, 255, 255
+                180, 180, 180, 255,  100, 100, 100, 255,
+                100, 100, 100, 255,  180, 180, 180, 255
             };
             
             std::cout << "Created fallback checkerboard texture with ID: " << textureID << std::endl;
@@ -239,12 +398,35 @@ namespace m3D
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, checkerboard);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             
             if (data) stbi_image_free(data);
         }
 
+        return textureID;
+    }
+
+    // Helper function to create a texture from a color
+    unsigned int Model::createColorTexture(float r, float g, float b) {
+        unsigned int textureID;
+        glGenTextures(1, &textureID);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        
+        // Create a simple colored texture
+        unsigned char colorTexture[4] = {
+            static_cast<unsigned char>(r * 255), 
+            static_cast<unsigned char>(g * 255), 
+            static_cast<unsigned char>(b * 255), 
+            255
+        };
+        
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, colorTexture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        
         return textureID;
     }
 }
