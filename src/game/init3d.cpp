@@ -14,7 +14,15 @@
 #include <ctime>
 #include "../render/Scene.h"
 #include "../render/ModelObject.h"
-#include "../render/PrimitiveShapes.h" // Include the primitive shapes header
+#include "../render/primitives/PrimitiveShapes.h" // Updated include path
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <iostream>
+#include <memory>
+#include <cmath>
 
 // Define the dimensions
 const unsigned SCREEN_WIDTH = WIDTH;
@@ -229,178 +237,10 @@ void generateRandomPointLights() {
     std::cout << "Generated " << randomPointLights.size() << " random point lights" << std::endl;
 }
 
-// Function to generate random primitive shapes
+// Function to generate primitive shapes
 void generatePrimitiveShapes() {
-    std::cout << "\n=== Starting to generate primitive shapes ===\n" << std::endl;
-    
-    // Clear existing primitives
-    primitiveShapes.clear();
-    rotationSpeeds.clear();
-    
-    // Random number generation
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    
-    // Position distributions
-    std::uniform_real_distribution<float> posDistX(-15.0f, 15.0f);
-    std::uniform_real_distribution<float> posDistY(1.0f, 8.0f);
-    std::uniform_real_distribution<float> posDistZ(-15.0f, 15.0f);
-    
-    // Rotation distributions
-    std::uniform_real_distribution<float> rotDist(0.0f, 360.0f);
-    
-    // Scale distributions
-    std::uniform_real_distribution<float> scaleDist(0.3f, 0.8f);
-    
-    // Color distributions
-    std::uniform_real_distribution<float> colorDist(0.2f, 1.0f);
-    
-    // Rotation speed distributions
-    std::uniform_real_distribution<float> speedDist(-50.0f, 50.0f);
-    
-    std::cout << "Generating 10 cubes..." << std::endl;
-    
-    // Generate 10 cubes
-    for (int i = 0; i < 10; i++) {
-        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
-        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
-        float scale = scaleDist(gen);
-        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
-        
-        std::string name = "Cube_" + std::to_string(i);
-        std::cout << "Creating cube " << i << ": " << name << std::endl;
-        
-        try {
-            auto cube = std::make_shared<m3D::Cube>(name, position, rotation, glm::vec3(scale), color);
-            primitiveShapes.push_back(cube);
-            scene.AddObject(cube);
-            
-            // Add random rotation speed
-            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
-            std::cout << "Cube " << i << " created successfully" << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "Error creating cube " << i << ": " << e.what() << std::endl;
-        }
-    }
-    
-    std::cout << "Generating 10 spheres..." << std::endl;
-    
-    // Generate 10 spheres with varying roundness
-    for (int i = 0; i < 10; i++) {
-        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
-        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
-        float scale = scaleDist(gen);
-        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
-        
-        // Calculate roundness - vary from 0.5 to 1.0 across the spheres
-        float roundness = 0.5f + (float)i / 10.0f * 0.5f;
-        
-        std::string name = "Sphere_" + std::to_string(i);
-        std::cout << "Creating sphere " << i << ": " << name << " with roundness " << roundness << std::endl;
-        
-        try {
-            // Use higher resolution for spheres (48 segments and rings) with varying roundness
-            auto sphere = std::make_shared<m3D::Sphere>(name, position, rotation, glm::vec3(scale), color, 48, 48, roundness);
-            primitiveShapes.push_back(sphere);
-            scene.AddObject(sphere);
-            
-            // Add random rotation speed
-            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
-            std::cout << "Sphere " << i << " created successfully" << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "Error creating sphere " << i << ": " << e.what() << std::endl;
-        }
-    }
-    
-    std::cout << "Generating 3 high-quality spheres with different roundness values" << std::endl;
-    
-    // Generate 3 high-quality spheres with different roundness values
-    for (int i = 0; i < 3; i++) {
-        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
-        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
-        float scale = scaleDist(gen) * 1.5f; // Make them a bit larger
-        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
-        
-        // Use different roundness values for each high-quality sphere
-        float roundness = 0.7f + (float)i * 0.15f; // 0.7, 0.85, 1.0
-        
-        std::string name = "HQSphere_" + std::to_string(i);
-        std::cout << "Creating high-quality sphere " << i << ": " << name << " with roundness " << roundness << std::endl;
-        
-        try {
-            // Create a high-quality sphere with 64 segments and rings and specified roundness
-            auto sphere = std::make_shared<m3D::HighQualitySphere>(name, position, rotation, glm::vec3(scale), color, 64, 64, roundness);
-            primitiveShapes.push_back(sphere);
-            scene.AddObject(sphere);
-            
-            // Add slower rotation speed for better visualization
-            rotationSpeeds.push_back(glm::vec3(speedDist(gen) * 0.5f, speedDist(gen) * 0.5f, speedDist(gen) * 0.5f));
-            
-            // Calculate and display the actual roundness metric
-            float roundnessMetric = sphere->calculateRoundnessMetric();
-            std::cout << "High-quality sphere " << i << " created successfully with roundness metric: " << roundnessMetric << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "Error creating high-quality sphere " << i << ": " << e.what() << std::endl;
-        }
-    }
-    
-    std::cout << "Generating 3 icospheres with different subdivision levels" << std::endl;
-    
-    // Generate 3 icospheres with different subdivision levels
-    for (int i = 0; i < 3; i++) {
-        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
-        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
-        float scale = scaleDist(gen) * 1.5f; // Make them a bit larger
-        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
-        
-        // Use different subdivision levels (2, 3, 4)
-        unsigned int subdivisions = i + 2;
-        
-        std::string name = "Icosphere_" + std::to_string(i);
-        std::cout << "Creating icosphere " << i << ": " << name << " with subdivisions " << subdivisions << std::endl;
-        
-        try {
-            // Create an icosphere with the specified subdivision level
-            auto icosphere = std::make_shared<m3D::IcosphereShape>(name, position, rotation, glm::vec3(scale), color, subdivisions);
-            primitiveShapes.push_back(icosphere);
-            scene.AddObject(icosphere);
-            
-            // Add slower rotation speed for better visualization
-            rotationSpeeds.push_back(glm::vec3(speedDist(gen) * 0.3f, speedDist(gen) * 0.3f, speedDist(gen) * 0.3f));
-            std::cout << "Icosphere " << i << " created successfully" << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "Error creating icosphere " << i << ": " << e.what() << std::endl;
-        }
-    }
-    
-    std::cout << "Generating 10 prisms..." << std::endl;
-    
-    // Generate 10 prisms
-    for (int i = 0; i < 10; i++) {
-        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
-        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
-        float scale = scaleDist(gen);
-        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
-        
-        std::string name = "Prism_" + std::to_string(i);
-        std::cout << "Creating prism " << i << ": " << name << std::endl;
-        
-        try {
-            auto prism = std::make_shared<m3D::Prism>(name, position, rotation, glm::vec3(scale), color);
-            primitiveShapes.push_back(prism);
-            scene.AddObject(prism);
-            
-            // Add random rotation speed
-            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
-            std::cout << "Prism " << i << " created successfully" << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "Error creating prism " << i << ": " << e.what() << std::endl;
-        }
-    }
-    
-    std::cout << "Generated " << primitiveShapes.size() << " primitive shapes" << std::endl;
-    std::cout << "Scene now has " << scene.GetObjectCount() << " total objects" << std::endl;
-    std::cout << "\n=== Finished generating primitive shapes ===\n" << std::endl;
+    // Call the refactored function from the PrimitiveShapes.h file
+    m3D::generatePrimitiveShapes(scene, primitiveShapes, rotationSpeeds);
 }
 
 // Function to update primitive rotations
