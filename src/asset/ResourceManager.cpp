@@ -22,29 +22,101 @@ const char *ResourceManager::GetFullPath(const std::string &filename)
 {
     char *buffer = new char[BUFFER_SIZE];
     std::strcpy(buffer, (filename).c_str());
+    std::cout << "GetFullPath: " << buffer << std::endl;
     return buffer;
 }
+
 const char *ResourceManager::GetModelPath(const std::string &filename)
 {
-    std::string path = (root.empty() ? "models/" : root + "/models/") + filename;
+    std::string path;
+    if (root.empty()) {
+        path = "models/" + filename;
+    } else {
+        path = root + "/models/" + filename;
+    }
+    
+    // Check if the file exists
+    std::ifstream fileCheck(path);
+    if (!fileCheck.good()) {
+        std::cout << "WARNING: Model file does not exist at path: " << path << std::endl;
+        
+        // Try bin/models as an alternative
+        std::string binPath = root + "/bin/models/" + filename;
+        std::ifstream binFileCheck(binPath);
+        if (binFileCheck.good()) {
+            std::cout << "Found model in bin/models instead: " << binPath << std::endl;
+            path = binPath;
+        }
+    } else {
+        std::cout << "Model file exists at: " << path << std::endl;
+    }
+    
     return GetFullPath(path);
 }
+
 const char *ResourceManager::GetShaderPath(const std::string &filename)
 {
-    std::string path = (root.empty() ? "shaders/" : root + "/shaders/") + filename;
+    std::string path;
+    if (root.empty()) {
+        path = "shaders/" + filename;
+    } else {
+        path = root + "/shaders/" + filename;
+    }
+    
+    // Check if the file exists
+    std::ifstream fileCheck(path);
+    if (!fileCheck.good()) {
+        std::cout << "WARNING: Shader file does not exist at path: " << path << std::endl;
+        
+        // Try bin/shaders as an alternative
+        std::string binPath = root + "/bin/shaders/" + filename;
+        std::ifstream binFileCheck(binPath);
+        if (binFileCheck.good()) {
+            std::cout << "Found shader in bin/shaders instead: " << binPath << std::endl;
+            path = binPath;
+        }
+    } else {
+        std::cout << "Shader file exists at: " << path << std::endl;
+    }
+    
     return GetFullPath(path);
 }
+
 const char *ResourceManager::GetTexturePath(const std::string &filename)
 {
-    std::string path = (root + "textures/") + filename;
+    std::string path;
+    if (root.empty()) {
+        path = "textures/" + filename;
+    } else {
+        path = root + "/textures/" + filename;
+    }
+    
+    // Check if the file exists
+    std::ifstream fileCheck(path);
+    if (!fileCheck.good()) {
+        std::cout << "WARNING: Texture file does not exist at path: " << path << std::endl;
+        
+        // Try bin/textures as an alternative
+        std::string binPath = root + "/bin/textures/" + filename;
+        std::ifstream binFileCheck(binPath);
+        if (binFileCheck.good()) {
+            std::cout << "Found texture in bin/textures instead: " << binPath << std::endl;
+            path = binPath;
+        }
+    } else {
+        std::cout << "Texture file exists at: " << path << std::endl;
+    }
+    
     return GetFullPath(path);
 }
 
 const char *ResourceManager::GetPath(const std::string &filename)
 {
     std::string path = root + "/" + filename;
+    std::cout << "GetPath: " << path << std::endl;
     return GetFullPath(path);
 }
+
 Shader ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, std::string name)
 {
     return LoadShader(vShaderFile, fShaderFile, nullptr, name);
@@ -193,8 +265,24 @@ Shader ResourceManager::loadShaderFromFile(const char *vShaderFile, const char *
     std::string vertexCode, fragmentCode, geometryCode;
     try
     {
+        std::cout << "Loading vertex shader from: " << vShaderFile << std::endl;
+        std::cout << "Loading fragment shader from: " << fShaderFile << std::endl;
+        if (gShaderFile) {
+            std::cout << "Loading geometry shader from: " << gShaderFile << std::endl;
+        }
+        
         std::ifstream vertexShaderFile(vShaderFile);
+        if (!vertexShaderFile.is_open()) {
+            std::cout << "ERROR::SHADER: Failed to open vertex shader file: " << vShaderFile << std::endl;
+            throw std::runtime_error("Failed to open vertex shader file");
+        }
+        
         std::ifstream fragmentShaderFile(fShaderFile);
+        if (!fragmentShaderFile.is_open()) {
+            std::cout << "ERROR::SHADER: Failed to open fragment shader file: " << fShaderFile << std::endl;
+            throw std::runtime_error("Failed to open fragment shader file");
+        }
+        
         std::stringstream vShaderStream, fShaderStream;
         vShaderStream << vertexShaderFile.rdbuf();
         fShaderStream << fragmentShaderFile.rdbuf();
@@ -202,24 +290,42 @@ Shader ResourceManager::loadShaderFromFile(const char *vShaderFile, const char *
         fragmentShaderFile.close();
         vertexCode = vShaderStream.str();
         fragmentCode = fShaderStream.str();
+        
+        std::cout << "Vertex shader code length: " << vertexCode.length() << std::endl;
+        std::cout << "Fragment shader code length: " << fragmentCode.length() << std::endl;
+        
         if (gShaderFile != nullptr)
         {
             std::ifstream geometryShaderFile(gShaderFile);
+            if (!geometryShaderFile.is_open()) {
+                std::cout << "ERROR::SHADER: Failed to open geometry shader file: " << gShaderFile << std::endl;
+                throw std::runtime_error("Failed to open geometry shader file");
+            }
+            
             std::stringstream gShaderStream;
             gShaderStream << geometryShaderFile.rdbuf();
             geometryShaderFile.close();
             geometryCode = gShaderStream.str();
+            
+            std::cout << "Geometry shader code length: " << geometryCode.length() << std::endl;
         }
     }
     catch (std::exception &e)
     {
-        std::cout << "ERROR::SHADER: Failed to read shader files";
+        std::cout << "ERROR::SHADER: Failed to read shader files: " << e.what() << std::endl;
+        throw;
     }
     const char *vShaderCode = vertexCode.c_str();
     const char *fShaderCode = fragmentCode.c_str();
     const char *gShaderCode = geometryCode.c_str();
     Shader shader;
-    shader.Compile(vShaderCode, fShaderCode, gShaderFile != nullptr ? gShaderCode : nullptr);
+    try {
+        shader.Compile(vShaderCode, fShaderCode, gShaderFile != nullptr ? gShaderCode : nullptr);
+        std::cout << "Shader compilation successful" << std::endl;
+    } catch (std::exception &e) {
+        std::cout << "ERROR::SHADER: Failed to compile shader: " << e.what() << std::endl;
+        throw;
+    }
     return shader;
 }
 

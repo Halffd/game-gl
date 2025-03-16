@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <stb_image.h>
+#include <fstream>
 
 using namespace std;
 
@@ -11,6 +12,16 @@ namespace m3D
 {
     Model::Model(const std::string &path, bool gamma) : gammaCorrection(gamma) // No default value here
     {
+        std::cout << "Loading model from path: " << path << std::endl;
+        
+        // Check if the file exists before trying to load it
+        std::ifstream fileCheck(path);
+        if (!fileCheck.good()) {
+            std::cout << "ERROR: Model file does not exist: " << path << std::endl;
+            throw std::runtime_error("Model file not found: " + path);
+        }
+        fileCheck.close();
+        
         loadModel(path);
     }
 
@@ -22,17 +33,23 @@ namespace m3D
 
     void Model::loadModel(const std::string &path)
     {
+        std::cout << "Starting Assimp import for: " << path << std::endl;
+        
         Assimp::Importer importer;
         const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
         
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
         {
             cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
-            return;
+            throw std::runtime_error("Failed to load model: " + path + " - " + importer.GetErrorString());
         }
 
         directory = path.substr(0, path.find_last_of('/'));
+        std::cout << "Model directory set to: " << directory << std::endl;
+        
+        std::cout << "Processing model nodes..." << std::endl;
         processNode(scene->mRootNode, scene);
+        std::cout << "Model loaded successfully with " << meshes.size() << " meshes" << std::endl;
     }
 
     void Model::processNode(aiNode *node, const aiScene *scene)
@@ -140,7 +157,7 @@ namespace m3D
             if (!skip)
             {
                 Texture texture;
-                texture.id = TextureFromFile(str.C_Str(), this->directory);
+                texture.id = TextureFromFile(str.C_Str(), this->directory, gammaCorrection);
                 texture.type = typeName;
                 texture.path = str.C_Str();
                 textures.push_back(texture);
@@ -155,6 +172,17 @@ namespace m3D
         string filename = string(path);
         filename = directory + '/' + filename;
 
+        std::cout << "Loading texture: " << filename << std::endl;
+        
+        // Check if the texture file exists
+        std::ifstream fileCheck(filename.c_str());
+        if (!fileCheck.good()) {
+            std::cout << "ERROR: Texture file does not exist: " << filename << std::endl;
+            // We'll continue and create a default texture
+        } else {
+            fileCheck.close();
+        }
+
         unsigned int textureID;
         glGenTextures(1, &textureID);
 
@@ -162,16 +190,31 @@ namespace m3D
         unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
         if (data)
         {
+            std::cout << "Texture loaded successfully: " << filename << " (" << width << "x" << height 
+                      << ", " << nrComponents << " components)" << std::endl;
+                      
             GLenum format;
-            if (nrComponents == 1)
+            GLenum internalFormat;
+            if (nrComponents == 1) {
                 format = GL_RED;
-            else if (nrComponents == 3)
+                internalFormat = GL_RED;
+            }
+            else if (nrComponents == 3) {
                 format = GL_RGB;
-            else if (nrComponents == 4)
+                internalFormat = gamma ? GL_SRGB : GL_RGB;
+            }
+            else if (nrComponents == 4) {
                 format = GL_RGBA;
+                internalFormat = gamma ? GL_SRGB_ALPHA : GL_RGBA;
+            }
+            else {
+                cout << "Unsupported number of components: " << nrComponents << " in texture: " << path << endl;
+                format = GL_RGB;
+                internalFormat = GL_RGB;
+            }
 
             glBindTexture(GL_TEXTURE_2D, textureID);
-            glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(GL_TEXTURE_2D);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -183,8 +226,23 @@ namespace m3D
         }
         else
         {
-            cout << "Texture failed to load at path: " << path << std::endl;
-            stbi_image_free(data);
+            cout << "Texture failed to load at path: " << filename << " - Error: " << stbi_failure_reason() << endl;
+            // Create a default texture (pink checkerboard) to indicate missing texture
+            unsigned char checkerboard[] = {
+                255, 0, 255, 255,  0, 0, 0, 255,
+                0, 0, 0, 255,  255, 0, 255, 255
+            };
+            
+            std::cout << "Created fallback checkerboard texture with ID: " << textureID << std::endl;
+            
+            glBindTexture(GL_TEXTURE_2D, textureID);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, checkerboard);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            
+            if (data) stbi_image_free(data);
         }
 
         return textureID;

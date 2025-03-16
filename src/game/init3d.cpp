@@ -7,6 +7,9 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <cstdio>
+#include <fstream>
+#include <unistd.h> // For getcwd
 
 // Define the dimensions
 const unsigned SCREEN_WIDTH = WIDTH;
@@ -61,6 +64,39 @@ int game3d(int argc, char *argv[], const std::string& type) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
     glfwWindowHint(GLFW_RESIZABLE, true);
+// 
+    // Get the current working directory
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        std::cout << "Current working directory: " << cwd << std::endl;
+    }
+
+    // Set ResourceManager root path to the parent directory of the current directory
+    std::string currentDir = cwd;
+    std::string parentDir = currentDir;
+    
+    // Log all files and directories in the current directory
+    std::cout << "\n=== Files and directories in current directory ===\n";
+    system("ls -la");
+    
+    // Set ResourceManager root path to the current directory
+    ResourceManager::root = currentDir;
+    std::cout << "ResourceManager root set to: " << ResourceManager::root << std::endl;
+    
+    // Log the structure of important directories
+    std::cout << "\n=== Checking models directory ===\n";
+    system("ls -la models 2>/dev/null || echo 'models directory not found'");
+    
+    std::cout << "\n=== Checking shaders directory ===\n";
+    system("ls -la shaders 2>/dev/null || echo 'shaders directory not found'");
+    
+    // Create bin directory if it doesn't exist
+    system("mkdir -p bin/models bin/shaders");
+    
+    // Copy necessary files to bin directory
+    std::cout << "\n=== Copying resources to bin directory ===\n";
+    system("cp -rv shaders/* bin/shaders/ 2>/dev/null || echo 'No shader files to copy'");
+    system("cp -rv models/* bin/models/ 2>/dev/null || echo 'No model files to copy'");
 
     GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "3D Model Viewer", nullptr, nullptr);
     if (window == nullptr) {
@@ -74,6 +110,10 @@ int game3d(int argc, char *argv[], const std::string& type) {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+
+    // Print OpenGL version
+    std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
+    std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
     // Set callbacks
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
@@ -93,64 +133,231 @@ int game3d(int argc, char *argv[], const std::string& type) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     firstMouse = true;
 
-    // Load shaders
-    ResourceManager::LoadShader("shaders/3d.vs", "shaders/3d.fs", nullptr, "model");
+    // Load shaders with absolute paths
+    std::string vertexShaderPath = std::string(cwd) + "/shaders/3d.vs";
+    std::string fragmentShaderPath = std::string(cwd) + "/shaders/3d.fs";
+    
+    std::cout << "Loading vertex shader from: " << vertexShaderPath << std::endl;
+    std::cout << "Loading fragment shader from: " << fragmentShaderPath << std::endl;
+    
+    try {
+        // Check if shader files exist
+        std::ifstream vertexFile(vertexShaderPath);
+        std::ifstream fragmentFile(fragmentShaderPath);
+        
+        if (!vertexFile.good()) {
+            std::cout << "Vertex shader file does not exist or cannot be opened!" << std::endl;
+            
+            // Try bin/shaders as an alternative
+            std::string binVertexPath = std::string(cwd) + "/bin/shaders/3d.vs";
+            std::ifstream binVertexFile(binVertexPath);
+            if (binVertexFile.good()) {
+                std::cout << "Found vertex shader in bin/shaders instead: " << binVertexPath << std::endl;
+                vertexShaderPath = binVertexPath;
+            }
+        } else {
+            std::cout << "Vertex shader file exists and can be opened." << std::endl;
+        }
+        
+        if (!fragmentFile.good()) {
+            std::cout << "Fragment shader file does not exist or cannot be opened!" << std::endl;
+            
+            // Try bin/shaders as an alternative
+            std::string binFragmentPath = std::string(cwd) + "/bin/shaders/3d.fs";
+            std::ifstream binFragmentFile(binFragmentPath);
+            if (binFragmentFile.good()) {
+                std::cout << "Found fragment shader in bin/shaders instead: " << binFragmentPath << std::endl;
+                fragmentShaderPath = binFragmentPath;
+            }
+        } else {
+            std::cout << "Fragment shader file exists and can be opened." << std::endl;
+        }
+        
+        vertexFile.close();
+        fragmentFile.close();
+        
+        // Try loading the shader using ResourceManager
+        std::cout << "Attempting to load shaders using ResourceManager..." << std::endl;
+        try {
+            ResourceManager::LoadShader("3d.vs", "3d.fs", nullptr, "model");
+            std::cout << "Successfully loaded model shader using ResourceManager" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "Failed to load shader using ResourceManager: " << e.what() << std::endl;
+            std::cout << "Falling back to direct path loading..." << std::endl;
+            
+            // Fall back to direct path loading
+            ResourceManager::LoadShader(vertexShaderPath.c_str(), fragmentShaderPath.c_str(), nullptr, "model");
+            std::cout << "Successfully loaded model shader using direct paths" << std::endl;
+        }
+    } catch (const std::exception& e) {
+        std::cout << "Failed to load model shader: " << e.what() << std::endl;
+        // Continue anyway to see if we can at least render something
+    }
     
     // Setup ground plane
     setupGround();
     
-    // Load models
-    Shader shader = ResourceManager::GetShader("model");
+    // Load models with absolute paths
+    std::string modelBasePath = std::string(cwd) + "/models";
+    std::cout << "Model base path: " << modelBasePath << std::endl;
+    
+    // Also check bin/models directory
+    std::string binModelBasePath = std::string(cwd) + "/bin/models";
+    std::cout << "Checking bin model path: " << binModelBasePath << std::endl;
+    
+    // Log the contents of both model directories
+    std::cout << "\n=== Contents of models directory ===\n";
+    system("find models -type f -name \"*.obj\" -o -name \"*.gltf\" 2>/dev/null || echo 'No model files found'");
+    
+    std::cout << "\n=== Contents of bin/models directory ===\n";
+    system("find bin/models -type f -name \"*.obj\" -o -name \"*.gltf\" 2>/dev/null || echo 'No model files found'");
+    
+    try {
+        Shader shader = ResourceManager::GetShader("model");
+        std::cout << "Shader ID: " << shader.ID << std::endl;
+    } catch (const std::exception& e) {
+        std::cout << "Failed to get model shader: " << e.what() << std::endl;
+    }
+    
+    std::cout << "Starting to load models..." << std::endl;
+    
+    // Function to check both regular and bin paths for models
+    auto findModelPath = [&](const std::string& relativePath) -> std::string {
+        std::string regularPath = modelBasePath + "/" + relativePath;
+        std::string binPath = binModelBasePath + "/" + relativePath;
+        
+        std::ifstream regularFile(regularPath);
+        if (regularFile.good()) {
+            std::cout << "Found model at: " << regularPath << std::endl;
+            return regularPath;
+        }
+        
+        std::ifstream binFile(binPath);
+        if (binFile.good()) {
+            std::cout << "Found model at bin path: " << binPath << std::endl;
+            return binPath;
+        }
+        
+        std::cout << "Model not found at either path: " << regularPath << " or " << binPath << std::endl;
+        return regularPath; // Return regular path anyway, will fail with proper error
+    };
     
     // Load backpack model
     try {
-        models.push_back(new m3D::Model("models/backpack/backpack.obj"));
-        modelPositions.push_back(glm::vec3(0.0f, 2.0f, 0.0f)); // Position above ground
-        modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        modelScales.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+        std::string backpackPath = findModelPath("backpack/backpack.obj");
+        std::cout << "Attempting to load backpack model from " << backpackPath << std::endl;
+        
+        // Check if file exists
+        std::ifstream backpackFile(backpackPath);
+        if (!backpackFile.good()) {
+            std::cout << "Backpack model file does not exist or cannot be opened!" << std::endl;
+        } else {
+            std::cout << "Backpack model file exists and can be opened." << std::endl;
+            backpackFile.close();
+            
+            models.push_back(new m3D::Model(backpackPath));
+            std::cout << "Successfully loaded backpack model" << std::endl;
+            modelPositions.push_back(glm::vec3(0.0f, 2.0f, 0.0f)); // Position above ground
+            modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+            modelScales.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+        }
     } catch (const std::exception& e) {
         std::cout << "Failed to load backpack model: " << e.what() << std::endl;
     }
     
     // Load mansion model
     try {
-        models.push_back(new m3D::Model("models/mansion/mansion.obj"));
-        modelPositions.push_back(glm::vec3(-10.0f, 0.0f, -10.0f)); // Position on ground
-        modelRotations.push_back(glm::vec3(0.0f, 45.0f, 0.0f));
-        modelScales.push_back(glm::vec3(0.1f, 0.1f, 0.1f));
+        std::string mansionPath = findModelPath("low_poly_mansion__house/scene.gltf");
+        std::cout << "Attempting to load mansion model from " << mansionPath << std::endl;
+        
+        // Check if file exists
+        std::ifstream mansionFile(mansionPath);
+        if (!mansionFile.good()) {
+            std::cout << "Mansion model file does not exist or cannot be opened!" << std::endl;
+        } else {
+            std::cout << "Mansion model file exists and can be opened." << std::endl;
+            mansionFile.close();
+            
+            models.push_back(new m3D::Model(mansionPath));
+            std::cout << "Successfully loaded mansion model" << std::endl;
+            modelPositions.push_back(glm::vec3(-10.0f, 0.0f, -10.0f)); // Position on ground
+            modelRotations.push_back(glm::vec3(0.0f, 45.0f, 0.0f));
+            modelScales.push_back(glm::vec3(0.1f, 0.1f, 0.1f));
+        }
     } catch (const std::exception& e) {
         std::cout << "Failed to load mansion model: " << e.what() << std::endl;
     }
     
     // Load tiptup model
     try {
-        models.push_back(new m3D::Model("models/tiptup/tiptup.obj"));
-        modelPositions.push_back(glm::vec3(5.0f, 0.5f, 5.0f)); // Position slightly above ground
-        modelRotations.push_back(glm::vec3(0.0f, 180.0f, 0.0f));
-        modelScales.push_back(glm::vec3(0.5f, 0.5f, 0.5f));
+        std::string tiptupPath = findModelPath("n64/Tiptup/ObjectTortRunner.obj");
+        std::cout << "Attempting to load tiptup model from " << tiptupPath << std::endl;
+        
+        // Check if file exists
+        std::ifstream tiptupFile(tiptupPath);
+        if (!tiptupFile.good()) {
+            std::cout << "Tiptup model file does not exist or cannot be opened!" << std::endl;
+        } else {
+            std::cout << "Tiptup model file exists and can be opened." << std::endl;
+            tiptupFile.close();
+            
+            models.push_back(new m3D::Model(tiptupPath));
+            std::cout << "Successfully loaded tiptup model" << std::endl;
+            modelPositions.push_back(glm::vec3(5.0f, 0.5f, 5.0f)); // Position slightly above ground
+            modelRotations.push_back(glm::vec3(0.0f, 180.0f, 0.0f));
+            modelScales.push_back(glm::vec3(0.5f, 0.5f, 0.5f));
+        }
     } catch (const std::exception& e) {
         std::cout << "Failed to load tiptup model: " << e.what() << std::endl;
     }
     
     // Load terry model
     try {
-        models.push_back(new m3D::Model("models/terry/terry.obj"));
-        modelPositions.push_back(glm::vec3(-5.0f, 0.0f, 5.0f)); // Position on ground
-        modelRotations.push_back(glm::vec3(0.0f, 135.0f, 0.0f));
-        modelScales.push_back(glm::vec3(0.02f, 0.02f, 0.02f));
+        std::string terryPath = findModelPath("n64/Terry/ObjectTerryboss.obj");
+        std::cout << "Attempting to load terry model from " << terryPath << std::endl;
+        
+        // Check if file exists
+        std::ifstream terryFile(terryPath);
+        if (!terryFile.good()) {
+            std::cout << "Terry model file does not exist or cannot be opened!" << std::endl;
+        } else {
+            std::cout << "Terry model file exists and can be opened." << std::endl;
+            terryFile.close();
+            
+            models.push_back(new m3D::Model(terryPath));
+            std::cout << "Successfully loaded terry model" << std::endl;
+            modelPositions.push_back(glm::vec3(-5.0f, 0.0f, 5.0f)); // Position on ground
+            modelRotations.push_back(glm::vec3(0.0f, 135.0f, 0.0f));
+            modelScales.push_back(glm::vec3(0.02f, 0.02f, 0.02f));
+        }
     } catch (const std::exception& e) {
         std::cout << "Failed to load terry model: " << e.what() << std::endl;
     }
     
     // Load toxic can model
     try {
-        models.push_back(new m3D::Model("models/toxic_can/toxic_can.obj"));
-        modelPositions.push_back(glm::vec3(10.0f, 0.0f, -5.0f)); // Position on ground
-        modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        modelScales.push_back(glm::vec3(0.5f, 0.5f, 0.5f));
+        std::string toxicCanPath = findModelPath("n64/Toxic Can/7398.obj");
+        std::cout << "Attempting to load toxic can model from " << toxicCanPath << std::endl;
+        
+        // Check if file exists
+        std::ifstream toxicCanFile(toxicCanPath);
+        if (!toxicCanFile.good()) {
+            std::cout << "Toxic can model file does not exist or cannot be opened!" << std::endl;
+        } else {
+            std::cout << "Toxic can model file exists and can be opened." << std::endl;
+            toxicCanFile.close();
+            
+            models.push_back(new m3D::Model(toxicCanPath));
+            std::cout << "Successfully loaded toxic can model" << std::endl;
+            modelPositions.push_back(glm::vec3(10.0f, 0.0f, -5.0f)); // Position on ground
+            modelRotations.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+            modelScales.push_back(glm::vec3(0.5f, 0.5f, 0.5f));
+        }
     } catch (const std::exception& e) {
         std::cout << "Failed to load toxic can model: " << e.what() << std::endl;
     }
+    
+    std::cout << "Loaded " << models.size() << " models successfully" << std::endl;
 
     // Game loop
     while (!glfwWindowShouldClose(window)) {
@@ -169,38 +376,57 @@ int game3d(int argc, char *argv[], const std::string& type) {
         // Render models window
         renderModelsWindow();
 
-        shader.Use();
+        // Get the shader and activate it once before setting all uniforms
+        try {
+            Shader shader = ResourceManager::GetShader("model");
+            shader.Use();
 
-        // Set lighting properties
-        shader.SetVector3f("lightPos", lightPos);
-        shader.SetVector3f("viewPos", camera.Position);
-        shader.SetVector3f("lightColor", lightColor);
-
-        // Pass projection matrix
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 
-            (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
-        shader.SetMatrix4("projection", projection);
-
-        // Camera/view transformation
-        glm::mat4 view = camera.GetViewMatrix();
-        shader.SetMatrix4("view", view);
-
-        // Render ground
-        renderGround(shader);
-        
-        // Render models
-        for (size_t i = 0; i < models.size(); i++) {
-            // Calculate model matrix
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, modelPositions[i]);
-            model = glm::rotate(model, glm::radians(modelRotations[i].x), glm::vec3(1.0f, 0.0f, 0.0f));
-            model = glm::rotate(model, glm::radians(modelRotations[i].y), glm::vec3(0.0f, 1.0f, 0.0f));
-            model = glm::rotate(model, glm::radians(modelRotations[i].z), glm::vec3(0.0f, 0.0f, 1.0f));
-            model = glm::scale(model, modelScales[i]);
-            shader.SetMatrix4("model", model);
+            // Set lighting properties
+            shader.SetVector3f("lightPos", lightPos);
+            shader.SetVector3f("viewPos", camera.Position);
+            shader.SetVector3f("lightColor", lightColor);
             
-            // Draw model
-            models[i]->Draw(shader);
+            // Only log every 100 frames to avoid spamming the console
+            static int frameCount = 0;
+            if (frameCount % 100 == 0) {
+                std::cout << "Rendering with light position: (" << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << ")" << std::endl;
+                std::cout << "Light color: (" << lightColor.x << ", " << lightColor.y << ", " << lightColor.z << ")" << std::endl;
+                std::cout << "Camera position: (" << camera.Position.x << ", " << camera.Position.y << ", " << camera.Position.z << ")" << std::endl;
+            }
+            frameCount++;
+
+            // Pass projection matrix
+            glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 
+                (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
+            shader.SetMatrix4("projection", projection);
+
+            // Camera/view transformation
+            glm::mat4 view = camera.GetViewMatrix();
+            shader.SetMatrix4("view", view);
+
+            // Render ground
+            renderGround(shader);
+            
+            // Render models
+            for (size_t i = 0; i < models.size(); i++) {
+                // Calculate model matrix
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, modelPositions[i]);
+                model = glm::rotate(model, glm::radians(modelRotations[i].x), glm::vec3(1.0f, 0.0f, 0.0f));
+                model = glm::rotate(model, glm::radians(modelRotations[i].y), glm::vec3(0.0f, 1.0f, 0.0f));
+                model = glm::rotate(model, glm::radians(modelRotations[i].z), glm::vec3(0.0f, 0.0f, 1.0f));
+                model = glm::scale(model, modelScales[i]);
+                shader.SetMatrix4("model", model);
+                
+                // Draw the model
+                try {
+                    models[i]->Draw(shader);
+                } catch (const std::exception& e) {
+                    std::cout << "Error drawing model " << i << ": " << e.what() << std::endl;
+                }
+            }
+        } catch (const std::exception& e) {
+            std::cout << "Error in render loop: " << e.what() << std::endl;
         }
         
         // Render ImGui
@@ -296,6 +522,9 @@ static void renderGround(Shader &shader) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, groundTexture);
     
+    // Set the texture uniform
+    shader.SetInteger("texture_diffuse1", 0);
+    
     // Draw ground
     glBindVertexArray(groundVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -384,17 +613,13 @@ static void toggleCursor(GLFWwindow *window) {
     glfwSetInputMode(window, GLFW_CURSOR, cursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
     
     if (!cursorEnabled) {
-        // When disabling cursor, reset firstMouse to recalculate reference position
+        // When disabling cursor, reset firstMouse to recalculate reference posit`n
         firstMouse = true;
     }
 }
 
 static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
     // Only process mouse movement if ImGui is not capturing the mouse
-    ImGuiIO &io = ImGui::GetIO();
-    if (io.WantCaptureMouse) {
-        return;
-    }
     
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
@@ -419,16 +644,12 @@ static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
 
 static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
     // Only process scroll if ImGui is not capturing the mouse
-    ImGuiIO &io = ImGui::GetIO();
-    if (!io.WantCaptureMouse) {
-        camera.ProcessMouseScroll(static_cast<float>(yoffset));
-    }
+    camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
 static void processInput(GLFWwindow* window) {
     // Check for ImGui keyboard capture
-    ImGuiIO &io = ImGui::GetIO();
-    
+   
     // Always process Escape and Enter keys regardless of ImGui focus
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
@@ -439,10 +660,7 @@ static void processInput(GLFWwindow* window) {
         toggleCursor(window);
         std::cout << "Cursor mode toggled: " << (cursorEnabled ? "Enabled" : "Disabled") << std::endl;
     }
-
-    // Only process movement keys if ImGui is not capturing keyboard
-    if (!io.WantCaptureKeyboard) {
-        // Process movement keys
+       // Process movement keys
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             camera.ProcessKeyboard(Camera_Movement::CAMERA_FORWARD, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -457,7 +675,6 @@ static void processInput(GLFWwindow* window) {
             camera.Position.y += camera.MovementSpeed * deltaTime;
         if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
             camera.Position.y -= camera.MovementSpeed * deltaTime;
-    }
 }
 
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height) {

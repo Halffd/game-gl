@@ -42,69 +42,98 @@ void Shader::Compile(const char* vertexSource, const char* fragmentSource, const
     glDeleteShader(sFragment);
     if (geometrySource != nullptr)
         glDeleteShader(gShader);
+    
+    std::cout << "Shader program ID: " << this->ID << std::endl;
 }
 
 void Shader::SetFloat(const char *name, float value, bool useShader)
 {
     if (useShader)
         this->Use();
-    glUniform1f(glGetUniformLocation(this->ID, name), value);
+    GLint location = glGetUniformLocation(this->ID, name);
+    if (location != -1) {
+        glUniform1f(location, value);
+    }
     glCheckError(__FILE__, __LINE__);
 }
 void Shader::SetInteger(const char *name, int value, bool useShader)
 {
     if (useShader)
         this->Use ();
-    glUniform1i(glGetUniformLocation(this->ID, name), value);
+    GLint location = glGetUniformLocation(this->ID, name);
+    if (location != -1) {
+        glUniform1i(location, value);
+    }
     glCheckError(__FILE__, __LINE__);
 }
 void Shader::SetVector2f(const char *name, float x, float y, bool useShader)
 {
     if (useShader)
         this->Use();
-    glUniform2f(glGetUniformLocation(this->ID, name), x, y);
+    GLint location = glGetUniformLocation(this->ID, name);
+    if (location != -1) {
+        glUniform2f(location, x, y);
+    }
     glCheckError(__FILE__, __LINE__);
 }
 void Shader::SetVector2f(const char *name, const glm::vec2 &value, bool useShader)
 {
     if (useShader)
         this->Use();
-    glUniform2f(glGetUniformLocation(this->ID, name), value.x, value.y);
+    GLint location = glGetUniformLocation(this->ID, name);
+    if (location != -1) {
+        glUniform2f(location, value.x, value.y);
+    }
     glCheckError(__FILE__, __LINE__);
 }
 void Shader::SetVector3f(const char *name, float x, float y, float z, bool useShader)
 {
     if (useShader)
         this->Use();
-    glUniform3f(glGetUniformLocation(this->ID, name), x, y, z);
+    GLint location = glGetUniformLocation(this->ID, name);
+    if (location != -1) {
+        glUniform3f(location, x, y, z);
+    }
     glCheckError(__FILE__, __LINE__);
 }
 void Shader::SetVector3f(const char *name, const glm::vec3 &value, bool useShader)
 {
     if (useShader)
         this->Use();
-    glUniform3f(glGetUniformLocation(this->ID, name), value.x, value.y, value.z);
+    GLint location = glGetUniformLocation(this->ID, name);
+    if (location != -1) {
+        glUniform3f(location, value.x, value.y, value.z);
+    }
     glCheckError(__FILE__, __LINE__);
 }
 void Shader::SetVector4f(const char *name, float x, float y, float z, float w, bool useShader)
 {
     if (useShader)
         this->Use();
-    glUniform4f(glGetUniformLocation(this->ID, name), x, y, z, w);
+    GLint location = glGetUniformLocation(this->ID, name);
+    if (location != -1) {
+        glUniform4f(location, x, y, z, w);
+    }
     glCheckError(__FILE__, __LINE__);
 }
 void Shader::SetVector4f(const char *name, const glm::vec4 &value, bool useShader)
 {
     if (useShader)
         this->Use();
-    glUniform4f(glGetUniformLocation(this->ID, name), value.x, value.y, value.z, value.w);
+    GLint location = glGetUniformLocation(this->ID, name);
+    if (location != -1) {
+        glUniform4f(location, value.x, value.y, value.z, value.w);
+    }
     glCheckError(__FILE__, __LINE__);
 }
 void Shader::SetMatrix4(const char *name, const glm::mat4 &matrix, bool useShader)
 {
     if (useShader)
         this->Use();
-    glUniformMatrix4fv(glGetUniformLocation(this->ID, name), 1, false, glm::value_ptr(matrix));
+    GLint location = glGetUniformLocation(this->ID, name);
+    if (location != -1) {
+        glUniformMatrix4fv(location, 1, false, glm::value_ptr(matrix));
+    }
     glCheckError(__FILE__, __LINE__);
 }
 
@@ -122,6 +151,11 @@ void Shader::checkCompileErrors(unsigned int object, std::string type)
             std::cout << "| ERROR::SHADER: Compile-time error: Type: " << type << "\n"
                 << infoLog << "\n -- --------------------------------------------------- -- "
                 << std::endl;
+            throw std::runtime_error("Shader compilation failed: " + type);
+        }
+        else
+        {
+            std::cout << "Shader compilation successful: " << type << std::endl;
         }
     }
     else
@@ -133,6 +167,11 @@ void Shader::checkCompileErrors(unsigned int object, std::string type)
             std::cout << "| ERROR::Shader: Link-time error: Type: " << type << "\n"
                 << infoLog << "\n -- --------------------------------------------------- -- "
                 << std::endl;
+            throw std::runtime_error("Shader linking failed");
+        }
+        else
+        {
+            std::cout << "Shader linking successful" << std::endl;
         }
     }
 }
