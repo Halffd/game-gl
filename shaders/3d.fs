@@ -248,8 +248,12 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
     
-    // Attenuation
+    // Improved attenuation with distance-based falloff
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+    
+    // Apply a distance-based cutoff for more realistic falloff
+    float distanceFactor = 1.0 - smoothstep(20.0, 40.0, distance); // Gradual falloff between 20 and 40 units
+    attenuation *= distanceFactor;
     
     // Combine results
     vec3 ambient = light.ambient * diffuseColor;
@@ -269,10 +273,15 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec
     vec3 lightDir;
     float distance;
     
+    // Get the spotlight direction from the uniform
+    vec3 spotDirection = normalize(light.direction);
+    
     if(useNormalMap) {
+        // For normal mapping, transform the light position to tangent space
         lightDir = normalize(TangentLightPos - TangentFragPos);
         distance = length(TangentLightPos - TangentFragPos);
     } else {
+        // Use the exact spotlight position from the uniform
         lightDir = normalize(light.position - fragPos);
         distance = length(light.position - fragPos);
     }
@@ -287,10 +296,17 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec
     // Attenuation
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
     
-    // Spotlight intensity
-    float theta = dot(lightDir, normalize(-light.direction));
+    // Distance-based falloff
+    float distanceFactor = 1.0 - smoothstep(15.0, 30.0, distance);
+    attenuation *= distanceFactor;
+    
+    // Spotlight cone effect - use the exact direction from the uniform
+    float theta = dot(lightDir, -spotDirection);
     float epsilon = light.cutOff - light.outerCutOff;
     float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+    
+    // Smoother falloff
+    intensity = smoothstep(0.0, 1.0, intensity);
     
     // Combine results
     vec3 ambient = light.ambient * diffuseColor;
@@ -301,6 +317,6 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec
     diffuse *= attenuation * intensity;
     specular *= attenuation * intensity;
     
-    // Apply spot light brightness adjustment using uniform
+    // Apply brightness adjustment
     return (ambient + diffuse + specular) * spotLightBrightness;
 } 

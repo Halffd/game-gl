@@ -18,7 +18,7 @@ uniform mat4 projection;
 
 // Light positions for tangent space calculations
 uniform vec3 lightPos; // Point light position
-uniform vec3 viewPos;
+uniform vec3 viewPos;  // Camera position
 uniform bool useNormalMap;
 
 void main() {

@@ -91,44 +91,44 @@ struct SpotLight {
 
 // Light instances
 static DirLight dirLight = {
-    glm::vec3(-0.2f, -1.0f, -0.3f),  // direction
-    glm::vec3(0.4f, 0.4f, 0.4f),     // ambient - increased from 0.2 to 0.4
-    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse - increased from 0.8 to 1.0
-    glm::vec3(1.0f, 1.0f, 1.0f),     // specular - already at max
+    glm::vec3(-0.5f, -1.0f, -0.3f),  // direction - adjusted for better angle
+    glm::vec3(0.5f, 0.5f, 0.5f),     // ambient - increased from 0.4 to 0.5
+    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse
+    glm::vec3(1.0f, 1.0f, 1.0f),     // specular
     true                             // enabled
 };
 
 // Main point light (separate from random lights)
 static PointLight pointLight = {
-    glm::vec3(1.2f, 1.0f, 2.0f),     // position
+    glm::vec3(0.0f, 15.0f, 0.0f),     // position - moved to center and higher
     1.0f,                            // constant
-    0.09f,                           // linear
-    0.032f,                          // quadratic
-    glm::vec3(0.2f, 0.2f, 0.2f),     // ambient - increased from 0.1 to 0.2
-    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse - increased from 0.8 to 1.0
-    glm::vec3(1.0f, 1.0f, 1.0f),     // specular - already at max
+    0.07f,                           // linear - slightly reduced for less attenuation
+    0.017f,                          // quadratic - slightly reduced for less attenuation
+    glm::vec3(0.3f, 0.3f, 0.3f),     // ambient - increased from 0.2 to 0.3
+    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse
+    glm::vec3(1.0f, 1.0f, 1.0f),     // specular
     true                             // enabled
 };
 
 // Update the spotlight to be enabled by default and increase brightness
 static SpotLight spotLight = {
-    glm::vec3(0.0f, 10.0f, 0.0f),     // position - raised higher for better coverage
-    glm::vec3(0.0f, -1.0f, 0.0f),    // direction - pointing straight down
-    glm::cos(glm::radians(15.0f)),   // cutOff - slightly wider beam
-    glm::cos(glm::radians(20.0f)),   // outerCutOff - slightly wider outer beam
+    glm::vec3(0.0f, 0.0f, 0.0f),     // position - will be updated with camera position
+    glm::vec3(0.0f, 0.0f, -1.0f),    // direction - will be updated with camera direction
+    glm::cos(glm::radians(12.5f)),   // cutOff - narrower beam for focused flashlight
+    glm::cos(glm::radians(17.5f)),   // outerCutOff - narrower outer beam for focused edge
     1.0f,                            // constant
-    0.01f,                           // linear - decreased further for less attenuation
-    0.001f,                          // quadratic - decreased further for less attenuation
+    0.09f,                           // linear - adjusted for flashlight effect
+    0.032f,                          // quadratic - adjusted for flashlight effect
     glm::vec3(0.0f, 0.0f, 0.0f),     // ambient - keep at 0
-    glm::vec3(5.0f, 5.0f, 5.0f),     // diffuse - increased significantly
-    glm::vec3(5.0f, 5.0f, 5.0f),     // specular - increased significantly
-    true                             // enabled (now true by default)
+    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse - white light for flashlight
+    glm::vec3(1.0f, 1.0f, 1.0f),     // specular - white light for flashlight
+    true                             // enabled
 };
 
 // Add random point lights
 const int MAX_POINT_LIGHTS = 20;
 std::vector<PointLight> randomPointLights;
-float MIN_DISTANCE_BETWEEN_LIGHTS = 10.0f; // Minimum distance between lights - now non-const
+float MIN_DISTANCE_BETWEEN_LIGHTS = 15.0f; // Increased minimum distance between lights
 bool useRandomPointLights = true; // Enable random point lights by default
 
 // Material settings
@@ -145,9 +145,9 @@ unsigned int groundTexture = 0;
 unsigned int groundNormalTexture = 0;
 
 // Add these variables after the material settings
-static float pointLightBrightness = 0.05f; // Increased from 0.5 to 0.8
-static float dirLightBrightness = 1.7f;   // Increased from 2.0 to 2.5
-static float spotLightBrightness = 1.0f;  // Increased from 2.5 to 4.0
+static float pointLightBrightness = 0.2f; // Increased to compensate for improved attenuation
+static float dirLightBrightness = 0.5f;   // Keep the same
+static float spotLightBrightness = 2.5f;  // Increased for better flashlight effect
 
 // Add variables for primitive shapes
 std::vector<std::shared_ptr<m3D::PrimitiveShape>> primitiveShapes;
@@ -194,10 +194,10 @@ void generateRandomPointLights() {
     std::random_device rd;
     std::mt19937 gen(rd());
     
-    // Position distributions
-    std::uniform_real_distribution<float> posDistX(-20.0f, 20.0f);
-    std::uniform_real_distribution<float> posDistY(0.5f, 10.0f);
-    std::uniform_real_distribution<float> posDistZ(-20.0f, 20.0f);
+    // Spherical distribution parameters
+    std::uniform_real_distribution<float> radiusDist(10.0f, 50.0f);  // Distance from center - increased range
+    std::uniform_real_distribution<float> thetaDist(0.0f, 2.0f * M_PI);  // Horizontal angle (0 to 2π)
+    std::uniform_real_distribution<float> phiDist(0.0f, M_PI);  // Vertical angle (0 to π)
     
     // Color distribution
     std::uniform_real_distribution<float> colorDist(0.5f, 1.0f);
@@ -207,13 +207,26 @@ void generateRandomPointLights() {
     std::uniform_real_distribution<float> linearDist(0.01f, 0.1f);
     std::uniform_real_distribution<float> quadraticDist(0.001f, 0.01f);
     
-    // Number of lights to generate
-    const int NUM_LIGHTS = 10;
+    // Number of lights to generate - increased to 35
+    const int NUM_LIGHTS = 35;
+    
+    // Reduce minimum distance to allow more lights
+    float tempMinDistance = MIN_DISTANCE_BETWEEN_LIGHTS;
+    MIN_DISTANCE_BETWEEN_LIGHTS = 8.0f; // Temporarily reduce minimum distance
     
     // Generate random lights
     for (int i = 0; i < NUM_LIGHTS; i++) {
-        // Generate a random position
-        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        // Generate a random position using spherical coordinates
+        float radius = radiusDist(gen);
+        float theta = thetaDist(gen);
+        float phi = phiDist(gen);
+        
+        // Convert spherical to Cartesian coordinates
+        float x = radius * sin(phi) * cos(theta);
+        float y = radius * sin(phi) * sin(theta);
+        float z = radius * cos(phi);
+        
+        glm::vec3 position(x, y, z);
         
         // Check if this position is far enough from existing lights
         bool validPosition = true;
@@ -225,8 +238,12 @@ void generateRandomPointLights() {
             }
         }
         
-        // If position is not valid, try again
+        // If position is not valid, try again (but limit retries to avoid infinite loop)
         if (!validPosition) {
+            if (i > 0 && randomPointLights.size() >= NUM_LIGHTS * 0.8) {
+                // If we've already got 80% of the desired lights, just continue
+                continue;
+            }
             i--; // Retry this iteration
             continue;
         }
@@ -249,7 +266,10 @@ void generateRandomPointLights() {
         randomPointLights.push_back(light);
     }
     
-    std::cout << "Generated " << randomPointLights.size() << " random point lights" << std::endl;
+    // Restore original minimum distance
+    MIN_DISTANCE_BETWEEN_LIGHTS = tempMinDistance;
+    
+    std::cout << "Generated " << randomPointLights.size() << " random point lights in a spherical distribution" << std::endl;
 }
 
 // Function to generate primitive shapes
@@ -935,13 +955,12 @@ static void renderLightingWindow() {
         ImGui::Separator();
         
         // Spot light
-        ImGui::Text("Spot Light");
+        ImGui::Text("Spot Light (Flashlight)");
         ImGui::Checkbox("Enable##SpotLight", &spotLight.enabled);
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Position and direction follow camera");
         ImGui::ColorEdit3("Ambient##SpotLight", (float*)&spotLight.ambient);
         ImGui::ColorEdit3("Diffuse##SpotLight", (float*)&spotLight.diffuse);
         ImGui::ColorEdit3("Specular##SpotLight", (float*)&spotLight.specular);
-        ImGui::SliderFloat3("Position##SpotLight", (float*)&spotLight.position, -20.0f, 20.0f);
-        ImGui::SliderFloat3("Direction##SpotLight", (float*)&spotLight.direction, -1.0f, 1.0f);
         ImGui::SliderFloat("Cut Off##SpotLight", &spotLight.cutOff, 0.0f, 1.0f);
         ImGui::SliderFloat("Outer Cut Off##SpotLight", &spotLight.outerCutOff, 0.0f, 1.0f);
         ImGui::SliderFloat("Constant##SpotLight", &spotLight.constant, 0.0f, 1.0f);
@@ -1197,6 +1216,10 @@ void setLightingUniforms(Shader &shader) {
     
     // Set camera position for lighting calculations
     shader.SetVector3f("viewPos", camera.Position);
+    
+    // Update spotlight position and direction to match camera exactly
+    spotLight.position = camera.Position; // Position spotlight exactly at camera position
+    spotLight.direction = camera.Front;   // Use camera's front vector as spotlight direction
     
     // Set directional light properties
     shader.SetVector3f("dirLight.direction", dirLight.direction);
