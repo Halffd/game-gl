@@ -14,6 +14,7 @@
 #include <ctime>
 #include "../render/Scene.h"
 #include "../render/ModelObject.h"
+#include "../render/PrimitiveShapes.h" // Include the primitive shapes header
 
 // Define the dimensions
 const unsigned SCREEN_WIDTH = WIDTH;
@@ -140,6 +141,10 @@ static float pointLightBrightness = 0.05f; // Increased from 0.5 to 0.8
 static float dirLightBrightness = 1.7f;   // Increased from 2.0 to 2.5
 static float spotLightBrightness = 1.0f;  // Increased from 2.5 to 4.0
 
+// Add variables for primitive shapes
+std::vector<std::shared_ptr<m3D::PrimitiveShape>> primitiveShapes;
+std::vector<glm::vec3> rotationSpeeds; // Store rotation speeds for each primitive
+
 // Forward declare static functions
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
@@ -222,6 +227,132 @@ void generateRandomPointLights() {
     }
     
     std::cout << "Generated " << randomPointLights.size() << " random point lights" << std::endl;
+}
+
+// Function to generate random primitive shapes
+void generatePrimitiveShapes() {
+    std::cout << "\n=== Starting to generate primitive shapes ===\n" << std::endl;
+    
+    // Clear existing primitives
+    primitiveShapes.clear();
+    rotationSpeeds.clear();
+    
+    // Random number generation
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    
+    // Position distributions
+    std::uniform_real_distribution<float> posDistX(-15.0f, 15.0f);
+    std::uniform_real_distribution<float> posDistY(1.0f, 8.0f);
+    std::uniform_real_distribution<float> posDistZ(-15.0f, 15.0f);
+    
+    // Rotation distributions
+    std::uniform_real_distribution<float> rotDist(0.0f, 360.0f);
+    
+    // Scale distributions
+    std::uniform_real_distribution<float> scaleDist(0.3f, 0.8f);
+    
+    // Color distributions
+    std::uniform_real_distribution<float> colorDist(0.2f, 1.0f);
+    
+    // Rotation speed distributions
+    std::uniform_real_distribution<float> speedDist(-50.0f, 50.0f);
+    
+    std::cout << "Generating 10 cubes..." << std::endl;
+    
+    // Generate 10 cubes
+    for (int i = 0; i < 10; i++) {
+        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
+        float scale = scaleDist(gen);
+        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+        
+        std::string name = "Cube_" + std::to_string(i);
+        std::cout << "Creating cube " << i << ": " << name << std::endl;
+        
+        try {
+            auto cube = std::make_shared<m3D::Cube>(name, position, rotation, glm::vec3(scale), color);
+            primitiveShapes.push_back(cube);
+            scene.AddObject(cube);
+            
+            // Add random rotation speed
+            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
+            std::cout << "Cube " << i << " created successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "Error creating cube " << i << ": " << e.what() << std::endl;
+        }
+    }
+    
+    std::cout << "Generating 10 spheres..." << std::endl;
+    
+    // Generate 10 spheres
+    for (int i = 0; i < 10; i++) {
+        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
+        float scale = scaleDist(gen);
+        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+        
+        std::string name = "Sphere_" + std::to_string(i);
+        std::cout << "Creating sphere " << i << ": " << name << std::endl;
+        
+        try {
+            auto sphere = std::make_shared<m3D::Sphere>(name, position, rotation, glm::vec3(scale), color);
+            primitiveShapes.push_back(sphere);
+            scene.AddObject(sphere);
+            
+            // Add random rotation speed
+            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
+            std::cout << "Sphere " << i << " created successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "Error creating sphere " << i << ": " << e.what() << std::endl;
+        }
+    }
+    
+    std::cout << "Generating 10 prisms..." << std::endl;
+    
+    // Generate 10 prisms
+    for (int i = 0; i < 10; i++) {
+        glm::vec3 position(posDistX(gen), posDistY(gen), posDistZ(gen));
+        glm::vec3 rotation(rotDist(gen), rotDist(gen), rotDist(gen));
+        float scale = scaleDist(gen);
+        glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
+        
+        std::string name = "Prism_" + std::to_string(i);
+        std::cout << "Creating prism " << i << ": " << name << std::endl;
+        
+        try {
+            auto prism = std::make_shared<m3D::Prism>(name, position, rotation, glm::vec3(scale), color);
+            primitiveShapes.push_back(prism);
+            scene.AddObject(prism);
+            
+            // Add random rotation speed
+            rotationSpeeds.push_back(glm::vec3(speedDist(gen), speedDist(gen), speedDist(gen)));
+            std::cout << "Prism " << i << " created successfully" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "Error creating prism " << i << ": " << e.what() << std::endl;
+        }
+    }
+    
+    std::cout << "Generated " << primitiveShapes.size() << " primitive shapes" << std::endl;
+    std::cout << "Scene now has " << scene.GetObjectCount() << " total objects" << std::endl;
+    std::cout << "\n=== Finished generating primitive shapes ===\n" << std::endl;
+}
+
+// Function to update primitive rotations
+void updatePrimitiveRotations(float deltaTime) {
+    for (size_t i = 0; i < primitiveShapes.size(); i++) {
+        if (i < rotationSpeeds.size() && primitiveShapes[i]) {
+            // Update rotation based on rotation speed and delta time
+            primitiveShapes[i]->rotation.x += rotationSpeeds[i].x * deltaTime;
+            primitiveShapes[i]->rotation.y += rotationSpeeds[i].y * deltaTime;
+            primitiveShapes[i]->rotation.z += rotationSpeeds[i].z * deltaTime;
+            
+            // Keep rotations in the range [0, 360]
+            primitiveShapes[i]->rotation.x = fmod(primitiveShapes[i]->rotation.x, 360.0f);
+            primitiveShapes[i]->rotation.y = fmod(primitiveShapes[i]->rotation.y, 360.0f);
+            primitiveShapes[i]->rotation.z = fmod(primitiveShapes[i]->rotation.z, 360.0f);
+        }
+    }
 }
 
 // Function to load models using the Scene class
@@ -371,6 +502,11 @@ void loadModels(const std::string& modelBasePath, const std::string& binModelBas
     }
     
     std::cout << "Loaded " << scene.GetObjectCount() << " models successfully" << std::endl;
+    
+    // Generate primitive shapes
+    std::cout << "\n=== About to call generatePrimitiveShapes() ===\n" << std::endl;
+    generatePrimitiveShapes();
+    std::cout << "\n=== Returned from generatePrimitiveShapes() ===\n" << std::endl;
 }
 
 int game3d(int argc, char *argv[], const std::string& type) {
@@ -540,6 +676,9 @@ int game3d(int argc, char *argv[], const std::string& type) {
         
         // Render lighting window
         renderLightingWindow();
+        
+        // Update primitive rotations
+        updatePrimitiveRotations(deltaTime);
 
         // Get the shader and activate it once before setting all uniforms
         try {
