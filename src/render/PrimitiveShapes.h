@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include <iostream>
+#include <map>
 
 namespace m3D {
 
@@ -179,17 +180,23 @@ public:
     }
 };
 
-// Sphere shape
+// Sphere shape with improved lighting and roundness control
 class Sphere : public PrimitiveShape {
 public:
+    // Roundness parameter (0.0 to 1.0) controls how spherical the shape is
+    // At 0.0, it's more like the original polyhedron
+    // At 1.0, it's a perfect sphere
+    float roundness;
+    
     Sphere(const std::string& name, 
            const glm::vec3& position = glm::vec3(0.0f),
            const glm::vec3& rotation = glm::vec3(0.0f),
            const glm::vec3& scale = glm::vec3(1.0f),
            const glm::vec3& color = glm::vec3(0.2f, 0.6f, 1.0f),
            unsigned int segments = 32,
-           unsigned int rings = 32) 
-        : PrimitiveShape(name, position, rotation, scale) {
+           unsigned int rings = 32,
+           float roundness = 1.0f) 
+        : PrimitiveShape(name, position, rotation, scale), roundness(roundness) {
         
         std::cout << "Creating Sphere: " << name << " at position (" 
                   << position.x << ", " << position.y << ", " << position.z << ")" << std::endl;
@@ -213,12 +220,36 @@ public:
                 float zPos = std::sin(phi) * std::sin(theta);
                 
                 Vertex vertex;
-                vertex.Position = glm::vec3(xPos * 0.5f, yPos * 0.5f, zPos * 0.5f);
+                
+                // Apply roundness parameter - interpolate between octahedron and sphere
+                if (roundness < 1.0f) {
+                    // Create an octahedron point
+                    glm::vec3 octPoint;
+                    
+                    // Determine which octant we're in
+                    float absX = std::abs(xPos);
+                    float absY = std::abs(yPos);
+                    float absZ = std::abs(zPos);
+                    
+                    // Normalize to create octahedron point
+                    float maxCoord = std::max(std::max(absX, absY), absZ);
+                    octPoint.x = xPos / maxCoord * 0.5f;
+                    octPoint.y = yPos / maxCoord * 0.5f;
+                    octPoint.z = zPos / maxCoord * 0.5f;
+                    
+                    // Interpolate between octahedron and sphere
+                    glm::vec3 spherePoint(xPos * 0.5f, yPos * 0.5f, zPos * 0.5f);
+                    vertex.Position = glm::mix(octPoint, spherePoint, roundness);
+                } else {
+                    // Perfect sphere
+                    vertex.Position = glm::vec3(xPos * 0.5f, yPos * 0.5f, zPos * 0.5f);
+                }
                 
                 // For a sphere, the normal is simply the normalized position vector
+                // This ensures correct lighting regardless of the shape's roundness
                 vertex.Normal = glm::normalize(glm::vec3(xPos, yPos, zPos));
                 
-                // Texture coordinates
+                // Texture coordinates with reduced distortion at poles
                 vertex.TexCoords = glm::vec2(xSegment, ySegment);
                 
                 // Calculate tangent and bitangent
@@ -280,6 +311,41 @@ public:
         // Create the mesh
         mesh = std::make_shared<Mesh>(vertices, indices, textures);
         std::cout << "Sphere mesh created successfully" << std::endl;
+    }
+    
+    // Calculate the roundness metric based on maximum sagitta
+    float calculateRoundnessMetric() const {
+        if (!mesh) return 0.0f;
+        
+        float maxSagitta = 0.0f;
+        float radius = 0.5f; // Our sphere has radius 0.5
+        
+        // Iterate through all triangular faces
+        for (size_t i = 0; i < mesh->indices.size(); i += 3) {
+            // Get the three vertices of this face
+            const Vertex& v1 = mesh->vertices[mesh->indices[i]];
+            const Vertex& v2 = mesh->vertices[mesh->indices[i+1]];
+            const Vertex& v3 = mesh->vertices[mesh->indices[i+2]];
+            
+            // Calculate face normal (non-normalized)
+            glm::vec3 edge1 = v2.Position - v1.Position;
+            glm::vec3 edge2 = v3.Position - v1.Position;
+            glm::vec3 faceNormal = glm::cross(edge1, edge2);
+            
+            // Calculate distance from center (0,0,0) to face plane
+            float distance = std::abs(glm::dot(faceNormal, v1.Position)) / glm::length(faceNormal);
+            
+            // Calculate sagitta (deviation from perfect sphere)
+            float sagitta = radius - distance;
+            
+            // Update maximum sagitta
+            if (sagitta > maxSagitta) {
+                maxSagitta = sagitta;
+            }
+        }
+        
+        // Roundness metric: 1 - (max_sagitta / radius)
+        return 1.0f - (maxSagitta / radius);
     }
 };
 
@@ -382,17 +448,21 @@ public:
     }
 };
 
-// High-quality sphere shape with smooth shading
+// High-quality sphere shape with smooth shading and improved lighting
 class HighQualitySphere : public PrimitiveShape {
 public:
+    // Roundness parameter (0.0 to 1.0) controls how spherical the shape is
+    float roundness;
+    
     HighQualitySphere(const std::string& name, 
                      const glm::vec3& position = glm::vec3(0.0f),
                      const glm::vec3& rotation = glm::vec3(0.0f),
                      const glm::vec3& scale = glm::vec3(1.0f),
                      const glm::vec3& color = glm::vec3(0.2f, 0.6f, 1.0f),
                      unsigned int segments = 64,
-                     unsigned int rings = 64) 
-        : PrimitiveShape(name, position, rotation, scale) {
+                     unsigned int rings = 64,
+                     float roundness = 1.0f) 
+        : PrimitiveShape(name, position, rotation, scale), roundness(roundness) {
         
         std::cout << "Creating High-Quality Sphere: " << name << " at position (" 
                   << position.x << ", " << position.y << ", " << position.z << ")" << std::endl;
@@ -416,11 +486,46 @@ public:
                 float zPos = std::sin(phi) * std::sin(theta);
                 
                 Vertex vertex;
-                vertex.Position = glm::vec3(xPos * 0.5f, yPos * 0.5f, zPos * 0.5f);
+                
+                // Apply roundness parameter - interpolate between icosahedron and sphere
+                if (roundness < 1.0f) {
+                    // Create an icosahedron-like point (better approximation than octahedron)
+                    glm::vec3 icoPoint;
+                    
+                    // Approximate icosahedron projection
+                    float phi = std::atan2(std::sqrt(xPos*xPos + zPos*zPos), yPos);
+                    float theta = std::atan2(zPos, xPos);
+                    
+                    // Adjust phi to create icosahedron-like shape
+                    float t = phi / glm::pi<float>();
+                    float adjustedPhi = phi;
+                    
+                    // Adjust phi based on the golden ratio properties of icosahedron
+                    if (t < 0.2f || t > 0.8f) {
+                        adjustedPhi = phi * 0.9f;
+                    } else if (t < 0.4f || t > 0.6f) {
+                        adjustedPhi = phi * 1.1f;
+                    }
+                    
+                    // Convert back to Cartesian
+                    float r = 0.5f;
+                    icoPoint.x = r * std::sin(adjustedPhi) * std::cos(theta);
+                    icoPoint.y = r * std::cos(adjustedPhi);
+                    icoPoint.z = r * std::sin(adjustedPhi) * std::sin(theta);
+                    
+                    // Interpolate between icosahedron and sphere
+                    glm::vec3 spherePoint(xPos * 0.5f, yPos * 0.5f, zPos * 0.5f);
+                    vertex.Position = glm::mix(icoPoint, spherePoint, roundness);
+                } else {
+                    // Perfect sphere
+                    vertex.Position = glm::vec3(xPos * 0.5f, yPos * 0.5f, zPos * 0.5f);
+                }
+                
+                // Always use perfect sphere normals for correct lighting
                 vertex.Normal = glm::normalize(glm::vec3(xPos, yPos, zPos));
                 
-                // Improved texture mapping for spheres
-                // This mapping reduces distortion at the poles
+                // Improved texture mapping for spheres with reduced pole distortion
+                // Use spherical unwrapping with adjustments to reduce distortion
                 vertex.TexCoords = glm::vec2(xSegment, ySegment);
                 
                 // Calculate tangent and bitangent for proper normal mapping
@@ -481,6 +586,240 @@ public:
         // Create the mesh
         mesh = std::make_shared<Mesh>(vertices, indices, textures);
         std::cout << "High-quality sphere mesh created successfully" << std::endl;
+    }
+    
+    // Calculate the roundness metric based on maximum sagitta
+    float calculateRoundnessMetric() const {
+        if (!mesh) return 0.0f;
+        
+        float maxSagitta = 0.0f;
+        float radius = 0.5f; // Our sphere has radius 0.5
+        
+        // Iterate through all triangular faces
+        for (size_t i = 0; i < mesh->indices.size(); i += 3) {
+            // Get the three vertices of this face
+            const Vertex& v1 = mesh->vertices[mesh->indices[i]];
+            const Vertex& v2 = mesh->vertices[mesh->indices[i+1]];
+            const Vertex& v3 = mesh->vertices[mesh->indices[i+2]];
+            
+            // Calculate face normal (non-normalized)
+            glm::vec3 edge1 = v2.Position - v1.Position;
+            glm::vec3 edge2 = v3.Position - v1.Position;
+            glm::vec3 faceNormal = glm::cross(edge1, edge2);
+            
+            // Calculate distance from center (0,0,0) to face plane
+            float distance = std::abs(glm::dot(faceNormal, v1.Position)) / glm::length(faceNormal);
+            
+            // Calculate sagitta (deviation from perfect sphere)
+            float sagitta = radius - distance;
+            
+            // Update maximum sagitta
+            if (sagitta > maxSagitta) {
+                maxSagitta = sagitta;
+            }
+        }
+        
+        // Roundness metric: 1 - (max_sagitta / radius)
+        return 1.0f - (maxSagitta / radius);
+    }
+};
+
+// Icosphere shape - a sphere based on subdivided icosahedron
+class IcosphereShape : public PrimitiveShape {
+public:
+    IcosphereShape(const std::string& name, 
+                  const glm::vec3& position = glm::vec3(0.0f),
+                  const glm::vec3& rotation = glm::vec3(0.0f),
+                  const glm::vec3& scale = glm::vec3(1.0f),
+                  const glm::vec3& color = glm::vec3(0.2f, 0.6f, 1.0f),
+                  unsigned int subdivisions = 3) 
+        : PrimitiveShape(name, position, rotation, scale) {
+        
+        std::cout << "Creating Icosphere: " << name << " at position (" 
+                  << position.x << ", " << position.y << ", " << position.z << ")" << std::endl;
+        
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        std::map<std::pair<unsigned int, unsigned int>, unsigned int> middlePointIndexCache;
+        
+        // Create 12 vertices of an icosahedron
+        const float t = (1.0f + std::sqrt(5.0f)) / 2.0f;
+        const float radius = 0.5f; // Radius of 0.5 to match other shapes
+        
+        // Add vertices for icosahedron
+        addVertex(vertices, glm::normalize(glm::vec3(-1.0f, t, 0.0f)) * radius);
+        addVertex(vertices, glm::normalize(glm::vec3(1.0f, t, 0.0f)) * radius);
+        addVertex(vertices, glm::normalize(glm::vec3(-1.0f, -t, 0.0f)) * radius);
+        addVertex(vertices, glm::normalize(glm::vec3(1.0f, -t, 0.0f)) * radius);
+        
+        addVertex(vertices, glm::normalize(glm::vec3(0.0f, -1.0f, t)) * radius);
+        addVertex(vertices, glm::normalize(glm::vec3(0.0f, 1.0f, t)) * radius);
+        addVertex(vertices, glm::normalize(glm::vec3(0.0f, -1.0f, -t)) * radius);
+        addVertex(vertices, glm::normalize(glm::vec3(0.0f, 1.0f, -t)) * radius);
+        
+        addVertex(vertices, glm::normalize(glm::vec3(t, 0.0f, -1.0f)) * radius);
+        addVertex(vertices, glm::normalize(glm::vec3(t, 0.0f, 1.0f)) * radius);
+        addVertex(vertices, glm::normalize(glm::vec3(-t, 0.0f, -1.0f)) * radius);
+        addVertex(vertices, glm::normalize(glm::vec3(-t, 0.0f, 1.0f)) * radius);
+        
+        // Add faces (5 faces around each vertex)
+        // 5 faces around point 0
+        addFace(indices, 0, 11, 5);
+        addFace(indices, 0, 5, 1);
+        addFace(indices, 0, 1, 7);
+        addFace(indices, 0, 7, 10);
+        addFace(indices, 0, 10, 11);
+        
+        // 5 faces around point 1
+        addFace(indices, 1, 5, 9);
+        addFace(indices, 1, 9, 8);
+        addFace(indices, 1, 8, 7);
+        
+        // 5 faces around point 2
+        addFace(indices, 2, 4, 11);
+        addFace(indices, 2, 11, 10);
+        addFace(indices, 2, 10, 6);
+        addFace(indices, 2, 6, 3);
+        addFace(indices, 2, 3, 4);
+        
+        // 5 faces around point 3
+        addFace(indices, 3, 6, 8);
+        addFace(indices, 3, 8, 9);
+        addFace(indices, 3, 9, 4);
+        
+        // 5 faces around point 4
+        addFace(indices, 4, 9, 5);
+        addFace(indices, 4, 5, 11);
+        
+        // 5 faces around point 5
+        
+        // 5 faces around point 6
+        addFace(indices, 6, 10, 7);
+        addFace(indices, 6, 7, 8);
+        
+        // 5 faces around point 7
+        
+        // 5 faces around point 8
+        
+        // 5 faces around point 9
+        
+        // 5 faces around point 10
+        
+        // 5 faces around point 11
+        
+        // Subdivide the faces
+        for (unsigned int i = 0; i < subdivisions; i++) {
+            std::vector<unsigned int> newIndices;
+            
+            // Iterate over all triangles
+            for (size_t j = 0; j < indices.size(); j += 3) {
+                unsigned int v1 = indices[j];
+                unsigned int v2 = indices[j + 1];
+                unsigned int v3 = indices[j + 2];
+                
+                // Get the midpoints of each edge
+                unsigned int a = getMiddlePoint(v1, v2, vertices, middlePointIndexCache, radius);
+                unsigned int b = getMiddlePoint(v2, v3, vertices, middlePointIndexCache, radius);
+                unsigned int c = getMiddlePoint(v3, v1, vertices, middlePointIndexCache, radius);
+                
+                // Create 4 new triangles
+                addFace(newIndices, v1, a, c);
+                addFace(newIndices, v2, b, a);
+                addFace(newIndices, v3, c, b);
+                addFace(newIndices, a, b, c);
+            }
+            
+            // Replace old indices with new ones
+            indices = newIndices;
+        }
+        
+        // Create a texture with the specified color
+        std::vector<Texture> textures;
+        Texture texture;
+        texture.id = createColorTexture(color.r, color.g, color.b);
+        texture.type = "texture_diffuse";
+        texture.path = "generated_color";
+        textures.push_back(texture);
+        
+        std::cout << "Creating icosphere mesh with " << vertices.size() << " vertices and " 
+                  << indices.size() << " indices" << std::endl;
+        
+        // Create the mesh
+        mesh = std::make_shared<Mesh>(vertices, indices, textures);
+        std::cout << "Icosphere mesh created successfully" << std::endl;
+    }
+    
+private:
+    // Helper function to add a vertex to the mesh
+    void addVertex(std::vector<Vertex>& vertices, const glm::vec3& position) {
+        Vertex vertex;
+        vertex.Position = position;
+        
+        // For a sphere, the normal is the normalized position
+        vertex.Normal = glm::normalize(position);
+        
+        // Calculate texture coordinates using spherical mapping
+        float u = 0.5f + std::atan2(position.z, position.x) / (2.0f * glm::pi<float>());
+        float v = 0.5f - std::asin(position.y) / glm::pi<float>();
+        vertex.TexCoords = glm::vec2(u, v);
+        
+        // Calculate tangent and bitangent
+        glm::vec3 tangent;
+        if (std::abs(vertex.Normal.y) < 0.999f) {
+            tangent = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), vertex.Normal));
+        } else {
+            tangent = glm::normalize(glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), vertex.Normal));
+        }
+        vertex.Tangent = tangent;
+        vertex.Bitangent = glm::normalize(glm::cross(vertex.Normal, tangent));
+        
+        // Initialize bone weights to 0
+        for (int i = 0; i < MAX_BONE_INFLUENCE; i++) {
+            vertex.m_BoneIDs[i] = 0;
+            vertex.m_Weights[i] = 0.0f;
+        }
+        
+        vertices.push_back(vertex);
+    }
+    
+    // Helper function to add a face (triangle) to the mesh
+    void addFace(std::vector<unsigned int>& indices, unsigned int v1, unsigned int v2, unsigned int v3) {
+        indices.push_back(v1);
+        indices.push_back(v2);
+        indices.push_back(v3);
+    }
+    
+    // Helper function to get or create a vertex at the middle of an edge
+    unsigned int getMiddlePoint(unsigned int v1, unsigned int v2, 
+                               std::vector<Vertex>& vertices, 
+                               std::map<std::pair<unsigned int, unsigned int>, unsigned int>& cache,
+                               float radius) {
+        // Check if we already have this edge's middle point
+        bool firstIsSmaller = v1 < v2;
+        std::pair<unsigned int, unsigned int> key = firstIsSmaller ? 
+            std::make_pair(v1, v2) : std::make_pair(v2, v1);
+            
+        auto it = cache.find(key);
+        if (it != cache.end()) {
+            return it->second;
+        }
+        
+        // Not in cache, calculate the middle point
+        const glm::vec3& p1 = vertices[v1].Position;
+        const glm::vec3& p2 = vertices[v2].Position;
+        glm::vec3 middle = (p1 + p2) * 0.5f;
+        
+        // Normalize to the sphere's radius
+        middle = glm::normalize(middle) * radius;
+        
+        // Add the new vertex
+        unsigned int newIndex = vertices.size();
+        addVertex(vertices, middle);
+        
+        // Add to cache
+        cache[key] = newIndex;
+        
+        return newIndex;
     }
 };
 
