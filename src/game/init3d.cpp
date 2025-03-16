@@ -1150,9 +1150,12 @@ void renderScene(Shader &shader) {
     // Render the ground
     renderGround(shader);
     
-    // Render models
-    for (auto& model : models) {
-        model->Draw(shader);
+    // Render models from the scene
+    for (const auto& modelName : modelNames) {
+        auto modelObj = scene.GetModelObject(modelName);
+        if (modelObj && modelObj->visible) {
+            modelObj->Draw(shader);
+        }
     }
     
     // Render primitive shapes
