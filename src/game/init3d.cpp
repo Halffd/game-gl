@@ -519,33 +519,17 @@ int game3d(int argc, char *argv[], const std::string& type) {
         std::cout << "Current working directory: " << cwd << std::endl;
     }
 
-    // Set ResourceManager root path to the parent directory of the current directory
-    std::string currentDir = cwd;
-    std::string parentDir = currentDir;
-    
-    // Log all files and directories in the current directory
-    std::cout << "\n=== Files and directories in current directory ===\n";
-    system("ls -la");
-    
     // Set ResourceManager root path to the current directory
-    ResourceManager::root = currentDir;
+    ResourceManager::root = cwd;
     std::cout << "ResourceManager root set to: " << ResourceManager::root << std::endl;
-    
-    // Log the structure of important directories
-    std::cout << "\n=== Checking models directory ===\n";
-    system("ls -la models 2>/dev/null || echo 'models directory not found'");
-    
-    std::cout << "\n=== Checking shaders directory ===\n";
-    system("ls -la shaders 2>/dev/null || echo 'shaders directory not found'");
-    
-    // Create bin directory if it doesn't exist
-    system("mkdir -p bin/models bin/shaders");
-    
-    // Copy necessary files to bin directory
-    std::cout << "\n=== Copying resources to bin directory ===\n";
-    system("cp -rv shaders/* bin/shaders/ 2>/dev/null || echo 'No shader files to copy'");
-    system("cp -rv models/* bin/models/ 2>/dev/null || echo 'No model files to copy'");
 
+    // Define shader paths relative to the current directory
+    std::string vertexShaderPath = ResourceManager::root + "/shaders/3d.vs";
+    std::string fragmentShaderPath = ResourceManager::root + "/shaders/3d.fs";
+
+    std::cout << "Loading vertex shader from: " << vertexShaderPath << std::endl;
+    std::cout << "Loading fragment shader from: " << fragmentShaderPath << std::endl;
+    
     GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "3D Model Viewer", nullptr, nullptr);
     if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -572,7 +556,7 @@ int game3d(int argc, char *argv[], const std::string& type) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+    glDepthFunc(GL_ALWAYS); 
     // Initialize ImGui
     Gui::Init(window);
     
@@ -581,10 +565,6 @@ int game3d(int argc, char *argv[], const std::string& type) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     firstMouse = true;
 
-    // Load shaders with absolute paths
-    std::string vertexShaderPath = std::string(cwd) + "/shaders/3d.vs";
-    std::string fragmentShaderPath = std::string(cwd) + "/shaders/3d.fs";
-    
     std::cout << "Loading vertex shader from: " << vertexShaderPath << std::endl;
     std::cout << "Loading fragment shader from: " << fragmentShaderPath << std::endl;
     
@@ -649,7 +629,7 @@ int game3d(int argc, char *argv[], const std::string& type) {
     useRandomPointLights = false; // Start with random lights disabled
     
     // Load models using the Scene class
-    loadModels(currentDir, std::string(cwd) + "/bin/models");
+    loadModels(cwd, std::string(cwd) + "/bin/models");
     
     // Generate primitive shapes
     generatePrimitiveShapes();

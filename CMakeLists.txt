@@ -104,3 +104,21 @@ file(MAKE_DIRECTORY ${BIN_DIR})
 foreach(DIR ${DIRECTORIES_TO_COPY})
     file(COPY ${CMAKE_SOURCE_DIR}/${DIR} DESTINATION ${BIN_DIR})
 endforeach()
+
+# Add commands to copy resource directories
+add_custom_command(
+    TARGET GameEngine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/shaders
+    ${CMAKE_BINARY_DIR}/shaders
+)
+
+add_custom_command(
+    TARGET GameEngine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/models
+    ${CMAKE_BINARY_DIR}/models
+)
+
+# Print message during build
+message(STATUS "Resource directories will be copied to build directory")
