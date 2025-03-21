@@ -110,18 +110,18 @@ static PointLight pointLight = {
     true                             // enabled
 };
 
-// Update the spotlight to be enabled by default and increase brightness
+// Update the spotlight to be a proper flashlight
 static SpotLight spotLight = {
     glm::vec3(0.0f, 0.0f, 0.0f),     // position - will be updated with camera position
     glm::vec3(0.0f, 0.0f, -1.0f),    // direction - will be updated with camera direction
-    glm::cos(glm::radians(12.5f)),   // cutOff - narrower beam for focused flashlight
-    glm::cos(glm::radians(17.5f)),   // outerCutOff - narrower outer beam for focused edge
+    glm::cos(glm::radians(12.5f)),   // cutOff - inner cone (12.5 degrees)
+    glm::cos(glm::radians(17.5f)),   // outerCutOff - outer cone (17.5 degrees)
     1.0f,                            // constant
-    0.09f,                           // linear - adjusted for flashlight effect
-    0.032f,                          // quadratic - adjusted for flashlight effect
-    glm::vec3(0.0f, 0.0f, 0.0f),     // ambient - keep at 0
-    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse - white light for flashlight
-    glm::vec3(1.0f, 1.0f, 1.0f),     // specular - white light for flashlight
+    0.09f,                           // linear
+    0.032f,                          // quadratic
+    glm::vec3(0.0f, 0.0f, 0.0f),     // ambient - keep dark
+    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse - bright white
+    glm::vec3(1.0f, 1.0f, 1.0f),     // specular - bright white
     true                             // enabled
 };
 
@@ -1217,9 +1217,9 @@ void setLightingUniforms(Shader &shader) {
     // Set camera position for lighting calculations
     shader.SetVector3f("viewPos", camera.Position);
     
-    // Update spotlight position and direction to match camera exactly
-    spotLight.position = camera.Position; // Position spotlight exactly at camera position
-    spotLight.direction = camera.Front;   // Use camera's front vector as spotlight direction
+    // Update spotlight position and direction to match camera
+    spotLight.position = camera.Position;
+    spotLight.direction = camera.Front;
     
     // Set directional light properties
     shader.SetVector3f("dirLight.direction", dirLight.direction);
@@ -1238,7 +1238,7 @@ void setLightingUniforms(Shader &shader) {
     shader.SetVector3f("pointLight.specular", pointLight.specular);
     shader.SetInteger("usePointLight", pointLight.enabled ? 1 : 0);
     
-    // Set spotlight properties
+    // Set spotlight uniforms
     shader.SetVector3f("spotLight.position", spotLight.position);
     shader.SetVector3f("spotLight.direction", spotLight.direction);
     shader.SetFloat("spotLight.cutOff", spotLight.cutOff);
