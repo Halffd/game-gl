@@ -145,9 +145,9 @@ unsigned int groundTexture = 0;
 unsigned int groundNormalTexture = 0;
 
 // Add these variables after the material settings
-static float pointLightBrightness = 0.2f; // Increased to compensate for improved attenuation
+static float pointLightBrightness = 0.6f; // Increased to compensate for improved attenuation
 static float dirLightBrightness = 0.5f;   // Keep the same
-static float spotLightBrightness = 2.5f;  // Increased for better flashlight effect
+static float spotLightBrightness = 0.7f;  // Increased for better flashlight effect
 
 // Add variables for primitive shapes
 std::vector<std::shared_ptr<m3D::PrimitiveShape>> primitiveShapes;
@@ -556,7 +556,7 @@ int game3d(int argc, char *argv[], const std::string& type) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthFunc(GL_ALWAYS); 
+
     // Initialize ImGui
     Gui::Init(window);
     
