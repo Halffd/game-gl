@@ -7,6 +7,8 @@ in vec3 FragPos;
 in vec3 TangentLightPos;
 in vec3 TangentViewPos;
 in vec3 TangentFragPos;
+in vec3 TangentSpotLightPos;
+in vec3 TangentSpotLightDir;
 
 // Material maps
 uniform sampler2D texture_diffuse1;
@@ -272,18 +274,18 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor) {
     vec3 lightDir;
     float distance;
-    
-    // Get the spotlight direction from the uniform
-    vec3 spotDirection = normalize(light.direction);
+    vec3 spotDirection;
     
     if(useNormalMap) {
-        // For normal mapping, transform the light position to tangent space
-        lightDir = normalize(TangentLightPos - TangentFragPos);
-        distance = length(TangentLightPos - TangentFragPos);
+        // For normal mapping, use the tangent space spotlight position and direction
+        lightDir = normalize(TangentSpotLightPos - TangentFragPos);
+        distance = length(TangentSpotLightPos - TangentFragPos);
+        spotDirection = normalize(TangentSpotLightDir);
     } else {
-        // Use the exact spotlight position from the uniform
+        // Use the world space spotlight position and direction
         lightDir = normalize(light.position - fragPos);
         distance = length(light.position - fragPos);
+        spotDirection = normalize(light.direction);
     }
     
     // Diffuse shading

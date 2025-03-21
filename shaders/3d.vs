@@ -11,6 +11,8 @@ out vec3 FragPos;
 out vec3 TangentLightPos;
 out vec3 TangentViewPos;
 out vec3 TangentFragPos;
+out vec3 TangentSpotLightPos;
+out vec3 TangentSpotLightDir;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -20,6 +22,10 @@ uniform mat4 projection;
 uniform vec3 lightPos; // Point light position
 uniform vec3 viewPos;  // Camera position
 uniform bool useNormalMap;
+
+// Add these uniforms
+uniform vec3 spotLightPos;  // Spotlight position
+uniform vec3 spotLightDir;  // Spotlight direction
 
 void main() {
     FragPos = vec3(model * vec4(aPos, 1.0));
@@ -38,6 +44,8 @@ void main() {
         TangentLightPos = TBN * lightPos;
         TangentViewPos = TBN * viewPos;
         TangentFragPos = TBN * FragPos;
+        TangentSpotLightPos = TBN * spotLightPos;
+        TangentSpotLightDir = TBN * spotLightDir;
     }
     
     gl_Position = projection * view * vec4(FragPos, 1.0);

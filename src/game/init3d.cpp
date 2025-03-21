@@ -335,7 +335,7 @@ static void renderDynamicShapesWindow() {
     
     ImGui::Checkbox("Enable Dynamic Shapes", &useDynamicShapes);
     
-    if (ImGui::Button("Regenerate Dynamic Shapes")) {
+    if (ImGui::Button("Regenerate Dynamic Shapes", ImVec2(200, 0))) {
         // Clear existing dynamic shapes
         dynamicShapes.clear();
         dynamicTransforms.clear();
@@ -1238,7 +1238,11 @@ void setLightingUniforms(Shader &shader) {
     shader.SetVector3f("pointLight.specular", pointLight.specular);
     shader.SetInteger("usePointLight", pointLight.enabled ? 1 : 0);
     
-    // Set spotlight uniforms
+    // Set spotlight position and direction for tangent space calculations
+    shader.SetVector3f("spotLightPos", spotLight.position);
+    shader.SetVector3f("spotLightDir", spotLight.direction);
+    
+    // Set spotlight uniforms (add these back)
     shader.SetVector3f("spotLight.position", spotLight.position);
     shader.SetVector3f("spotLight.direction", spotLight.direction);
     shader.SetFloat("spotLight.cutOff", spotLight.cutOff);
