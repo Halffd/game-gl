@@ -1,0 +1,4 @@
+* linguist-vendored
+*.c linguist-vendored=true
+*.cpp linguist-language=C++
+*.glsl linguist-language=GLSL
