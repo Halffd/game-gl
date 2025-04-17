@@ -82,6 +82,9 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
 float near = 0.1;
 float far  = 100.0;
+uniform vec3 fogColor = vec3(0.7, 0.7, 0.7); // light gray fog
+uniform float fogStart = 3.0;               // fog starts here
+uniform float fogEnd = 35.0;                 // fully fogged here
 
 // Checkerboard normal function
 vec3 calculateCheckerboardNormal(vec2 position, float scale, float height) {
@@ -114,44 +117,49 @@ vec3 calculateCheckerboardNormal(vec2 position, float scale, float height) {
 float LinearizeDepth(float d)
 {
     // d = depth in non-linear space
-    float z_ndc = exp(d) * 2.0 - 1.0;
-    return exp(2.0 * near * far)
-         / exp(far + near - z_ndc * (far - near));
+    float z_ndc = d * 2.0 - 1.0;
+    return (2.0 * near * far)
+         / (far + near - z_ndc * (far - near));
+}
+vec3 ApplyFog(vec3 color, float depth)
+{
+    float fogFactor = clamp((fogEnd - depth) / (fogEnd - fogStart), 0.0, 1.0);
+    return mix(fogColor, color, fogFactor);
 }
 void depthTest()
 {
     // get eye-space Z, then normalize to [0,1] for visualization
-    float depth = LinearizeDepth(gl_FragCoord.z);
-    depth = pow(depth / far, 0.2); // artistic contrast
-    FragColor = vec4(vec3(depth), 1.0);
+    float linearZ = LinearizeDepth(gl_FragCoord.z);
+    float normalized = linearZ / far;
+    // output normalized Z to the fragment shader
+    FragColor = vec4(vec3(normalized), 1.0);
 }
 
 void main()
 {
-    depthTest(); // call depthTest function
-    return;
+    // depthTest(); // call depthTest function
     // Sample the diffuse texture
     vec4 texColor = texture(texture_diffuse1, TexCoords);
-    
+
     // If the texture is completely transparent, discard the fragment
     if(texColor.a < 0.1)
         discard;
-    
+
     // Get diffuse color
     vec3 diffuseColor = texColor.rgb;
-    
+
     // Apply detail map if available
     if(useDetailMap) {
         vec3 detailColor = texture(texture_detail1, TexCoords * 5.0).rgb; // Scale UVs for detail
         diffuseColor = mix(diffuseColor, detailColor, 0.3); // Blend with 30% detail
     }
-    
+
     // Get specular color
     vec3 specularColor = vec3(0.5);
     if(useSpecularMap) {
         specularColor = texture(texture_specular1, TexCoords).rgb;
     }
-    
+
     // Get normal from normal map, use checkerboard for ground, or use the interpolated normal
     vec3 norm;
     if(useNormalMap) {
@@ -168,7 +176,7 @@ void main()
             norm = normalize(Normal);
         }
     }
-    
+
     // Calculate view direction
     vec3 viewDir;
     if(useNormalMap) {
@@ -176,48 +184,53 @@ void main()
     } else {
         viewDir = normalize(viewPos - FragPos);
     }
-    
+
     // Calculate scatter effect if available
     float scatter = 0.0;
     if(useScatterMap) {
         scatter = texture(texture_scatter1, TexCoords).r;
     }
-    
+
     // Calculate lighting
     vec3 result = vec3(0.0);
-    
+
     // Directional light
     if(useDirLight) {
         result += CalcDirLight(dirLight, norm, viewDir, diffuseColor, specularColor);
     }
-    
+
     // Main point light
     if(usePointLight) {
         result += CalcPointLight(pointLight, norm, FragPos, viewDir, diffuseColor, specularColor);
     }
-    
+
     // Random point lights
     if(useRandomPointLights) {
         for(int i = 0; i < numRandomPointLights && i < MAX_POINT_LIGHTS; i++) {
             result += CalcPointLight(randomPointLights[i], norm, FragPos, viewDir, diffuseColor, specularColor);
         }
     }
-    
+
     // Spot light
     if(useSpotLight) {
         result += CalcSpotLight(spotLight, norm, FragPos, viewDir, diffuseColor, specularColor);
     }
-    
+
     // Add scatter effect
     if(useScatterMap) {
         result += diffuseColor * scatter * 0.5;
     }
-    
+
     // If no lights are enabled, use a basic ambient light
     if(!useDirLight && !usePointLight && !useSpotLight && !useRandomPointLights) {
         result = diffuseColor * 0.3; // Basic ambient
     }
-    
+    float linearZ = LinearizeDepth(gl_FragCoord.z);
+    float fade = clamp(1.0 - linearZ / 8.0, 0.0, 1.0); // fades beyond 50 units
+    result *= fade;
+
+    // Apply fog
+    result = ApplyFog(result, linearZ);
     FragColor = vec4(result, texColor.a);
 }
 
