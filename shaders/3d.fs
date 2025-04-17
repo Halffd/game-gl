@@ -114,17 +114,16 @@ vec3 calculateCheckerboardNormal(vec2 position, float scale, float height) {
 float LinearizeDepth(float d)
 {
     // d = depth in non-linear space
-    float z_ndc = d * 2.0 - 1.0;
-    return (2.0 * near * far)
-         / (far + near - z_ndc * (far - near));
+    float z_ndc = exp(d) * 2.0 - 1.0;
+    return exp(2.0 * near * far)
+         / exp(far + near - z_ndc * (far - near));
 }
 void depthTest()
 {
     // get eye-space Z, then normalize to [0,1] for visualization
-    float linearZ = LinearizeDepth(gl_FragCoord.z);
-    float normalized = linearZ / far;
-    // output normalized Z to the fragment shader
-    FragColor = vec4(vec3(normalized), 1.0);
+    float depth = LinearizeDepth(gl_FragCoord.z);
+    depth = pow(depth / far, 0.2); // artistic contrast
+    FragColor = vec4(vec3(depth), 1.0);
 }
 
 void main()
