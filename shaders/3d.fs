@@ -80,6 +80,8 @@ uniform float shininess;
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
+float near = 0.1;
+float far  = 100.0;
 
 // Checkerboard normal function
 vec3 calculateCheckerboardNormal(vec2 position, float scale, float height) {
@@ -87,29 +89,48 @@ vec3 calculateCheckerboardNormal(vec2 position, float scale, float height) {
     float x = floor(position.x * scale);
     float z = floor(position.y * scale);
     bool isEven = mod(x + z, 2.0) < 1.0;
-    
+
     // Create normal vector - pointing up for even squares, angled for odd squares
     vec3 normal = vec3(0.0, 1.0, 0.0);
     if (!isEven) {
         // Calculate normal based on position within the checker
         float fx = fract(position.x * scale);
         float fz = fract(position.y * scale);
-        
+
         // Create a bump in the center of each odd square
         float dx = 0.5 - fx;
         float dz = 0.5 - fz;
         float dist = sqrt(dx * dx + dz * dz);
-        
+
         if (dist < 0.4) {
             // Create a dome-like normal
             normal = normalize(vec3(dx * height, 0.5, dz * height));
         }
     }
-    
+
     return normalize(normal);
 }
+// Recover eye‑space Z from non‑linear depth buffer
+float LinearizeDepth(float d)
+{
+    // d = depth in non-linear space
+    float z_ndc = d * 2.0 - 1.0;
+    return (2.0 * near * far)
+         / (far + near - z_ndc * (far - near));
+}
+void depthTest()
+{
+    // get eye-space Z, then normalize to [0,1] for visualization
+    float linearZ = LinearizeDepth(gl_FragCoord.z);
+    float normalized = linearZ / far;
+    // output normalized Z to the fragment shader
+    FragColor = vec4(vec3(normalized), 1.0);
+}
 
-void main() {
+void main()
+{
+    depthTest(); // call depthTest function
+    return;
     // Sample the diffuse texture
     vec4 texColor = texture(texture_diffuse1, TexCoords);
     
