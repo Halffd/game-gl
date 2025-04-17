@@ -231,6 +231,10 @@ void main()
 
     // Apply fog
     result = ApplyFog(result, linearZ);
+
+    if (linearZ >= fogEnd) {
+        discard;
+    }
     FragColor = vec4(result, texColor.a);
 }
 
