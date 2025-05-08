@@ -488,6 +488,7 @@ int game3d(int argc, char *argv[], const std::string &type) {
     // Configure global OpenGL state
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
+    glEnable(GL_STENCIL_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Initialize ImGui
@@ -579,7 +580,8 @@ int game3d(int argc, char *argv[], const std::string &type) {
         processInput(window);
 
         glClearColor(0.05f, 0.05f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 
         // Start ImGui frame
         Gui::Start();
@@ -613,6 +615,19 @@ int game3d(int argc, char *argv[], const std::string &type) {
 
         // Set lighting uniforms
         setLightingUniforms(shader);
+        // On startup
+        glClearStencil(0); // Initial stencil value = 0
+
+        // In render loop
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        // First pass - write to stencil
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);
+
+        // Second pass - use stencil
+        glStencilFunc(GL_EQUAL, static_cast<int>(currentFrame) % 2, 0xFF); // Flicker between 0/1
+        //glStencilMask(0x00);
+        glStencilOp(GL_INVERT, GL_INCR, GL_REPLACE);
 
         // Render the scene
         renderScene(shader);
