@@ -23,7 +23,7 @@
 #include <iostream>
 #include <memory>
 #include <cmath>
-
+#define TESTING 1
 // Define the dimensions
 const unsigned SCREEN_WIDTH = WIDTH;
 const unsigned SCREEN_HEIGHT = HEIGHT;
@@ -41,11 +41,11 @@ bool cursorEnabled = true;
 std::map<int, bool> keyWasPressed;
 
 // Model variables
-std::vector<m3D::Model*> models;
+std::vector<m3D::Model *> models;
 std::vector<glm::vec3> modelPositions;
 std::vector<glm::vec3> modelRotations;
 std::vector<glm::vec3> modelScales;
-bool showModelsWindow = true;
+bool showModelsWindow = false;
 int selectedModel = 0;
 
 // Scene management
@@ -91,38 +91,38 @@ struct SpotLight {
 
 // Light instances
 static DirLight dirLight = {
-    glm::vec3(-0.5f, -1.0f, -0.3f),  // direction - adjusted for better angle
-    glm::vec3(0.5f, 0.5f, 0.5f),     // ambient - increased from 0.4 to 0.5
-    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse
-    glm::vec3(1.0f, 1.0f, 1.0f),     // specular
-    true                             // enabled
+    glm::vec3(-0.5f, -1.0f, -0.3f), // direction - adjusted for better angle
+    glm::vec3(0.63f, 0.63f, 0.63f), // ambient - increased from 0.4 to 0.5
+    glm::vec3(1.0f, 1.0f, 1.0f), // diffuse
+    glm::vec3(1.0f, 1.0f, 1.0f), // specular
+    true // enabled
 };
 
 // Main point light (separate from random lights)
 static PointLight pointLight = {
-    glm::vec3(0.0f, 15.0f, 0.0f),     // position - moved to center and higher
-    1.0f,                            // constant
-    0.07f,                           // linear - slightly reduced for less attenuation
-    0.017f,                          // quadratic - slightly reduced for less attenuation
-    glm::vec3(0.3f, 0.3f, 0.3f),     // ambient - increased from 0.2 to 0.3
-    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse
-    glm::vec3(1.0f, 1.0f, 1.0f),     // specular
-    true                             // enabled
+    glm::vec3(0.0f, 15.0f, 0.0f), // position - moved to center and higher
+    1.0f, // constant
+    0.07f, // linear - slightly reduced for less attenuation
+    0.017f, // quadratic - slightly reduced for less attenuation
+    glm::vec3(0.3f, 0.3f, 0.3f), // ambient - increased from 0.2 to 0.3
+    glm::vec3(1.0f, 1.0f, 1.0f), // diffuse
+    glm::vec3(1.0f, 1.0f, 1.0f), // specular
+    true // enabled
 };
 
 // Update the spotlight to be a proper flashlight
 static SpotLight spotLight = {
-    glm::vec3(0.0f, 0.0f, 0.0f),     // position - will be updated with camera position
-    glm::vec3(0.0f, 0.0f, -1.0f),    // direction - will be updated with camera direction
-    glm::cos(glm::radians(12.5f)),   // cutOff - inner cone (12.5 degrees)
-    glm::cos(glm::radians(17.5f)),   // outerCutOff - outer cone (17.5 degrees)
-    1.0f,                            // constant
-    0.09f,                           // linear
-    0.032f,                          // quadratic
-    glm::vec3(0.0f, 0.0f, 0.0f),     // ambient - keep dark
-    glm::vec3(1.0f, 1.0f, 1.0f),     // diffuse - bright white
-    glm::vec3(1.0f, 1.0f, 1.0f),     // specular - bright white
-    true                             // enabled
+    glm::vec3(0.0f, 0.0f, 0.0f), // position - will be updated with camera position
+    glm::vec3(0.0f, 0.0f, -1.0f), // direction - will be updated with camera direction
+    glm::cos(glm::radians(12.5f)), // cutOff - inner cone (12.5 degrees)
+    glm::cos(glm::radians(17.5f)), // outerCutOff - outer cone (17.5 degrees)
+    1.0f, // constant
+    0.09f, // linear
+    0.032f, // quadratic
+    glm::vec3(0.0f, 0.0f, 0.0f), // ambient - keep dark
+    glm::vec3(1.0f, 1.0f, 1.0f), // diffuse - bright white
+    glm::vec3(1.0f, 1.0f, 1.0f), // specular - bright white
+    true // enabled
 };
 
 // Add random point lights
@@ -146,18 +146,18 @@ unsigned int groundNormalTexture = 0;
 
 // Add these variables after the material settings
 static float pointLightBrightness = 0.6f; // Increased to compensate for improved attenuation
-static float dirLightBrightness = 0.5f;   // Keep the same
-static float spotLightBrightness = 0.7f;  // Increased for better flashlight effect
+static float dirLightBrightness = 0.5f; // Keep the same
+static float spotLightBrightness = 0.7f; // Increased for better flashlight effect
 
 // Add variables for primitive shapes
-std::vector<std::shared_ptr<m3D::PrimitiveShape>> primitiveShapes;
+std::vector<std::shared_ptr<m3D::PrimitiveShape> > primitiveShapes;
 std::vector<glm::vec3> rotationSpeeds; // Store rotation speeds for each primitive
 
 // Dynamic shapes with mathematical transformations
-std::vector<std::shared_ptr<m3D::PrimitiveShape>> dynamicShapes;
-std::vector<std::shared_ptr<m3D::DynamicTransform>> dynamicTransforms;
+std::vector<std::shared_ptr<m3D::PrimitiveShape> > dynamicShapes;
+std::vector<std::shared_ptr<m3D::DynamicTransform> > dynamicTransforms;
 bool useDynamicShapes = true;
-bool showDynamicShapesWindow = true;
+bool showDynamicShapesWindow = false;
 
 // Global variables for keyboard controls
 bool showCartesianPlane = false; // Hidden by default
@@ -166,78 +166,90 @@ bool runMode = true; // Default to run mode
 float baseMovementSpeed = 2.5f; // Default movement speed
 
 // Forward declare static functions
-static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
-static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-static void processInput(GLFWwindow* window);
+static void framebufferSizeCallback(GLFWwindow *window, int width, int height);
+
+static void mouse_callback(GLFWwindow *window, double xposIn, double yposIn);
+
+static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+
+static void processInput(GLFWwindow *window);
+
 static void renderModelsWindow();
+
 static void renderLightingWindow();
+
 static void renderDynamicShapesWindow();
+
 static void setupGround();
+
 static void renderGround(Shader &shader);
+
 static bool toggleKey(int key, bool &toggleState);
+
 static void toggleCursor(GLFWwindow *window);
+
 static void renderScene(Shader &shader);
+
 static void setLightingUniforms(Shader &shader);
 
 // Function to generate random point lights
 void generateRandomPointLights() {
     // Clear existing random lights
     randomPointLights.clear();
-    
+
     // If random lights are disabled, return early
     if (!useRandomPointLights) {
         return;
     }
-    
+
     // Random number generation
     std::random_device rd;
     std::mt19937 gen(rd());
-    
+
     // Spherical distribution parameters
-    std::uniform_real_distribution<float> radiusDist(10.0f, 50.0f);  // Distance from center - increased range
-    std::uniform_real_distribution<float> thetaDist(0.0f, 2.0f * M_PI);  // Horizontal angle (0 to 2π)
-    std::uniform_real_distribution<float> phiDist(0.0f, M_PI);  // Vertical angle (0 to π)
-    
+    std::uniform_real_distribution<float> radiusDist(10.0f, 50.0f); // Distance from center - increased range
+    std::uniform_real_distribution<float> thetaDist(0.0f, 2.0f * M_PI); // Horizontal angle (0 to 2π)
+    std::uniform_real_distribution<float> phiDist(0.0f, M_PI); // Vertical angle (0 to π)
+
     // Color distribution
     std::uniform_real_distribution<float> colorDist(0.5f, 1.0f);
-    
+
     // Attenuation distributions
     std::uniform_real_distribution<float> constantDist(0.5f, 1.0f);
     std::uniform_real_distribution<float> linearDist(0.01f, 0.1f);
     std::uniform_real_distribution<float> quadraticDist(0.001f, 0.01f);
-    
+
     // Number of lights to generate - increased to 35
     const int NUM_LIGHTS = 35;
-    
+
     // Reduce minimum distance to allow more lights
     float tempMinDistance = MIN_DISTANCE_BETWEEN_LIGHTS;
-    MIN_DISTANCE_BETWEEN_LIGHTS = 8.0f; // Temporarily reduce minimum distance
-    
+    MIN_DISTANCE_BETWEEN_LIGHTS = 28.0f; // Temporarily reduce minimum distance
+
     // Generate random lights
     for (int i = 0; i < NUM_LIGHTS; i++) {
         // Generate a random position using spherical coordinates
         float radius = radiusDist(gen);
         float theta = thetaDist(gen);
         float phi = phiDist(gen);
-        
+
         // Convert spherical to Cartesian coordinates
         float x = radius * sin(phi) * cos(theta);
         float y = radius * sin(phi) * sin(theta);
         float z = radius * cos(phi);
-        
+
         glm::vec3 position(x, y, z);
-        
+
         // Check if this position is far enough from existing lights
         bool validPosition = true;
-        for (const auto& light : randomPointLights) {
+        for (const auto &light: randomPointLights) {
             float distance = glm::length(position - light.position);
             if (distance < MIN_DISTANCE_BETWEEN_LIGHTS) {
                 validPosition = false;
                 break;
             }
         }
-        
+
         // If position is not valid, try again (but limit retries to avoid infinite loop)
         if (!validPosition) {
             if (i > 0 && randomPointLights.size() >= NUM_LIGHTS * 0.8) {
@@ -247,10 +259,10 @@ void generateRandomPointLights() {
             i--; // Retry this iteration
             continue;
         }
-        
+
         // Generate a random color
         glm::vec3 color(colorDist(gen), colorDist(gen), colorDist(gen));
-        
+
         // Create the light
         PointLight light;
         light.position = position;
@@ -261,15 +273,16 @@ void generateRandomPointLights() {
         light.linear = linearDist(gen);
         light.quadratic = quadraticDist(gen);
         light.enabled = true;
-        
+
         // Add to the list
         randomPointLights.push_back(light);
     }
-    
+
     // Restore original minimum distance
     MIN_DISTANCE_BETWEEN_LIGHTS = tempMinDistance;
-    
-    std::cout << "Generated " << randomPointLights.size() << " random point lights in a spherical distribution" << std::endl;
+
+    std::cout << "Generated " << randomPointLights.size() << " random point lights in a spherical distribution" <<
+            std::endl;
 }
 
 // Function to generate primitive shapes
@@ -286,7 +299,7 @@ void updatePrimitiveRotations(float deltaTime) {
             primitiveShapes[i]->rotation.x += rotationSpeeds[i].x * deltaTime;
             primitiveShapes[i]->rotation.y += rotationSpeeds[i].y * deltaTime;
             primitiveShapes[i]->rotation.z += rotationSpeeds[i].z * deltaTime;
-            
+
             // Keep rotations in the range [0, 360]
             primitiveShapes[i]->rotation.x = fmod(primitiveShapes[i]->rotation.x, 360.0f);
             primitiveShapes[i]->rotation.y = fmod(primitiveShapes[i]->rotation.y, 360.0f);
@@ -304,20 +317,21 @@ void generateDynamicShapes() {
 // Function to update dynamic shapes based on time
 void updateDynamicShapes(float time) {
     if (!useDynamicShapes) return;
-    
+
     for (size_t i = 0; i < dynamicShapes.size(); i++) {
         if (i < dynamicTransforms.size() && dynamicShapes[i]) {
             // Update the dynamic transform based on time
             dynamicTransforms[i]->update(time);
-            
+
             // Apply the updated transform to the shape
             dynamicShapes[i]->position = dynamicTransforms[i]->getPosition();
-            dynamicShapes[i]->rotation = dynamicTransforms[i]->getRotation() * 57.2958f; // Convert to degrees (radians * 180/PI)
+            dynamicShapes[i]->rotation = dynamicTransforms[i]->getRotation() * 57.2958f;
+            // Convert to degrees (radians * 180/PI)
             dynamicShapes[i]->scale = dynamicTransforms[i]->getScale();
-            
+
             // Update material properties
             dynamicShapes[i]->SetColor(dynamicTransforms[i]->getColor());
-            
+
             // Update shader parameters for material properties
             // These will be applied when the shape is drawn
             dynamicShapes[i]->SetMaterialProperty("diffuse", dynamicTransforms[i]->getDiffuse());
@@ -330,180 +344,93 @@ void updateDynamicShapes(float time) {
 // Function to render dynamic shapes control window
 static void renderDynamicShapesWindow() {
     if (!showDynamicShapesWindow) return;
-    
+
     ImGui::Begin("Dynamic Shapes", &showDynamicShapesWindow);
-    
+
     ImGui::Checkbox("Enable Dynamic Shapes", &useDynamicShapes);
-    
+
     if (ImGui::Button("Regenerate Dynamic Shapes", ImVec2(200, 0))) {
         // Clear existing dynamic shapes
         dynamicShapes.clear();
         dynamicTransforms.clear();
-        
+
         // Generate new dynamic shapes
         generateDynamicShapes();
     }
-    
+
     ImGui::Text("Total Dynamic Shapes: %zu", dynamicShapes.size());
-    
+
     ImGui::End();
 }
 
 // Function to load models using the Scene class
+bool loadModel(const std::string& name,
+               const std::string& relativePath,
+               const std::string& modelRoot,
+               const std::string& binRoot,
+               const glm::vec3& position,
+               const glm::vec3& rotation,
+               const glm::vec3& scale)
+{
+    auto findModelPath = [&](const std::string &relPath) -> std::string {
+        std::string regular = modelRoot + "/" + relPath;
+        std::string bin = binRoot + "/" + relPath;
+        if (std::ifstream(regular).good()) return regular;
+        if (std::ifstream(bin).good()) return bin;
+        return regular; // fallback, will fail on open
+    };
+
+    try {
+        std::string path = findModelPath(relativePath);
+        std::ifstream file(path);
+        if (!file.good()) {
+            std::cout << "Model file not found or unreadable: " << path << std::endl;
+            return false;
+        }
+
+        auto obj = scene.CreateModelObject(name, path, position, rotation, scale);
+        if (!obj) {
+            std::cout << "Failed to create model object: " << name << std::endl;
+            return false;
+        }
+
+        modelNames.push_back(name);
+        std::cout << "Loaded model: " << name << " from " << path << std::endl;
+        return true;
+
+    } catch (const std::exception& e) {
+        std::cout << "Error loading model " << name << ": " << e.what() << std::endl;
+        return false;
+    }
+}
 void loadModels(const std::string& modelBasePath, const std::string& binModelBasePath) {
     std::cout << "Starting to load models using Scene class..." << std::endl;
-    
-    // Function to check both regular and bin paths for models
-    auto findModelPath = [&](const std::string& relativePath) -> std::string {
-        std::string regularPath = modelBasePath + "/" + relativePath;
-        std::string binPath = binModelBasePath + "/" + relativePath;
-        
-        std::ifstream regularFile(regularPath);
-        if (regularFile.good()) {
-            std::cout << "Found model at: " << regularPath << std::endl;
-            return regularPath;
-        }
-        
-        std::ifstream binFile(binPath);
-        if (binFile.good()) {
-            std::cout << "Found model at bin path: " << binPath << std::endl;
-            return binPath;
-        }
-        
-        std::cout << "Model not found at either path: " << regularPath << " or " << binPath << std::endl;
-        return regularPath; // Return regular path anyway, will fail with proper error
+
+    struct ModelData {
+        std::string name;
+        std::string relPath;
+        glm::vec3 position;
+        glm::vec3 rotation;
+        glm::vec3 scale;
     };
-    
-    // Load backpack model
-    try {
-        std::string backpackPath = findModelPath("backpack/backpack.obj");
-        std::cout << "Attempting to load backpack model from " << backpackPath << std::endl;
-        
-        // Check if file exists
-        std::ifstream backpackFile(backpackPath);
-        if (!backpackFile.good()) {
-            std::cout << "Backpack model file does not exist or cannot be opened!" << std::endl;
-        } else {
-            std::cout << "Backpack model file exists and can be opened." << std::endl;
-            backpackFile.close();
-            
-            auto backpackObj = scene.CreateModelObject(
-                "Backpack", 
-                backpackPath, 
-                glm::vec3(0.0f, 1.5f, 0.0f),  // Position above ground (adjusted for lowered ground)
-                glm::vec3(0.0f, 0.0f, 0.0f),  // No rotation
-                glm::vec3(1.0f, 1.0f, 1.0f)   // Normal scale
-            );
-            
-            if (backpackObj) {
-                modelNames.push_back("Backpack");
-                std::cout << "Successfully loaded backpack model" << std::endl;
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Failed to load backpack model: " << e.what() << std::endl;
+
+    std::vector<ModelData> modelsToLoad = {
+        {"Backpack", "backpack/backpack.obj", glm::vec3(0.0f, 1.5f, 0.0f), glm::vec3(0), glm::vec3(1.0f)},
+        {"Mansion", "low_poly_mansion__house/scene.gltf", glm::vec3(-10.0f, -0.5f, -10.0f), glm::vec3(0.0f, 45.0f, 0.0f), glm::vec3(0.00625f)},
+        {"Tiptup", "n64/Tiptup/ObjectTortRunner.obj", glm::vec3(13.0f, 0.0f, 5.0f), glm::vec3(0.0f, 180.0f, 0.0f), glm::vec3(0.5f)},
+        {"Solar System", "solar_system_model_orrery/scene.gltf", glm::vec3(0.0f, 0.0f, 18.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.1f)},
+        {"Model", "koseki_bijou/scene.glb", glm::vec3(-1.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(10.0f)},
+        {"Smol", "smol/scene.gltf", glm::vec3(7.0f, 0.0f, -4.0f), glm::vec3(18.0f, 0.0f, 0.0f), glm::vec3(3.0f)}
+    };
+
+    for (const auto& m : modelsToLoad) {
+        loadModel(m.name, m.relPath, modelBasePath, binModelBasePath, m.position, m.rotation, m.scale);
     }
-    
-    // Load mansion model
-    try {
-        std::string mansionPath = findModelPath("low_poly_mansion__house/scene.gltf");
-        std::cout << "Attempting to load mansion model from " << mansionPath << std::endl;
-        
-        // Check if file exists
-        std::ifstream mansionFile(mansionPath);
-        if (!mansionFile.good()) {
-            std::cout << "Mansion model file does not exist or cannot be opened!" << std::endl;
-        } else {
-            std::cout << "Mansion model file exists and can be opened." << std::endl;
-            mansionFile.close();
-            
-            // Use a much smaller scale for the mansion (0.00625 instead of 0.05, 800% smaller)
-            auto mansionObj = scene.CreateModelObject(
-                "Mansion", 
-                mansionPath, 
-                glm::vec3(-10.0f, -0.5f, -10.0f),  // Position on ground (adjusted for lowered ground)
-                glm::vec3(0.0f, 45.0f, 0.0f),     // Rotate 45 degrees
-                glm::vec3(0.00625f, 0.00625f, 0.00625f)    // 800% smaller scale
-            );
-            
-            if (mansionObj) {
-                modelNames.push_back("Mansion");
-                std::cout << "Successfully loaded mansion model" << std::endl;
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Failed to load mansion model: " << e.what() << std::endl;
-    }
-    
-    // Load tiptup model
-    try {
-        std::string tiptupPath = findModelPath("n64/Tiptup/ObjectTortRunner.obj");
-        std::cout << "Attempting to load tiptup model from " << tiptupPath << std::endl;
-        
-        // Check if file exists
-        std::ifstream tiptupFile(tiptupPath);
-        if (!tiptupFile.good()) {
-            std::cout << "Tiptup model file does not exist or cannot be opened!" << std::endl;
-        } else {
-            std::cout << "Tiptup model file exists and can be opened." << std::endl;
-            tiptupFile.close();
-            
-            auto tiptupObj = scene.CreateModelObject(
-                "Tiptup", 
-                tiptupPath, 
-                glm::vec3(5.0f, 0.0f, 5.0f),      // Position on ground (adjusted for lowered ground)
-                glm::vec3(0.0f, 180.0f, 0.0f),    // Rotate 180 degrees
-                glm::vec3(0.5f, 0.5f, 0.5f)       // Half scale
-            );
-            
-            if (tiptupObj) {
-                modelNames.push_back("Tiptup");
-                std::cout << "Successfully loaded tiptup model" << std::endl;
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Failed to load tiptup model: " << e.what() << std::endl;
-    }
-    
-    // Load terry model
-    try {
-        std::string terryPath = findModelPath("n64/Terry/ObjectTerryboss.obj");
-        std::cout << "Attempting to load terry model from " << terryPath << std::endl;
-        
-        // Check if file exists
-        std::ifstream terryFile(terryPath);
-        if (!terryFile.good()) {
-            std::cout << "Terry model file does not exist or cannot be opened!" << std::endl;
-        } else {
-            std::cout << "Terry model file exists and can be opened." << std::endl;
-            terryFile.close();
-            
-            auto terryObj = scene.CreateModelObject(
-                "Terry", 
-                terryPath, 
-                glm::vec3(-5.0f, -0.5f, 5.0f),     // Position on ground (adjusted for lowered ground)
-                glm::vec3(0.0f, 135.0f, 0.0f),    // Rotate 135 degrees
-                glm::vec3(0.02f, 0.02f, 0.02f)    // Very small scale
-            );
-            
-            if (terryObj) {
-                modelNames.push_back("Terry");
-                std::cout << "Successfully loaded terry model" << std::endl;
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Failed to load terry model: " << e.what() << std::endl;
-    }
-    
-    std::cout << "Loaded " << scene.GetObjectCount() << " models successfully" << std::endl;
-    
-    // Generate primitive shapes
-    std::cout << "\n=== About to call generatePrimitiveShapes() ===\n" << std::endl;
-    generatePrimitiveShapes();
-    std::cout << "\n=== Returned from generatePrimitiveShapes() ===\n" << std::endl;
+
+    std::cout << "Loaded " << scene.GetObjectCount() << " models successfully\n";
 }
 
-int game3d(int argc, char *argv[], const std::string& type) {
+int game3d(int argc, char *argv[], const std::string &type) {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -512,10 +439,16 @@ int game3d(int argc, char *argv[], const std::string& type) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
     glfwWindowHint(GLFW_RESIZABLE, true);
-// 
     // Get the current working directory
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
+#ifdef TESTING
+        // Find the last '/' and terminate the string there
+        char* lastSlash = strrchr(cwd, '/');
+        if (lastSlash != nullptr) {
+            *lastSlash = '\0'; // Chop off the last directory
+        }
+#endif
         std::cout << "Current working directory: " << cwd << std::endl;
     }
 
@@ -529,8 +462,8 @@ int game3d(int argc, char *argv[], const std::string& type) {
 
     std::cout << "Loading vertex shader from: " << vertexShaderPath << std::endl;
     std::cout << "Loading fragment shader from: " << fragmentShaderPath << std::endl;
-    
-    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "3D Model Viewer", nullptr, nullptr);
+
+    GLFWwindow *window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "3D Model Viewer", nullptr, nullptr);
     if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -538,7 +471,7 @@ int game3d(int argc, char *argv[], const std::string& type) {
     }
     glfwMakeContextCurrent(window);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
@@ -559,7 +492,7 @@ int game3d(int argc, char *argv[], const std::string& type) {
 
     // Initialize ImGui
     Gui::Init(window);
-    
+
     // Set initial cursor mode - start with cursor disabled for movement
     cursorEnabled = false;
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -567,15 +500,15 @@ int game3d(int argc, char *argv[], const std::string& type) {
 
     std::cout << "Loading vertex shader from: " << vertexShaderPath << std::endl;
     std::cout << "Loading fragment shader from: " << fragmentShaderPath << std::endl;
-    
+
     try {
         // Check if shader files exist
         std::ifstream vertexFile(vertexShaderPath);
         std::ifstream fragmentFile(fragmentShaderPath);
-        
+
         if (!vertexFile.good()) {
             std::cout << "Vertex shader file does not exist or cannot be opened!" << std::endl;
-            
+
             // Try bin/shaders as an alternative
             std::string binVertexPath = std::string(cwd) + "/bin/shaders/3d.vs";
             std::ifstream binVertexFile(binVertexPath);
@@ -586,10 +519,10 @@ int game3d(int argc, char *argv[], const std::string& type) {
         } else {
             std::cout << "Vertex shader file exists and can be opened." << std::endl;
         }
-        
+
         if (!fragmentFile.good()) {
             std::cout << "Fragment shader file does not exist or cannot be opened!" << std::endl;
-            
+
             // Try bin/shaders as an alternative
             std::string binFragmentPath = std::string(cwd) + "/bin/shaders/3d.fs";
             std::ifstream binFragmentFile(binFragmentPath);
@@ -600,43 +533,43 @@ int game3d(int argc, char *argv[], const std::string& type) {
         } else {
             std::cout << "Fragment shader file exists and can be opened." << std::endl;
         }
-        
+
         vertexFile.close();
         fragmentFile.close();
-        
+
         // Try loading the shader using ResourceManager
         std::cout << "Attempting to load shaders using ResourceManager..." << std::endl;
         try {
             ResourceManager::LoadShader("3d.vs", "3d.fs", nullptr, "model");
             std::cout << "Successfully loaded model shader using ResourceManager" << std::endl;
-        } catch (const std::exception& e) {
+        } catch (const std::exception &e) {
             std::cout << "Failed to load shader using ResourceManager: " << e.what() << std::endl;
             std::cout << "Falling back to direct path loading..." << std::endl;
-            
+
             // Fall back to direct path loading
             ResourceManager::LoadShader(vertexShaderPath.c_str(), fragmentShaderPath.c_str(), nullptr, "model");
             std::cout << "Successfully loaded model shader using direct paths" << std::endl;
         }
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         std::cout << "Failed to load model shader: " << e.what() << std::endl;
         // Continue anyway to see if we can at least render something
     }
-    
+
     // Setup ground plane with improved textures
     setupGround();
-    
+
     // Initialize random point lights
     useRandomPointLights = false; // Start with random lights disabled
-    
+
     // Load models using the Scene class
-    loadModels(cwd, std::string(cwd) + "/bin/models");
-    
+    loadModels(cwd, std::string(cwd) + "/models");
+
     // Generate primitive shapes
     generatePrimitiveShapes();
-    
+
     // Generate dynamic shapes with mathematical transformations
     generateDynamicShapes();
-    
+
     // Game loop
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -650,39 +583,40 @@ int game3d(int argc, char *argv[], const std::string& type) {
 
         // Start ImGui frame
         Gui::Start();
-        
+
         // Render models window
         renderModelsWindow();
-        
+
         // Render lighting window
         renderLightingWindow();
-        
+
         // Render dynamic shapes window
         if (showDynamicShapesWindow) {
             renderDynamicShapesWindow();
         }
-        
+
         // Update dynamic shapes
         if (useDynamicShapes) {
             updateDynamicShapes(currentFrame);
         }
-        
+
         // Configure shader for rendering
         Shader shader = ResourceManager::GetShader("model");
         shader.Use();
-        
+
         // Set camera uniforms
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT,
+                                                0.1f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
         shader.SetMatrix4("projection", projection);
         shader.SetMatrix4("view", view);
-        
+
         // Set lighting uniforms
         setLightingUniforms(shader);
-        
+
         // Render the scene
         renderScene(shader);
-        
+
         // Render ImGui
         Gui::Render();
 
@@ -703,13 +637,13 @@ int game3d(int argc, char *argv[], const std::string& type) {
 
     // Cleanup
     scene.Clear();
-    
+
     // Clean up ground resources
     if (groundVAO) {
         glDeleteVertexArrays(1, &groundVAO);
         glDeleteBuffers(1, &groundVBO);
     }
-    
+
     ResourceManager::Clear();
     Gui::Clean();
     glfwTerminate();
@@ -720,86 +654,86 @@ static void setupGround() {
     // Create a large ground plane - lowered by 50% (y = -0.5f instead of 0.0f)
     float groundVertices[] = {
         // positions          // normals           // texture coords  // tangent                // bitangent
-        -50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 0.0f,       1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
-         50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 0.0f,      1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
-         50.0f, -0.5f,  50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 50.0f,     1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
-         
-        -50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 0.0f,       1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
-         50.0f, -0.5f,  50.0f, 0.0f, 1.0f, 0.0f,    50.0f, 50.0f,     1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f,
-        -50.0f, -0.5f,  50.0f, 0.0f, 1.0f, 0.0f,    0.0f, 50.0f,      1.0f, 0.0f, 0.0f,        0.0f, 0.0f, 1.0f
+        -50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f, 50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        50.0f, -0.5f, 50.0f, 0.0f, 1.0f, 0.0f, 50.0f, 50.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+
+        -50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        50.0f, -0.5f, 50.0f, 0.0f, 1.0f, 0.0f, 50.0f, 50.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        -50.0f, -0.5f, 50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 50.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f
     };
-    
+
     // Generate and bind VAO and VBO
     glGenVertexArrays(1, &groundVAO);
     glGenBuffers(1, &groundVBO);
-    
+
     glBindVertexArray(groundVAO);
     glBindBuffer(GL_ARRAY_BUFFER, groundVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(groundVertices), groundVertices, GL_STATIC_DRAW);
-    
+
     // Position attribute
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
-    
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) 0);
+
     // Normal attribute
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
-    
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (3 * sizeof(float)));
+
     // Texture coords attribute
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
-    
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (6 * sizeof(float)));
+
     // Tangent attribute
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
-    
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (8 * sizeof(float)));
+
     // Bitangent attribute
     glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
-    
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (11 * sizeof(float)));
+
     glBindVertexArray(0);
-    
+
     // Create a larger, more detailed ground texture (4x4 grid instead of 2x2)
     unsigned char groundTextureData[] = {
         // Row 1
-        20, 40, 100, 255,  30, 50, 110, 255,  30, 50, 110, 255,  20, 40, 100, 255,
-        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
-        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
-        20, 40, 100, 255,  30, 50, 110, 255,  30, 50, 110, 255,  20, 40, 100, 255,
-        
+        20, 40, 100, 255, 30, 50, 110, 255, 30, 50, 110, 255, 20, 40, 100, 255,
+        30, 50, 110, 255, 40, 60, 120, 255, 40, 60, 120, 255, 30, 50, 110, 255,
+        30, 50, 110, 255, 40, 60, 120, 255, 40, 60, 120, 255, 30, 50, 110, 255,
+        20, 40, 100, 255, 30, 50, 110, 255, 30, 50, 110, 255, 20, 40, 100, 255,
+
         // Row 2
-        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
-        40, 60, 120, 255,  50, 70, 130, 255,  50, 70, 130, 255,  40, 60, 120, 255,
-        40, 60, 120, 255,  50, 70, 130, 255,  50, 70, 130, 255,  40, 60, 120, 255,
-        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
-        
+        30, 50, 110, 255, 40, 60, 120, 255, 40, 60, 120, 255, 30, 50, 110, 255,
+        40, 60, 120, 255, 50, 70, 130, 255, 50, 70, 130, 255, 40, 60, 120, 255,
+        40, 60, 120, 255, 50, 70, 130, 255, 50, 70, 130, 255, 40, 60, 120, 255,
+        30, 50, 110, 255, 40, 60, 120, 255, 40, 60, 120, 255, 30, 50, 110, 255,
+
         // Row 3
-        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
-        40, 60, 120, 255,  50, 70, 130, 255,  50, 70, 130, 255,  40, 60, 120, 255,
-        40, 60, 120, 255,  50, 70, 130, 255,  50, 70, 130, 255,  40, 60, 120, 255,
-        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
-        
+        30, 50, 110, 255, 40, 60, 120, 255, 40, 60, 120, 255, 30, 50, 110, 255,
+        40, 60, 120, 255, 50, 70, 130, 255, 50, 70, 130, 255, 40, 60, 120, 255,
+        40, 60, 120, 255, 50, 70, 130, 255, 50, 70, 130, 255, 40, 60, 120, 255,
+        30, 50, 110, 255, 40, 60, 120, 255, 40, 60, 120, 255, 30, 50, 110, 255,
+
         // Row 4
-        20, 40, 100, 255,  30, 50, 110, 255,  30, 50, 110, 255,  20, 40, 100, 255,
-        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
-        30, 50, 110, 255,  40, 60, 120, 255,  40, 60, 120, 255,  30, 50, 110, 255,
-        20, 40, 100, 255,  30, 50, 110, 255,  30, 50, 110, 255,  20, 40, 100, 255
+        20, 40, 100, 255, 30, 50, 110, 255, 30, 50, 110, 255, 20, 40, 100, 255,
+        30, 50, 110, 255, 40, 60, 120, 255, 40, 60, 120, 255, 30, 50, 110, 255,
+        30, 50, 110, 255, 40, 60, 120, 255, 40, 60, 120, 255, 30, 50, 110, 255,
+        20, 40, 100, 255, 30, 50, 110, 255, 30, 50, 110, 255, 20, 40, 100, 255
     };
-    
+
     // Generate and bind texture
     glGenTextures(1, &groundTexture);
     glBindTexture(GL_TEXTURE_2D, groundTexture);
-    
+
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Use mipmapping
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // Use linear filtering
-    
+
     // Upload texture data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 16, 16, 0, GL_RGBA, GL_UNSIGNED_BYTE, groundTextureData);
     glGenerateMipmap(GL_TEXTURE_2D); // Generate mipmaps to prevent flickering at distance
-    
+
     // Create a normal map for the ground
     unsigned char normalMapData[16 * 16 * 4];
     // Fill with flat normals (128, 128, 255, 255)
@@ -809,21 +743,21 @@ static void setupGround() {
         normalMapData[i * 4 + 2] = 255;
         normalMapData[i * 4 + 3] = 255;
     }
-    
+
     // Generate and bind normal texture
     glGenTextures(1, &groundNormalTexture);
     glBindTexture(GL_TEXTURE_2D, groundNormalTexture);
-    
+
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
+
     // Upload normal map data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 16, 16, 0, GL_RGBA, GL_UNSIGNED_BYTE, normalMapData);
     glGenerateMipmap(GL_TEXTURE_2D);
-    
+
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -831,17 +765,17 @@ static void renderGround(Shader &shader) {
     // Set model matrix for ground
     glm::mat4 model = glm::mat4(1.0f);
     shader.SetMatrix4("model", model);
-    
+
     // Bind ground diffuse texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, groundTexture);
     shader.SetInteger("texture_diffuse1", 0);
-    
+
     // Bind ground normal texture
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, groundNormalTexture);
     shader.SetInteger("texture_normal1", 1);
-    
+
     // Draw ground
     glBindVertexArray(groundVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -851,46 +785,46 @@ static void renderGround(Shader &shader) {
 static void renderModelsWindow() {
     if (showModelsWindow) {
         ImGui::Begin("Models", &showModelsWindow);
-        
+
         if (scene.GetObjectCount() > 0) {
-            const char* items[modelNames.size()];
+            const char *items[modelNames.size()];
             for (size_t i = 0; i < modelNames.size(); i++) {
                 items[i] = modelNames[i].c_str();
             }
-            
+
             ImGui::Combo("Select Model", &selectedModel, items, modelNames.size());
-            
+
             if (selectedModel >= 0 && selectedModel < modelNames.size()) {
                 std::string modelName = modelNames[selectedModel];
                 auto modelObj = scene.GetModelObject(modelName);
-                
+
                 if (modelObj) {
                     ImGui::Text("Model: %s", modelName.c_str());
-                    
+
                     // Position controls
                     ImGui::Text("Position");
                     ImGui::SliderFloat("X##Pos", &modelObj->position.x, -20.0f, 20.0f);
                     ImGui::SliderFloat("Y##Pos", &modelObj->position.y, -20.0f, 20.0f);
                     ImGui::SliderFloat("Z##Pos", &modelObj->position.z, -20.0f, 20.0f);
-                    
+
                     // Rotation controls
                     ImGui::Text("Rotation");
                     ImGui::SliderFloat("X##Rot", &modelObj->rotation.x, 0.0f, 360.0f);
                     ImGui::SliderFloat("Y##Rot", &modelObj->rotation.y, 0.0f, 360.0f);
                     ImGui::SliderFloat("Z##Rot", &modelObj->rotation.z, 0.0f, 360.0f);
-                    
+
                     // Scale controls
                     ImGui::Text("Scale");
                     ImGui::SliderFloat("X##Scale", &modelObj->scale.x, 0.01f, 5.0f);
                     ImGui::SliderFloat("Y##Scale", &modelObj->scale.y, 0.01f, 5.0f);
                     ImGui::SliderFloat("Z##Scale", &modelObj->scale.z, 0.01f, 5.0f);
-                    
+
                     // Visibility toggle
                     ImGui::Checkbox("Visible", &modelObj->visible);
                 }
             }
         }
-        
+
         ImGui::End();
     }
 }
@@ -905,59 +839,59 @@ static void renderLightingWindow() {
         ImGui::Checkbox("Use Detail Map", &useDetailMap);
         ImGui::Checkbox("Use Scatter Map", &useScatterMap);
         ImGui::Separator();
-        
+
         // Light brightness adjustments
         ImGui::Text("Light Brightness Adjustments");
         ImGui::SliderFloat("Point Light Brightness", &pointLightBrightness, 0.1f, 5.0f);
         ImGui::SliderFloat("Directional Light Brightness", &dirLightBrightness, 0.1f, 5.0f);
         ImGui::SliderFloat("Spot Light Brightness", &spotLightBrightness, 0.1f, 5.0f);
         ImGui::Separator();
-        
+
         // Directional light
         ImGui::Text("Directional Light");
         ImGui::Checkbox("Enable##DirLight", &dirLight.enabled);
-        ImGui::ColorEdit3("Ambient##DirLight", (float*)&dirLight.ambient);
-        ImGui::ColorEdit3("Diffuse##DirLight", (float*)&dirLight.diffuse);
-        ImGui::ColorEdit3("Specular##DirLight", (float*)&dirLight.specular);
-        ImGui::SliderFloat3("Direction##DirLight", (float*)&dirLight.direction, -1.0f, 1.0f);
+        ImGui::ColorEdit3("Ambient##DirLight", (float *) &dirLight.ambient);
+        ImGui::ColorEdit3("Diffuse##DirLight", (float *) &dirLight.diffuse);
+        ImGui::ColorEdit3("Specular##DirLight", (float *) &dirLight.specular);
+        ImGui::SliderFloat3("Direction##DirLight", (float *) &dirLight.direction, -1.0f, 1.0f);
         ImGui::Separator();
-        
+
         // Point light
         ImGui::Text("Point Light");
         ImGui::Checkbox("Enable##PointLight", &pointLight.enabled);
-        ImGui::ColorEdit3("Ambient##PointLight", (float*)&pointLight.ambient);
-        ImGui::ColorEdit3("Diffuse##PointLight", (float*)&pointLight.diffuse);
-        ImGui::ColorEdit3("Specular##PointLight", (float*)&pointLight.specular);
-        ImGui::SliderFloat3("Position##PointLight", (float*)&pointLight.position, -20.0f, 20.0f);
+        ImGui::ColorEdit3("Ambient##PointLight", (float *) &pointLight.ambient);
+        ImGui::ColorEdit3("Diffuse##PointLight", (float *) &pointLight.diffuse);
+        ImGui::ColorEdit3("Specular##PointLight", (float *) &pointLight.specular);
+        ImGui::SliderFloat3("Position##PointLight", (float *) &pointLight.position, -20.0f, 20.0f);
         ImGui::SliderFloat("Constant##PointLight", &pointLight.constant, 0.0f, 1.0f);
         ImGui::SliderFloat("Linear##PointLight", &pointLight.linear, 0.0f, 1.0f);
         ImGui::SliderFloat("Quadratic##PointLight", &pointLight.quadratic, 0.0f, 1.0f);
         ImGui::Separator();
-        
+
         // Spot light
         ImGui::Text("Spot Light (Flashlight)");
         ImGui::Checkbox("Enable##SpotLight", &spotLight.enabled);
         ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Position and direction follow camera");
-        ImGui::ColorEdit3("Ambient##SpotLight", (float*)&spotLight.ambient);
-        ImGui::ColorEdit3("Diffuse##SpotLight", (float*)&spotLight.diffuse);
-        ImGui::ColorEdit3("Specular##SpotLight", (float*)&spotLight.specular);
+        ImGui::ColorEdit3("Ambient##SpotLight", (float *) &spotLight.ambient);
+        ImGui::ColorEdit3("Diffuse##SpotLight", (float *) &spotLight.diffuse);
+        ImGui::ColorEdit3("Specular##SpotLight", (float *) &spotLight.specular);
         ImGui::SliderFloat("Cut Off##SpotLight", &spotLight.cutOff, 0.0f, 1.0f);
         ImGui::SliderFloat("Outer Cut Off##SpotLight", &spotLight.outerCutOff, 0.0f, 1.0f);
         ImGui::SliderFloat("Constant##SpotLight", &spotLight.constant, 0.0f, 1.0f);
         ImGui::SliderFloat("Linear##SpotLight", &spotLight.linear, 0.0f, 1.0f);
         ImGui::SliderFloat("Quadratic##SpotLight", &spotLight.quadratic, 0.0f, 1.0f);
         ImGui::Separator();
-        
+
         // Random Point Lights
         ImGui::Text("Random Point Lights");
         ImGui::Checkbox("Enable Random Lights", &useRandomPointLights);
-        
+
         ImGui::Text("Random Lights: %zu", randomPointLights.size());
-        
+
         if (ImGui::Button("Regenerate Random Lights", ImVec2(200, 0))) {
             generateRandomPointLights();
         }
-        
+
         ImGui::SliderFloat("Min Distance Between Lights", &MIN_DISTANCE_BETWEEN_LIGHTS, 5.0f, 30.0f);
     }
     ImGui::End();
@@ -969,8 +903,8 @@ static bool toggleKey(int key, bool &toggleState) {
     if (!keyWasPressed[key] && keyCurrentlyPressed) {
         // Key was just pressed
         toggleState = !toggleState; // Toggle the state
-        keyWasPressed[key] = true;  // Set the flag for this key
-        return true;                // Indicate that the state was toggled
+        keyWasPressed[key] = true; // Set the flag for this key
+        return true; // Indicate that the state was toggled
     } else if (keyWasPressed[key] && !keyCurrentlyPressed) {
         // Key was just released
         keyWasPressed[key] = false; // Reset the flag for this key
@@ -982,16 +916,16 @@ static bool toggleKey(int key, bool &toggleState) {
 static void toggleCursor(GLFWwindow *window) {
     cursorEnabled = !cursorEnabled;
     glfwSetInputMode(window, GLFW_CURSOR, cursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
-    
+
     if (!cursorEnabled) {
         // When disabling cursor, reset firstMouse to recalculate reference posit`n
         firstMouse = true;
     }
 }
 
-static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+static void mouse_callback(GLFWwindow *window, double xposIn, double yposIn) {
     // Only process mouse movement if ImGui is not capturing the mouse
-    
+
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
 
@@ -1013,32 +947,32 @@ static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
     }
 }
 
-static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
     // Only process scroll if ImGui is not capturing the mouse
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
-static void processInput(GLFWwindow* window) {
+static void processInput(GLFWwindow *window) {
     // Check for ImGui keyboard capture
-   
+
     // Always process Escape and Enter keys regardless of ImGui focus
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    
+
     // Toggle cursor with Enter key
     static bool enterToggle = false;
     if (toggleKey(GLFW_KEY_ENTER, enterToggle)) {
         toggleCursor(window);
         std::cout << "Cursor mode toggled: " << (cursorEnabled ? "Enabled" : "Disabled") << std::endl;
     }
-    
+
     // Toggle Cartesian plane visibility with P key
     static bool pToggle = false;
     if (toggleKey(GLFW_KEY_P, pToggle)) {
         showCartesianPlane = !showCartesianPlane;
         std::cout << "Cartesian plane visibility: " << (showCartesianPlane ? "Shown" : "Hidden") << std::endl;
     }
-    
+
     // Toggle triangle contours with G key
     static bool gToggle = false;
     if (toggleKey(GLFW_KEY_G, gToggle)) {
@@ -1051,7 +985,7 @@ static void processInput(GLFWwindow* window) {
             std::cout << "Triangle contours: Hidden" << std::endl;
         }
     }
-    
+
     // Toggle run/walk mode with / key
     static bool slashToggle = false;
     if (toggleKey(GLFW_KEY_SLASH, slashToggle)) {
@@ -1064,7 +998,7 @@ static void processInput(GLFWwindow* window) {
             std::cout << "Movement mode: Walk (Speed: " << camera.MovementSpeed << ")" << std::endl;
         }
     }
-    
+
     // Manually increase speed with ] key
     static bool rightBracketToggle = false;
     if (toggleKey(GLFW_KEY_RIGHT_BRACKET, rightBracketToggle)) {
@@ -1076,7 +1010,7 @@ static void processInput(GLFWwindow* window) {
         }
         std::cout << "Movement speed increased to: " << camera.MovementSpeed << std::endl;
     }
-    
+
     // Manually decrease speed with [ key
     static bool leftBracketToggle = false;
     if (toggleKey(GLFW_KEY_LEFT_BRACKET, leftBracketToggle)) {
@@ -1088,38 +1022,38 @@ static void processInput(GLFWwindow* window) {
         }
         std::cout << "Movement speed decreased to: " << camera.MovementSpeed << std::endl;
     }
-    
+
     // Zoom in with = key
     static bool equalToggle = false;
     if (toggleKey(GLFW_KEY_EQUAL, equalToggle)) {
         camera.Zoom = std::max(1.0f, camera.Zoom - 1.0f);
         std::cout << "Zoom level: " << camera.Zoom << std::endl;
     }
-    
+
     // Zoom out with - key
     static bool minusToggle = false;
     if (toggleKey(GLFW_KEY_MINUS, minusToggle)) {
         camera.Zoom = std::min(45.0f, camera.Zoom + 1.0f);
         std::cout << "Zoom level: " << camera.Zoom << std::endl;
     }
-    
+
     // Check for shift key (faster movement)
     float speedMultiplier = 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || 
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
         glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
         speedMultiplier = 2.0f; // Double speed when shift is pressed
     }
-    
+
     // Check for ctrl key (slower movement)
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS || 
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
         glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
         speedMultiplier = 0.5f; // Half speed when ctrl is pressed
     }
-    
+
     // Apply speed multiplier to camera
     float originalSpeed = camera.MovementSpeed;
     camera.MovementSpeed *= speedMultiplier;
-    
+
     // Process movement keys
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(Camera_Movement::CAMERA_FORWARD, deltaTime);
@@ -1129,18 +1063,18 @@ static void processInput(GLFWwindow* window) {
         camera.ProcessKeyboard(Camera_Movement::CAMERA_LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(Camera_Movement::CAMERA_RIGHT, deltaTime);
-    
+
     // Additional camera controls
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
         camera.Position.y += camera.MovementSpeed * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
         camera.Position.y -= camera.MovementSpeed * deltaTime;
-    
+
     // Reset camera speed to original value
     camera.MovementSpeed = originalSpeed;
 }
 
-static void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+static void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
@@ -1148,33 +1082,34 @@ static void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 void renderScene(Shader &shader) {
     // Render the ground
     renderGround(shader);
-    
+
     // Render models from the scene
-    for (const auto& modelName : modelNames) {
+    for (const auto &modelName: modelNames) {
+        std::cout << "Rendering model: " << modelName << std::endl;
         auto modelObj = scene.GetModelObject(modelName);
         if (modelObj && modelObj->visible) {
             modelObj->Draw(shader);
         }
     }
-    
+
     // Render primitive shapes
-    for (auto& shape : primitiveShapes) {
+    for (auto &shape: primitiveShapes) {
         if (shape) {
             shape->Draw(shader);
         }
     }
-    
+
     // Render dynamic shapes
     if (useDynamicShapes) {
-        for (auto& shape : dynamicShapes) {
+        for (auto &shape: dynamicShapes) {
             // Skip CartesianPlane objects if they should be hidden
             std::string name = shape->name;
-            if (!showCartesianPlane && 
-                (name.find("CartesianPlane") != std::string::npos || 
+            if (!showCartesianPlane &&
+                (name.find("CartesianPlane") != std::string::npos ||
                  name.find("WhiteGridCube") != std::string::npos)) {
                 continue; // Skip rendering this shape
             }
-            
+
             shape->Draw(shader);
         }
     }
@@ -1188,26 +1123,26 @@ void setLightingUniforms(Shader &shader) {
     shader.SetInteger("useSpecularMap", useSpecularMap ? 1 : 0);
     shader.SetInteger("useDetailMap", useDetailMap ? 1 : 0);
     shader.SetInteger("useScatterMap", useScatterMap ? 1 : 0);
-    
+
     // Set light brightness adjustment uniforms
     shader.SetFloat("pointLightBrightness", pointLightBrightness);
     shader.SetFloat("dirLightBrightness", dirLightBrightness);
     shader.SetFloat("spotLightBrightness", spotLightBrightness);
-    
+
     // Set camera position for lighting calculations
     shader.SetVector3f("viewPos", camera.Position);
-    
+
     // Update spotlight position and direction to match camera
     spotLight.position = camera.Position;
     spotLight.direction = camera.Front;
-    
+
     // Set directional light properties
     shader.SetVector3f("dirLight.direction", dirLight.direction);
     shader.SetVector3f("dirLight.ambient", dirLight.ambient);
     shader.SetVector3f("dirLight.diffuse", dirLight.diffuse);
     shader.SetVector3f("dirLight.specular", dirLight.specular);
     shader.SetInteger("useDirLight", dirLight.enabled ? 1 : 0);
-    
+
     // Set main point light properties
     shader.SetVector3f("pointLight.position", pointLight.position);
     shader.SetFloat("pointLight.constant", pointLight.constant);
@@ -1217,11 +1152,11 @@ void setLightingUniforms(Shader &shader) {
     shader.SetVector3f("pointLight.diffuse", pointLight.diffuse);
     shader.SetVector3f("pointLight.specular", pointLight.specular);
     shader.SetInteger("usePointLight", pointLight.enabled ? 1 : 0);
-    
+
     // Set spotlight position and direction for tangent space calculations
     shader.SetVector3f("spotLightPos", spotLight.position);
     shader.SetVector3f("spotLightDir", spotLight.direction);
-    
+
     // Set spotlight uniforms (add these back)
     shader.SetVector3f("spotLight.position", spotLight.position);
     shader.SetVector3f("spotLight.direction", spotLight.direction);
@@ -1234,11 +1169,11 @@ void setLightingUniforms(Shader &shader) {
     shader.SetVector3f("spotLight.diffuse", spotLight.diffuse);
     shader.SetVector3f("spotLight.specular", spotLight.specular);
     shader.SetInteger("useSpotLight", spotLight.enabled ? 1 : 0);
-    
+
     // Set random point lights
     shader.SetInteger("numRandomPointLights", static_cast<int>(randomPointLights.size()));
     shader.SetInteger("useRandomPointLights", useRandomPointLights ? 1 : 0);
-    
+
     for (size_t i = 0; i < randomPointLights.size() && i < MAX_POINT_LIGHTS; i++) {
         std::string index = std::to_string(i);
         shader.SetVector3f(("randomPointLights[" + index + "].position").c_str(), randomPointLights[i].position);
@@ -1249,4 +1184,4 @@ void setLightingUniforms(Shader &shader) {
         shader.SetVector3f(("randomPointLights[" + index + "].diffuse").c_str(), randomPointLights[i].diffuse);
         shader.SetVector3f(("randomPointLights[" + index + "].specular").c_str(), randomPointLights[i].specular);
     }
-} 
+}

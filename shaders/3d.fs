@@ -225,16 +225,16 @@ void main()
     if(!useDirLight && !usePointLight && !useSpotLight && !useRandomPointLights) {
         result = diffuseColor * 0.3; // Basic ambient
     }
-    float linearZ = LinearizeDepth(gl_FragCoord.z);
-    float fade = clamp(1.0 - linearZ / 8.0, 0.0, 1.0); // fades beyond 50 units
-    result *= fade;
+    //float linearZ = LinearizeDepth(gl_FragCoord.z);
+    //float fade = clamp(1.0 - linearZ / 8.0, 0.0, 1.0); // fades beyond 50 units
+    //result *= fade;
 
     // Apply fog
-    result = ApplyFog(result, linearZ);
+    //result = ApplyFog(result, linearZ);
 
-    if (linearZ >= fogEnd) {
-        discard;
-    }
+    //if (linearZ >= fogEnd) {
+    //    discard;
+    //}
     FragColor = vec4(result, texColor.a);
 }
 
