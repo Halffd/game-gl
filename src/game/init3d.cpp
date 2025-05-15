@@ -487,10 +487,13 @@ int game3d(int argc, char *argv[], const std::string &type) {
     glfwSetScrollCallback(window, scroll_callback);
 
     // Configure global OpenGL state
+    // configure global opengl state
+    // -----------------------------
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
+    glDepthFunc(GL_LESS);
     glEnable(GL_STENCIL_TEST);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     // Initialize ImGui
     Gui::Init(window);
@@ -543,7 +546,7 @@ int game3d(int argc, char *argv[], const std::string &type) {
         std::cout << "Attempting to load shaders using ResourceManager..." << std::endl;
         try {
             ResourceManager::LoadShader("3d.vs", "3d.fs", nullptr, "model");
-            ResourceManager::LoadShader("outline.vs", "outline.fs", nullptr, "outline");
+            ResourceManager::LoadShader("3d.vs", "outline.fs", nullptr, "outline");
             std::cout << "Successfully loaded model shader using ResourceManager" << std::endl;
         } catch (const std::exception &e) {
             std::cout << "Failed to load shader using ResourceManager: " << e.what() << std::endl;
@@ -583,7 +586,6 @@ int game3d(int argc, char *argv[], const std::string &type) {
 
         glClearColor(0.05f, 0.05f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
 
         // Start ImGui frame
         Gui::Start();
@@ -1097,119 +1099,62 @@ static void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
 
 // Function to render the scene with the CartesianPlane visibility check
 void renderScene(Shader &shader) {
-    glEnable(GL_STENCIL_TEST);
-    glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
     // PHASE 1: Render regular objects and mark them in stencil buffer
-    glStencilFunc(GL_ALWAYS, 1, 0xFF); // all fragments should pass the stencil test
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-    glStencilMask(0x00); // enable writing to the stencil buffer
-    glClearStencil(0);
+    glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
     // Render the ground
     renderGround(shader);
-
-    glStencilMask(0xFF);                // ⟵ now allow writes
+    // 1st. render pass, draw objects as normal, writing to the stencil buffer
+    // --------------------------------------------------------------------
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-    // Render models from the scene
-    for (const auto &modelName: modelNames) {
-        auto modelObj = scene.GetModelObject(modelName);
-        if (modelObj && modelObj->visible) {
-            modelObj->Draw(shader);
-        }
-    }
-
-    // Render primitive shapes
-    for (auto &shape: primitiveShapes) {
-        if (shape && shape->visible) {
-            shape->Draw(shader);
-        }
-    }
-    // Render dynamic shapes
-    if (useDynamicShapes) {
-        for (auto &shape: dynamicShapes) {
-            // Skip CartesianPlane objects if they should be hidden
-            std::string name = shape->name;
-            if (!showCartesianPlane &&
-                (name.find("CartesianPlane") != std::string::npos ||
-                 name.find("WhiteGridCube") != std::string::npos)) {
-                continue; // Skip rendering this shape
-                 }
-
-            shape->Draw(shader);
-        }
-    }
-
-    // PHASE 2: Render outlines using the stencil buffer
-    glEnable(GL_STENCIL_TEST);
-    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-    glStencilMask(0x00);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
+    glStencilMask(0xFF);
     // Get the outline shader
     Shader outlineShader = ResourceManager::GetShader("outline");
 
     // Explicitly activate the shader before rendering
     outlineShader.Use();
-    outlineShader.SetMatrix4("view", camera.GetViewMatrix());
-    outlineShader.SetMatrix4("projection", camera.GetProjectionMatrix());
+    //outlineShader.SetMatrix4("view", camera.GetViewMatrix());
+    //outlineShader.SetMatrix4("projection", camera.GetProjectionMatrix());
     // Scale factor for outlines (slightly larger than original)
-    const float outlineScale = 1.05f; // 5% larger
+    const float outlineScale = 1.1f; // 5% larger
 
     // Render model outlines
     for (const auto &modelName: modelNames) {
-        auto modelObj = scene.GetModelObject(modelName);
-        if (modelObj && modelObj->visible) {
-            // Store original transform
-            glm::vec3 originalScale = modelObj->scale;
 
-            // Apply scaled-up transformation
-            modelObj->scale *= outlineScale;
+        auto obj = scene.GetModelObject(modelame);
+        if (!obj || !obj->visible) continue;
 
-            // Make sure shader is active before each draw call
-            outlineShader.Use();
+        // ——— 1) mark this object into stencil
+        glStencilMask(0xFF);                                      // enable stencil writes
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);                        // always pass
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);                // write 1 on depth-pass
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        shader.Use();
+        obj->Draw(shader);
 
-            try {
-                // Draw with outline shader
-                modelObj->Draw(outlineShader);
-            } catch (const std::exception& e) {
-                std::cerr << "Error drawing model outline for " << modelName
-                          << ": " << e.what() << std::endl;
-            }
+        // ——— 2) draw its outline where stencil≠1
+        glStencilMask(0x00);                                      // disable writes
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
 
-            // Restore original transform
-            modelObj->scale = originalScale;
-        }
+        glm::vec3 old = obj->scale;
+        obj->scale *= outlineScale;
+        outlineShader.Use();
+        obj->Draw(outlineShader);
+        obj->scale = old;
+
+        // ——— 3) clear stencil (and depth) before next object
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glStencilMask(0xFF);
+        glClear(GL_STENCIL_BUFFER_BIT);
+        glClear(GL_DEPTH_BUFFER_BIT);   // so next model’s mark isn’t occluded
     }
-
-    // Render primitive shape outlines
-    for (auto &shape: primitiveShapes) {
-        if (shape && shape->visible) {
-            // Store original transform
-            glm::vec3 originalScale = shape->scale;
-
-            // Apply scaled-up transformation
-            shape->scale *= outlineScale;
-
-            // Make sure shader is active before each draw call
-            outlineShader.Use();
-
-            try {
-                // Draw with outline shader
-                shape->Draw(outlineShader);
-            } catch (const std::exception& e) {
-                std::cerr << "Error drawing shape outline: " << e.what() << std::endl;
-            }
-
-            // Restore original transform
-            shape->scale = originalScale;
-        }
-    }
-
     // restore state
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
     glStencilMask(0xFF);
     glStencilFunc(GL_ALWAYS, 0, 0xFF);
+    glEnable(GL_DEPTH_TEST);
 }
 // Function to set lighting uniforms
 void setLightingUniforms(Shader &shader) {
