@@ -40,6 +40,8 @@ extern float lastFrame;
 bool cursorEnabled = true;
 std::map<int, bool> keyWasPressed;
 
+glm::mat4 projection = glm::mat4(1.0f);
+
 // Model variables
 std::vector<m3D::Model *> models;
 std::vector<glm::vec3> modelPositions;
@@ -416,12 +418,15 @@ void loadModels(const std::string& modelBasePath, const std::string& binModelBas
 
     std::vector<ModelData> modelsToLoad = {
         {"Backpack", "backpack/backpack.obj", glm::vec3(0.0f, 1.5f, 0.0f), glm::vec3(0), glm::vec3(1.0f)},
-        {"Mansion", "low_poly_mansion__house/scene.gltf", glm::vec3(-10.0f, -0.5f, -10.0f), glm::vec3(0.0f, 45.0f, 0.0f), glm::vec3(0.00625f)},
-        {"Tiptup", "n64/Tiptup/ObjectTortRunner.obj", glm::vec3(13.0f, 0.0f, 5.0f), glm::vec3(0.0f, 180.0f, 0.0f), glm::vec3(0.5f)},
+        {"Mansion", "low_poly_mansion__house/scene.gltf", glm::vec3(-10.0f, -0.5f, -10.0f), glm::vec3(0.0f, 245.0f, 0.0f), glm::vec3(0.00625f)},
+        //{"Tiptup", "n64/Tiptup/ObjectTortRunner.obj", glm::vec3(13.0f, 0.0f, 5.0f), glm::vec3(0.0f, 180.0f, 0.0f), glm::vec3(0.5f)},
         {"Solar System", "solar_system_model_orrery/scene.gltf", glm::vec3(0.0f, 0.0f, 18.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.1f)},
         {"Model", "koseki_bijou/Model.glb", glm::vec3(-1.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f)},
-        {"ModelH", "hakos_baelz_3d_model_-_mmd_download/scene.gltf", glm::vec3(2.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(2.0f)},
-        {"ModelM", "hatsune_miku/scene.gltf", glm::vec3(-4.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.4f)},
+//        {"ModelH", "hakos_baelz_3d_model_-_mmd_download/scene.gltf", glm::vec3(2.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(2.0f)},
+        {"ModelM", "hatsune_miku.glb", glm::vec3(-4.0f, 1.0f, 9.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.4f)},
+        {"Island", "GameCube - The Legend of Zelda The Wind Waker - Windfall Island Lenzos Shop/Lenzos Shop.obj", glm::vec3(8.0f, 0.0f, -1.0f), glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.2f)},
+        {"Bird", "GameCube - The Legend of Zelda The Wind Waker - Medli/MediBody.dae", glm::vec3(3.0f, 8.0f,  0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.1f)},
+        {"Pirate", "GameCube - The Legend of Zelda The Wind Waker - Pirate Ship Interior/Pirate Ship Interior.dae", glm::vec3(6.0f, 2.0f, 9.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.003f)},
     };
 
     for (const auto& m : modelsToLoad) {
@@ -492,6 +497,8 @@ int game3d(int argc, char *argv[], const std::string &type) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_STENCIL_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
@@ -611,7 +618,7 @@ int game3d(int argc, char *argv[], const std::string &type) {
         shader.Use();
 
         // Set camera uniforms
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT,
+        projection = glm::perspective(glm::radians(camera.Zoom), (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT,
                                                 0.1f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
         shader.SetMatrix4("projection", projection);
@@ -1107,50 +1114,103 @@ void renderScene(Shader &shader) {
     // --------------------------------------------------------------------
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
     glStencilMask(0xFF);
+    // Render models from the scene
+    for (const auto &modelName: modelNames) {
+        auto modelObj = scene.GetModelObject(modelName);
+        if (modelObj && modelObj->visible) {
+            modelObj->Draw(shader);
+        }
+    }
+
+    // Render primitive shapes
+    for (auto &shape: primitiveShapes) {
+        if (shape && shape->visible) {
+            shape->Draw(shader);
+        }
+    }
+    // Render dynamic shapes
+    if (useDynamicShapes) {
+        for (auto &shape: dynamicShapes) {
+            // Skip CartesianPlane objects if they should be hidden
+            std::string name = shape->name;
+            if (!showCartesianPlane &&
+                (name.find("CartesianPlane") != std::string::npos ||
+                 name.find("WhiteGridCube") != std::string::npos)) {
+                continue; // Skip rendering this shape
+                 }
+
+            shape->Draw(shader);
+        }
+    }
+
+    // 2nd. render pass: now draw slightly scaled versions of the objects, this time disabling stencil writing.
+    // Because the stencil buffer is now filled with several 1s. The parts of the buffer that are 1 are not drawn, thus only drawing
+    // the objects' size differences, making it look like borders.
+    // -----------------------------------------------------------------------------------------------------------------------------
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00);
+    glDisable(GL_DEPTH_TEST);
+
     // Get the outline shader
     Shader outlineShader = ResourceManager::GetShader("outline");
 
     // Explicitly activate the shader before rendering
     outlineShader.Use();
-    //outlineShader.SetMatrix4("view", camera.GetViewMatrix());
-    //outlineShader.SetMatrix4("projection", camera.GetProjectionMatrix());
+    outlineShader.SetMatrix4("view", camera.GetViewMatrix());
+    outlineShader.SetMatrix4("projection", projection);
     // Scale factor for outlines (slightly larger than original)
-    const float outlineScale = 1.1f; // 5% larger
+    const float outlineScale = 1.03f; // 5% larger
 
     // Render model outlines
     for (const auto &modelName: modelNames) {
+        auto modelObj = scene.GetModelObject(modelName);
+        if (modelObj && modelObj->visible) {
+            // Store original transform
+            glm::vec3 originalScale = modelObj->scale;
 
-        auto obj = scene.GetModelObject(modelame);
-        if (!obj || !obj->visible) continue;
+            // Apply scaled-up transformation
+            modelObj->scale *= outlineScale;
 
-        // ——— 1) mark this object into stencil
-        glStencilMask(0xFF);                                      // enable stencil writes
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);                        // always pass
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);                // write 1 on depth-pass
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        shader.Use();
-        obj->Draw(shader);
+            // Make sure shader is active before each draw call
+            outlineShader.Use();
 
-        // ——— 2) draw its outline where stencil≠1
-        glStencilMask(0x00);                                      // disable writes
-        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
+            try {
+                // Draw with outline shader
+                modelObj->Draw(outlineShader);
+            } catch (const std::exception& e) {
+                std::cerr << "Error drawing model outline for " << modelName
+                          << ": " << e.what() << std::endl;
+            }
 
-        glm::vec3 old = obj->scale;
-        obj->scale *= outlineScale;
-        outlineShader.Use();
-        obj->Draw(outlineShader);
-        obj->scale = old;
-
-        // ——— 3) clear stencil (and depth) before next object
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        glStencilMask(0xFF);
-        glClear(GL_STENCIL_BUFFER_BIT);
-        glClear(GL_DEPTH_BUFFER_BIT);   // so next model’s mark isn’t occluded
+            // Restore original scale
+            modelObj->scale = originalScale;
+        }
     }
+
+    // Render primitive shape outlines
+    for (auto &shape: primitiveShapes) {
+        if (shape && shape->visible) {
+            // Store original transform
+            glm::vec3 originalScale = shape->scale;
+
+            // Apply scaled-up transformation
+            shape->scale *= outlineScale;
+
+            // Make sure shader is active before each draw call
+            outlineShader.Use();
+
+            try {
+                // Draw with outline shader
+                shape->Draw(outlineShader);
+            } catch (const std::exception& e) {
+                std::cerr << "Error drawing shape outline: " << e.what() << std::endl;
+            }
+
+            // Restore original transform
+            shape->scale = originalScale;
+        }
+    }
+
     // restore state
     glStencilMask(0xFF);
     glStencilFunc(GL_ALWAYS, 0, 0xFF);

@@ -67,6 +67,7 @@
     uniform float pointLightBrightness = 0.2; // Default: 20% of original (80% reduction)
     uniform float dirLightBrightness = 1.4;   // Default: 140% of original (40% increase)
     uniform float spotLightBrightness = 1.8;  // Default: 180% of original (80% increase)
+    bool useCelShading = true;
 
     // Other uniforms
     uniform vec3 viewPos;
@@ -133,6 +134,25 @@
         float normalized = linearZ / far;
         // output normalized Z to the fragment shader
         FragColor = vec4(vec3(normalized), 1.0);
+    }
+    vec3 ApplyCelShading(vec3 lightColor, float diffuseIntensity, float specularIntensity, bool useSpecular) {
+        // Quantize diffuse into steps
+        float levels = 3.0;
+        float stepSize = 1.0 / levels;
+        float quantizedDiffuse = floor(diffuseIntensity / stepSize) * stepSize;
+
+        // Clamp final intensity
+        quantizedDiffuse = clamp(quantizedDiffuse, 0.0, 1.0);
+
+        // Optional: threshold specular into a hard band
+        float spec = 0.0;
+        if (useSpecular) {
+            float specThreshold = 0.5;
+            spec = specularIntensity > specThreshold ? 1.0 : 0.0;
+        }
+
+        // Just return the quantized intensities, we'll apply colors later
+        return vec3(quantizedDiffuse, spec, 0.0);
     }
 
     void main()
@@ -264,7 +284,13 @@
         vec3 specular = light.specular * spec * specularColor;
 
         // Apply directional light brightness adjustment using uniform
-        return (ambient + diffuse + specular) * dirLightBrightness;
+        vec3 lighting;
+        if (useCelShading) {
+            lighting = ApplyCelShading(light.diffuse, diff, spec, true);
+        } else {
+            lighting = diffuse + specular;
+        }
+        return lighting * dirLightBrightness + ambient;
     }
 
     // Calculates the color when using a point light
@@ -304,7 +330,14 @@
         specular *= attenuation;
 
         // Apply point light brightness adjustment using uniform
-        return (ambient + diffuse + specular) * pointLightBrightness;
+        vec3 lighting;
+        if (useCelShading) {
+            lighting = ApplyCelShading(light.diffuse, diff, spec, true);
+        } else {
+            lighting = light.diffuse * diff * diffuseColor + light.specular * spec * specularColor;
+        }
+        return lighting * attenuation * pointLightBrightness + ambient;
+
     }
 
     // Calculates the color when using a spot light
@@ -357,5 +390,23 @@
         specular *= attenuation * intensity;
 
         // Apply brightness adjustment
-        return (ambient + diffuse + specular) * spotLightBrightness;
+        vec3 lighting;
+        if (useCelShading) {
+            vec3 celFactors = ApplyCelShading(light.diffuse, diff, spec, true);
+            float celDiff = celFactors.x;
+            float celSpec = celFactors.y;
+
+            // Now use these quantized factors with your original calculation
+            lighting = light.diffuse * celDiff * diffuseColor +
+                      light.specular * celSpec * specularColor;
+        } else {
+            lighting = light.diffuse * diff * diffuseColor +
+                      light.specular * spec * specularColor;
+        }
+
+        // Now apply attenuation, intensity and brightness adjustment
+        lighting = lighting * attenuation * intensity * spotLightBrightness;
+
+        // Don't forget ambient
+        return lighting + ambient;
     }
