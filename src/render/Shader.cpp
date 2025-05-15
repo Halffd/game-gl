@@ -151,7 +151,8 @@ void Shader::checkCompileErrors(unsigned int object, std::string type)
             std::cout << "| ERROR::SHADER: Compile-time error: Type: " << type << "\n"
                 << infoLog << "\n -- --------------------------------------------------- -- "
                 << std::endl;
-            throw std::runtime_error("Shader compilation failed: " + type);
+            exit(1);
+            //throw std::runtime_error("Shader compilation failed: " + type);
         }
         else
         {
@@ -167,7 +168,8 @@ void Shader::checkCompileErrors(unsigned int object, std::string type)
             std::cout << "| ERROR::Shader: Link-time error: Type: " << type << "\n"
                 << infoLog << "\n -- --------------------------------------------------- -- "
                 << std::endl;
-            throw std::runtime_error("Shader linking failed");
+            exit(1);
+            //throw std::runtime_error("Shader linking failed");
         }
         else
         {

@@ -32,6 +32,13 @@ public:
     glm::vec3 Up;
     glm::vec3 Right;
     glm::vec3 WorldUp;
+    glm::mat4 Projection;
+    void SetProjectionMatrix(glm::mat4 projectionMatrix) {
+        Projection = projectionMatrix;
+    }
+    glm::mat4 GetProjectionMatrix() {
+        return Projection;
+    }
     // euler Angles
     float Yaw;
     float Pitch;

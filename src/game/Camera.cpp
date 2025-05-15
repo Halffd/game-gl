@@ -29,6 +29,12 @@ void Camera::SetZoom(float zoom) {
     Zoom = zoom;
     UpdateViewMatrix();
 }
+void Camera::SetProjectionMatrix(glm::mat4 projectionMatrix) {
+    Projection = projectionMatrix;
+}
+glm::mat4 Camera::GetProjectionMatrix() {
+    return Projection;
+}
 
 void Camera::FollowPlayer(const glm::vec2& playerPosition) {
     SetPosition(playerPosition);

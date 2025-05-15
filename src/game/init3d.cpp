@@ -156,7 +156,7 @@ std::vector<glm::vec3> rotationSpeeds; // Store rotation speeds for each primiti
 // Dynamic shapes with mathematical transformations
 std::vector<std::shared_ptr<m3D::PrimitiveShape> > dynamicShapes;
 std::vector<std::shared_ptr<m3D::DynamicTransform> > dynamicTransforms;
-bool useDynamicShapes = true;
+bool useDynamicShapes = false;
 bool showDynamicShapesWindow = false;
 
 // Global variables for keyboard controls
@@ -419,8 +419,9 @@ void loadModels(const std::string& modelBasePath, const std::string& binModelBas
         {"Mansion", "low_poly_mansion__house/scene.gltf", glm::vec3(-10.0f, -0.5f, -10.0f), glm::vec3(0.0f, 45.0f, 0.0f), glm::vec3(0.00625f)},
         {"Tiptup", "n64/Tiptup/ObjectTortRunner.obj", glm::vec3(13.0f, 0.0f, 5.0f), glm::vec3(0.0f, 180.0f, 0.0f), glm::vec3(0.5f)},
         {"Solar System", "solar_system_model_orrery/scene.gltf", glm::vec3(0.0f, 0.0f, 18.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.1f)},
-        {"Model", "koseki_bijou/scene.glb", glm::vec3(-1.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(10.0f)},
-        {"Smol", "smol/scene.gltf", glm::vec3(7.0f, 0.0f, -4.0f), glm::vec3(18.0f, 0.0f, 0.0f), glm::vec3(3.0f)}
+        {"Model", "koseki_bijou/Model.glb", glm::vec3(-1.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.0f)},
+        {"ModelH", "hakos_baelz_3d_model_-_mmd_download/scene.gltf", glm::vec3(2.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(2.0f)},
+        {"ModelM", "hatsune_miku/scene.gltf", glm::vec3(-4.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(3.4f)},
     };
 
     for (const auto& m : modelsToLoad) {
@@ -498,7 +499,7 @@ int game3d(int argc, char *argv[], const std::string &type) {
     cursorEnabled = false;
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     firstMouse = true;
-
+    toggleCursor(window);
     std::cout << "Loading vertex shader from: " << vertexShaderPath << std::endl;
     std::cout << "Loading fragment shader from: " << fragmentShaderPath << std::endl;
 
@@ -542,6 +543,7 @@ int game3d(int argc, char *argv[], const std::string &type) {
         std::cout << "Attempting to load shaders using ResourceManager..." << std::endl;
         try {
             ResourceManager::LoadShader("3d.vs", "3d.fs", nullptr, "model");
+            ResourceManager::LoadShader("outline.vs", "outline.fs", nullptr, "outline");
             std::cout << "Successfully loaded model shader using ResourceManager" << std::endl;
         } catch (const std::exception &e) {
             std::cout << "Failed to load shader using ResourceManager: " << e.what() << std::endl;
@@ -616,18 +618,18 @@ int game3d(int argc, char *argv[], const std::string &type) {
         // Set lighting uniforms
         setLightingUniforms(shader);
         // On startup
-        glClearStencil(0); // Initial stencil value = 0
+        //glClearStencil(0); // Initial stencil value = 0
 
         // In render loop
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        //glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
         // First pass - write to stencil
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
-        glStencilMask(0xFF);
+        //glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        //glStencilMask(0xFF);
 
         // Second pass - use stencil
-        glStencilFunc(GL_EQUAL, static_cast<int>(currentFrame) % 2, 0xFF); // Flicker between 0/1
+        //glStencilFunc(GL_EQUAL, static_cast<int>(currentFrame) % 2, 0xFF); // Flicker between 0/1
         //glStencilMask(0x00);
-        glStencilOp(GL_INVERT, GL_INCR, GL_REPLACE);
+        //glStencilOp(GL_INVERT, GL_INCR, GL_REPLACE);
 
         // Render the scene
         renderScene(shader);
@@ -1095,12 +1097,21 @@ static void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
 
 // Function to render the scene with the CartesianPlane visibility check
 void renderScene(Shader &shader) {
+    glEnable(GL_STENCIL_TEST);
+    glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
+    // PHASE 1: Render regular objects and mark them in stencil buffer
+    glStencilFunc(GL_ALWAYS, 1, 0xFF); // all fragments should pass the stencil test
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilMask(0x00); // enable writing to the stencil buffer
+    glClearStencil(0);
     // Render the ground
     renderGround(shader);
 
+    glStencilMask(0xFF);                // ⟵ now allow writes
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     // Render models from the scene
     for (const auto &modelName: modelNames) {
-        std::cout << "Rendering model: " << modelName << std::endl;
         auto modelObj = scene.GetModelObject(modelName);
         if (modelObj && modelObj->visible) {
             modelObj->Draw(shader);
@@ -1109,11 +1120,10 @@ void renderScene(Shader &shader) {
 
     // Render primitive shapes
     for (auto &shape: primitiveShapes) {
-        if (shape) {
+        if (shape && shape->visible) {
             shape->Draw(shader);
         }
     }
-
     // Render dynamic shapes
     if (useDynamicShapes) {
         for (auto &shape: dynamicShapes) {
@@ -1123,13 +1133,84 @@ void renderScene(Shader &shader) {
                 (name.find("CartesianPlane") != std::string::npos ||
                  name.find("WhiteGridCube") != std::string::npos)) {
                 continue; // Skip rendering this shape
-            }
+                 }
 
             shape->Draw(shader);
         }
     }
-}
 
+    // PHASE 2: Render outlines using the stencil buffer
+    glEnable(GL_STENCIL_TEST);
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    // Get the outline shader
+    Shader outlineShader = ResourceManager::GetShader("outline");
+
+    // Explicitly activate the shader before rendering
+    outlineShader.Use();
+    outlineShader.SetMatrix4("view", camera.GetViewMatrix());
+    outlineShader.SetMatrix4("projection", camera.GetProjectionMatrix());
+    // Scale factor for outlines (slightly larger than original)
+    const float outlineScale = 1.05f; // 5% larger
+
+    // Render model outlines
+    for (const auto &modelName: modelNames) {
+        auto modelObj = scene.GetModelObject(modelName);
+        if (modelObj && modelObj->visible) {
+            // Store original transform
+            glm::vec3 originalScale = modelObj->scale;
+
+            // Apply scaled-up transformation
+            modelObj->scale *= outlineScale;
+
+            // Make sure shader is active before each draw call
+            outlineShader.Use();
+
+            try {
+                // Draw with outline shader
+                modelObj->Draw(outlineShader);
+            } catch (const std::exception& e) {
+                std::cerr << "Error drawing model outline for " << modelName
+                          << ": " << e.what() << std::endl;
+            }
+
+            // Restore original transform
+            modelObj->scale = originalScale;
+        }
+    }
+
+    // Render primitive shape outlines
+    for (auto &shape: primitiveShapes) {
+        if (shape && shape->visible) {
+            // Store original transform
+            glm::vec3 originalScale = shape->scale;
+
+            // Apply scaled-up transformation
+            shape->scale *= outlineScale;
+
+            // Make sure shader is active before each draw call
+            outlineShader.Use();
+
+            try {
+                // Draw with outline shader
+                shape->Draw(outlineShader);
+            } catch (const std::exception& e) {
+                std::cerr << "Error drawing shape outline: " << e.what() << std::endl;
+            }
+
+            // Restore original transform
+            shape->scale = originalScale;
+        }
+    }
+
+    // restore state
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 0, 0xFF);
+}
 // Function to set lighting uniforms
 void setLightingUniforms(Shader &shader) {
     // Set material properties

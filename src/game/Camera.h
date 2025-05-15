@@ -14,6 +14,8 @@ public:
     void SetPosition(glm::vec2 position);
     void SetSize(glm::vec2 size);
     void SetZoom(float zoom);
+    void SetProjectionMatrix(glm::mat4 projectionMatrix);
+    glm::mat4 GetProjectionMatrix();
     
     void FollowPlayer(const glm::vec2& playerPosition);
     void FocusOnObject(const glm::vec2& objectPosition);
@@ -28,7 +30,7 @@ private:
     glm::vec2 Size;     // Size of the camera view
     float Zoom;         // Zoom level
     glm::mat4 View;     // View matrix
-
+    glm::mat4 Projection;
 };
 
 #endif // CAMERA_H

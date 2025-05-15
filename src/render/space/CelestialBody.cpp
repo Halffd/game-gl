@@ -4,15 +4,12 @@
 #define PI 3.14159265359f
 
 CelestialBody::CelestialBody(float mass, float radius, float rotationPeriod, float axialTilt)
-    : mass(mass), radius(radius), rotationPeriod(rotationPeriod), axialTilt(axialTilt) {
+    : mass(mass), radius(radius), rotationPeriod(rotationPeriod), axialTilt(axialTilt), sphereModel(nullptr) {
     position = glm::vec3(0.0f);
     velocity = glm::vec3(0.0f);
     currentRotation = 0.0f;
     color = glm::vec3(1.0f); // Default white
     texture = 0;
-
-    // Initialize sphere model for rendering
-    sphereModel = nullptr;
     SetupSphere();
 }
 
@@ -26,9 +23,9 @@ CelestialBody::~CelestialBody() {
     }
 
     // Clean up model if it was created internally
-    if (sphereModel) {
-        delete sphereModel;
-    }
+    //if (sphereModel) {
+    //    delete sphereModel;
+    //}
 }
 
 void CelestialBody::Update(float deltaTime) {
@@ -65,14 +62,8 @@ void CelestialBody::Draw(Shader &shader) {
     SetupMaterial(shader);
 
     // Draw the sphere
-    if (sphereModel) {
-        sphereModel->Draw(shader);
-    } else {
-        // Fallback - bind VAO and draw directly
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 2880); // Assuming 960 triangles for a sphere (can be adjusted)
-        glBindVertexArray(0);
-    }
+    //if (sphereModel)
+    //    sphereModel->Draw(shader);
 }
 
 void CelestialBody::SetupSphere() {

@@ -142,8 +142,8 @@ void Star::RenderGlowEffect(Shader &mainShader) {
 
     // Pass necessary uniforms (view, projection matrices would be needed)
     // This is a placeholder - you'd get these from your camera/scene
-    glowShader->SetMatrix4("projection", mainShader.GetMatrix4("projection"));
-    glowShader->SetMatrix4("view", mainShader.GetMatrix4("view"));
+    //glowShader->SetMatrix4("projection", mainShader.GetMatrix4("projection"));
+    //glowShader->SetMatrix4("view", mainShader.GetMatrix4("view"));
 
     // Create a billboard model matrix
     glm::mat4 model = glm::mat4(1.0f);

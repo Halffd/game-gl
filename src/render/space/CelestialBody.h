@@ -27,7 +27,7 @@ protected:
     
     // OpenGL rendering data
     unsigned int VAO, VBO;
-    Model* sphereModel;      // Using model class for sphere rendering
+    m3D::Model sphereModel;      // Using model class for sphere rendering
 
 public:
     CelestialBody(float mass, float radius, float rotationPeriod, float axialTilt);
