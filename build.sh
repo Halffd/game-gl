@@ -16,8 +16,8 @@ log() {
 mkdir -p "$BIN_DIR/linux" "$BIN_DIR/windows/32" "$BIN_DIR/windows/64" "$BUILD_DIR/zip"
 
 # Check for command-line arguments
-if [ "$1" -ne 1 ]; then
-    echo "Usage: $0 {all|linux|windows}"
+if [ "$#" -lt 1 ]; then
+    echo "Usage: $0 {all|linux|windows [32|64]}"
     exit 1
 fi
 
@@ -26,15 +26,13 @@ case "$1" in
     all)
         log "Building for both Linux and Windows (32-bit and 64-bit)..."
         # Build for Linux
-        ./build.sh linux
-        # Build for Windows (32-bit)
-        #./build.sh windows 32
+        "$0" linux
         # Build for Windows (64-bit)
-        ./build.sh windows 64
+        "$0" windows 64
         ;;
     linux)
         log "Starting Linux build..."
-        rm -rf "$BIN_DIR/linux/*"  # Clean previous builds
+        rm -rf "$BIN_DIR/linux/"*  # Clean previous builds
         mkdir -p "$BUILD_DIR/linux"  # Ensure Linux build directory exists
         cd "$BUILD_DIR/linux"
         
@@ -42,13 +40,17 @@ case "$1" in
         cmake ../..  # Adjust the path as necessary
         cmake --build .  # Compile the project
         cd ../..
+        
         # Copy Linux binaries to their directory using rsync
-        rsync -a --exclude=linux  --exclude=windows "$BUILD_DIR/" "$BIN_DIR/linux/"  # Use rsync to copy files
+        if [ -d "$BUILD_DIR/linux" ]; then
+            rsync -av --exclude='*.o' --exclude='*.cmake' --exclude='CMakeFiles' --exclude='Makefile' "$BUILD_DIR/linux/" "$BIN_DIR/linux/"
+        fi
         log "Linux build completed."
 
         # Zip the Linux binaries if they exist
         if [ -d "$BIN_DIR/linux" ] && [ "$(ls -A "$BIN_DIR/linux")" ]; then
-            zip -r "$BUILD_DIR/zip/linux.zip" "$BIN_DIR/linux"
+            cd "$BIN_DIR" && zip -r "../$BUILD_DIR/zip/linux.zip" linux/
+            cd ..
             log "Linux binaries zipped into linux.zip."
         else
             log "No Linux binaries found to zip."
@@ -72,26 +74,32 @@ case "$1" in
         fi
         
         log "Starting Windows $ARCH-bit build..."
-  #      rm -r "$BIN_DIR*"  # Clean previous binaries
-        mkdir -p "$BUILD_DIR"  # Ensure build directory exists
-        cd "$BUILD_DIR"
-        pwd
+        rm -rf "$BIN_DIR/windows/$ARCH/"*  # Clean previous binaries
+        mkdir -p "$BUILD_DIR/windows_$ARCH"  # Ensure build directory exists
+        cd "$BUILD_DIR/windows_$ARCH"
+        
         # Configure the project based on architecture
         cmake -DCMAKE_SYSTEM_NAME=Windows \
               -DCMAKE_C_COMPILER=${TOOLCHAIN}-gcc \
               -DCMAKE_CXX_COMPILER=${TOOLCHAIN}-g++ \
-              -DCMAKE_FIND_ROOT_PATH=/usr/${TOOLCHAIN} ..  # Adjust as necessary
+              -DCMAKE_FIND_ROOT_PATH=/usr/${TOOLCHAIN} \
+              -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+              -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+              -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY ../..
 
         cmake --build .  # Compile the project
-        #cd ..
+        cd ../..
 
         # Copy Windows binaries to their directory using rsync
-        rsync -a --exclude=zip --exclude=linux --exclude=linux --exclude=windows "$BUILD_DIR/" "$BIN_DIR/windows/$ARCH/"  # Use rsync to copy files
+        if [ -d "$BUILD_DIR/windows_$ARCH" ]; then
+            rsync -av --exclude='*.o' --exclude='*.cmake' --exclude='CMakeFiles' --exclude='Makefile' "$BUILD_DIR/windows_$ARCH/" "$BIN_DIR/windows/$ARCH/"
+        fi
         log "Windows $ARCH-bit build completed."
 
         # Zip the Windows binaries if they exist
         if [ -d "$BIN_DIR/windows/$ARCH" ] && [ "$(ls -A "$BIN_DIR/windows/$ARCH")" ]; then
-            zip -r "$BUILD_DIR/zip/windows_${ARCH}.zip" "$BIN_DIR/windows/$ARCH"
+            cd "$BIN_DIR/windows" && zip -r "../../$BUILD_DIR/zip/windows_${ARCH}.zip" "$ARCH/"
+            cd ../..
             log "Windows $ARCH-bit binaries zipped into windows_${ARCH}.zip."
         else
             log "No Windows $ARCH-bit binaries found to zip."
@@ -99,7 +107,7 @@ case "$1" in
         ;;
     *)
         echo "Invalid argument: $1"
-        echo "Usage: $0 {all|linux|windows}"
+        echo "Usage: $0 {all|linux|windows [32|64]}"
         exit 1
         ;;
 esac
@@ -112,7 +120,11 @@ else
     log "No Linux game executable found to link."
 fi
 
-# Ensure the zip directory exists and move zip files into it
-mkdir -p "$BIN_DIR/zip"
-cp -r "$BUILD_DIR/zip" "$BIN_DIR"  # Move zip files to the bin directory
+# Move zip files to bin directory
+if [ -d "$BUILD_DIR/zip" ] && [ "$(ls -A "$BUILD_DIR/zip")" ]; then
+    mkdir -p "$BIN_DIR/zip"
+    mv "$BUILD_DIR/zip"/* "$BIN_DIR/zip/"
+    log "Zip files moved to bin directory."
+fi
+
 log "Build process completed successfully."

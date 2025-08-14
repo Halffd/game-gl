@@ -16,6 +16,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_FIND_STATIC_PREFERENCES TRUE)
 set(BUILD_SHARED_LIBS OFF)  # Ensure shared libraries are not built
+# Default debug, -DRelease: release
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 # Option to enable verbose messages
 option(ENABLE_VERBOSE "Enable verbose makefile messages" ON)
