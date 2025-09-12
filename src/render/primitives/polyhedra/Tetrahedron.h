@@ -2,6 +2,8 @@
 #define TETRAHEDRON_SHAPE_H
 
 #include "../PrimitiveShape.h"
+#include <algorithm> // Added for std::max
+#include <iostream>
 
 namespace m3D {
 
@@ -160,4 +162,4 @@ public:
 
 } // namespace m3D
 
-#endif // TETRAHEDRON_SHAPE_H 
+#endif // TETRAHEDRON_SHAPE_H

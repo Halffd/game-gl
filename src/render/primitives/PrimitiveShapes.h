@@ -2,7 +2,7 @@
 #define PRIMITIVE_SHAPES_ALL_H
 
 #include "PrimitiveShape.h"
-#include "../Scene.h"
+#include "../../scene/Scene.h" // Changed include path
 #include <vector>
 #include <memory>
 #include <glm/glm.hpp>
@@ -49,4 +49,4 @@ void generateDynamicShapes(Scene& scene,
 
 } // namespace m3D
 
-#endif // PRIMITIVE_SHAPES_ALL_H 
+#endif // PRIMITIVE_SHAPES_ALL_H

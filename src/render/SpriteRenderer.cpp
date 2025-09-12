@@ -1,7 +1,6 @@
 #include "render/SpriteRenderer.h"
 #include "util/common.h"
 #include <glm/gtc/matrix_transform.hpp>
-#include "../Transform.hpp"
 #include "game/Camera.h"
 
 glm::mat4 mat2To4(const glm::mat2& mat2){
