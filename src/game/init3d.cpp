@@ -23,6 +23,7 @@
 #include <iostream>
 #include <memory>
 #include <cmath>
+#include "Timer.hpp"
 #define TESTING 1
 // Define the dimensions
 const unsigned SCREEN_WIDTH = WIDTH;
@@ -193,7 +194,283 @@ static void toggleCursor(GLFWwindow *window);
 static void renderScene(Shader &shader);
 
 static void setLightingUniforms(Shader &shader);
+enum BlendTone {
+    // Original tones
+    NORMAL, CINEMATIC_DARK, VINTAGE_FILM, MATRIX_GREEN, RADIOACTIVE,
+    GLASS_TINT, FILM_NOIR, CYBERPUNK, SEPIA_OLD, NEON_GLOW,
+    BLOOD_RED, ICE_BLUE, FIRE_ORANGE, POISON_GREEN, DEEP_PURPLE,
+    GOLDEN_HOUR, UNDERWATER, THERMAL_VISION, X_RAY, DREAM_SOFT,
+    
+    // NEW CHAOS TONES
+    APOCALYPSE_ORANGE, ZOMBIE_GREEN, VAMPIRE_CRIMSON, GHOST_PALE,
+    ALIEN_PURPLE, SPACE_VOID, SOLAR_FLARE, NUCLEAR_YELLOW,
+    FROST_WHITE, LAVA_RED, OCEAN_DEEP, SKY_BRIGHT,
+    RUST_BROWN, NEON_PINK, ELECTRIC_CYAN, TOXIC_LIME,
+    SHADOW_GRAY, DAWN_ROSE, DUSK_VIOLET, MIDNIGHT_BLUE,
+    DESERT_SAND, JUNGLE_GREEN, ARCTIC_TEAL, VOLCANO_ASH,
+    LASER_MAGENTA, HOLO_RAINBOW, RETRO_AMBER, SYNTHWAVE_PURPLE,
+    BLADE_RUNNER, TRON_BLUE, AKIRA_RED, GHOST_SHELL,
+    MAD_MAX_DUST, ALIEN_ISOLATION, DOOM_HELL, BIOSHOCK_WATER,
+    FALLOUT_SEPIA, METRO_DARK, STALKER_RADIATION, WITCHER_FOG,
+    BATTLEFIELD_SMOKE, CALL_OF_DUTY, OVERWATCH_BRIGHT, APEX_NEON,
+    FORTNITE_CARTOON, MINECRAFT_BLOCK, TERRARIA_PIXEL, STARDEW_COZY,
+    LIMBO_SHADOW, INSIDE_MONOCHROME, JOURNEY_GOLD, ABZU_OCEAN,
+    CUPHEAD_SEPIA, HOLLOW_KNIGHT, CELESTE_MOUNTAIN, HADES_UNDERWORLD
+};
 
+void blendingTone(BlendTone tone) {
+    switch(tone) {
+        // ... (previous cases) ...
+        
+        case APOCALYPSE_ORANGE:
+            glBlendFunc(GL_ONE, GL_SRC_COLOR);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(1.0f, 0.4f, 0.1f, 0.8f);
+            break;
+            
+        case ZOMBIE_GREEN:
+            glBlendFunc(GL_CONSTANT_COLOR, GL_DST_COLOR);
+            glBlendEquation(GL_FUNC_SUBTRACT);
+            glBlendColor(0.3f, 0.7f, 0.2f, 0.6f);
+            break;
+            
+        case VAMPIRE_CRIMSON:
+            glBlendFunc(GL_DST_COLOR, GL_CONSTANT_COLOR);
+            glBlendEquation(GL_MAX);
+            glBlendColor(0.8f, 0.1f, 0.1f, 0.9f);
+            break;
+            
+        case GHOST_PALE:
+            glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(0.9f, 0.9f, 1.0f, 0.3f);
+            break;
+            
+        case ALIEN_PURPLE:
+            glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_DST_COLOR);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(0.6f, 0.2f, 0.9f, 0.7f);
+            break;
+            
+        case SPACE_VOID:
+            glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA);
+            glBlendEquation(GL_MIN);
+            glBlendColor(0.05f, 0.05f, 0.2f, 1.0f);
+            break;
+            
+        case SOLAR_FLARE:
+            glBlendFunc(GL_ONE, GL_ONE);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(1.0f, 0.9f, 0.3f, 1.0f);
+            break;
+            
+        case NUCLEAR_YELLOW:
+            glBlendFunc(GL_ONE, GL_DST_COLOR);
+            glBlendEquation(GL_MAX);
+            glBlendColor(0.9f, 0.9f, 0.2f, 0.8f);
+            break;
+            
+        case FROST_WHITE:
+            glBlendFunc(GL_CONSTANT_COLOR, GL_ONE_MINUS_CONSTANT_COLOR);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(0.9f, 0.95f, 1.0f, 0.5f);
+            break;
+            
+        case LAVA_RED:
+            glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+            glBlendEquation(GL_MAX);
+            glBlendColor(1.0f, 0.3f, 0.0f, 0.9f);
+            break;
+            
+        case SYNTHWAVE_PURPLE:
+            glBlendFuncSeparate(GL_ONE, GL_ONE, GL_SRC_ALPHA, GL_ONE);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(0.8f, 0.2f, 0.9f, 0.6f);
+            break;
+            
+        case BLADE_RUNNER:
+            glBlendFunc(GL_CONSTANT_COLOR, GL_SRC_COLOR);
+            glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
+            glBlendColor(0.9f, 0.7f, 0.2f, 0.8f);
+            break;
+            
+        case TRON_BLUE:
+            glBlendFunc(GL_ONE, GL_ONE);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(0.1f, 0.6f, 1.0f, 1.0f);
+            break;
+            
+        case AKIRA_RED:
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            glBlendEquation(GL_MAX);
+            glBlendColor(1.0f, 0.1f, 0.2f, 0.9f);
+            break;
+            
+        case MAD_MAX_DUST:
+            glBlendFunc(GL_DST_COLOR, GL_ZERO);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(0.8f, 0.6f, 0.4f, 1.0f);
+            break;
+            
+        case DOOM_HELL:
+            glBlendFunc(GL_ONE, GL_DST_COLOR);
+            glBlendEquation(GL_MAX);
+            glBlendColor(1.0f, 0.2f, 0.0f, 1.0f);
+            break;
+            
+        case FALLOUT_SEPIA:
+            glBlendFunc(GL_CONSTANT_COLOR, GL_ONE_MINUS_SRC_COLOR);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(0.7f, 0.6f, 0.3f, 0.8f);
+            break;
+            
+        case LIMBO_SHADOW:
+            glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+            glBlendEquation(GL_MIN);
+            glBlendColor(0.1f, 0.1f, 0.1f, 1.0f);
+            break;
+            
+        case CUPHEAD_SEPIA:
+            glBlendFunc(GL_DST_COLOR, GL_CONSTANT_COLOR);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendColor(0.9f, 0.7f, 0.5f, 0.9f);
+            break;
+            
+        case HADES_UNDERWORLD:
+            glBlendFunc(GL_CONSTANT_COLOR, GL_ONE_MINUS_DST_COLOR);
+            glBlendEquation(GL_FUNC_SUBTRACT);
+            glBlendColor(0.6f, 0.1f, 0.3f, 0.8f);
+            break;
+            
+        // Add more insane combinations...
+        case LASER_MAGENTA:
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+            glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
+            glBlendColor(1.0f, 0.0f, 0.8f, 1.0f);
+            break;
+            
+        case HOLO_RAINBOW:
+            glBlendFuncSeparate(GL_ONE, GL_ONE, GL_CONSTANT_ALPHA, GL_ONE);
+            glBlendEquationSeparate(GL_FUNC_ADD, GL_MAX);
+            // Rainbow changes over time - you'd need to update this
+            static float hue = 0.0f;
+            hue += 0.01f;
+            float r = sin(hue) * 0.5f + 0.5f;
+            float g = sin(hue + 2.094f) * 0.5f + 0.5f; // 120 degrees
+            float b = sin(hue + 4.188f) * 0.5f + 0.5f; // 240 degrees
+            glBlendColor(r, g, b, 0.8f);
+            break;
+    }
+}
+
+// THE ULTIMATE CHAOS FUNCTION
+void randomTone() {
+    static std::vector<BlendTone> allTones = {
+        NORMAL, CINEMATIC_DARK, VINTAGE_FILM, MATRIX_GREEN, RADIOACTIVE,
+        GLASS_TINT, FILM_NOIR, CYBERPUNK, SEPIA_OLD, NEON_GLOW,
+        BLOOD_RED, ICE_BLUE, FIRE_ORANGE, POISON_GREEN, DEEP_PURPLE,
+        GOLDEN_HOUR, UNDERWATER, THERMAL_VISION, X_RAY, DREAM_SOFT,
+        APOCALYPSE_ORANGE, ZOMBIE_GREEN, VAMPIRE_CRIMSON, GHOST_PALE,
+        ALIEN_PURPLE, SPACE_VOID, SOLAR_FLARE, NUCLEAR_YELLOW,
+        FROST_WHITE, LAVA_RED, SYNTHWAVE_PURPLE, BLADE_RUNNER,
+        TRON_BLUE, AKIRA_RED, MAD_MAX_DUST, DOOM_HELL,
+        FALLOUT_SEPIA, LIMBO_SHADOW, CUPHEAD_SEPIA, HADES_UNDERWORLD,
+        LASER_MAGENTA, HOLO_RAINBOW
+        // Add all the others...
+    };
+    
+    BlendTone randomTone = allTones[rand() % allTones.size()];
+    blendingTone(randomTone);
+}
+
+// CURATED RANDOM SETS
+void randomGameTone() {
+    static std::vector<BlendTone> gameTones = {
+        BLADE_RUNNER, TRON_BLUE, AKIRA_RED, MAD_MAX_DUST, DOOM_HELL,
+        FALLOUT_SEPIA, LIMBO_SHADOW, CUPHEAD_SEPIA, HADES_UNDERWORLD
+    };
+    blendingTone(gameTones[rand() % gameTones.size()]);
+}
+
+void randomHorrorTone() {
+    static std::vector<BlendTone> horrorTones = {
+        ZOMBIE_GREEN, VAMPIRE_CRIMSON, GHOST_PALE, BLOOD_RED,
+        LIMBO_SHADOW, DOOM_HELL, POISON_GREEN, X_RAY
+    };
+    blendingTone(horrorTones[rand() % horrorTones.size()]);
+}
+
+void randomSciFiTone() {
+    static std::vector<BlendTone> scifiTones = {
+        ALIEN_PURPLE, SPACE_VOID, MATRIX_GREEN, TRON_BLUE,
+        LASER_MAGENTA, SYNTHWAVE_PURPLE, NUCLEAR_YELLOW, RADIOACTIVE
+    };
+    blendingTone(scifiTones[rand() % scifiTones.size()]);
+}
+// Dynamic mood shifts
+void dynamicToneShift() {
+    static int moodCounter = 0;
+    moodCounter++;
+    
+    if (moodCounter % 10 < 3) {
+        randomHorrorTone();        // 30% horror
+    } else if (moodCounter % 10 < 6) {
+        randomSciFiTone();         // 30% sci-fi  
+    } else {
+        randomGameTone();          // 40% game tones
+    }
+}
+
+void randomBlending(){
+    // Valid blend factors for maximum chaos
+    GLenum factors[] = {
+        GL_ZERO, GL_ONE, GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR,
+        GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR, GL_SRC_ALPHA, 
+        GL_ONE_MINUS_SRC_ALPHA, GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA,
+        GL_CONSTANT_COLOR, GL_ONE_MINUS_CONSTANT_COLOR,
+        GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA
+    };
+    
+    // Random blend equations because why not destroy reality
+    GLenum equations[] = {
+        GL_FUNC_ADD,              // Normal addition (boring)
+        GL_FUNC_SUBTRACT,         // Subtractive chaos
+        GL_FUNC_REVERSE_SUBTRACT, // Reverse subtractive chaos
+        GL_MIN,                   // Min() per component (weird af)
+        GL_MAX                    // Max() per component (also weird af)
+    };
+    
+    int numFactors = sizeof(factors) / sizeof(factors[0]);
+    int numEquations = sizeof(equations) / sizeof(equations[0]);
+    
+    // Random equation for RGB and Alpha separately because we're animals
+    GLenum rgbEquation = equations[rand() % numEquations];
+    GLenum alphaEquation = equations[rand() % numEquations];
+    glBlendEquationSeparate(rgbEquation, alphaEquation);
+    
+    if(rand() % 2) {
+        // 50% chance: glBlendFunc
+        GLenum srcFactor = factors[rand() % numFactors];
+        GLenum dstFactor = factors[rand() % numFactors];
+        glBlendFunc(srcFactor, dstFactor);
+    } else {
+        // 50% chance: glBlendFuncSeparate - complete anarchy
+        GLenum srcRGB = factors[rand() % numFactors];
+        GLenum dstRGB = factors[rand() % numFactors];
+        GLenum srcAlpha = factors[rand() % numFactors];
+        GLenum dstAlpha = factors[rand() % numFactors];
+        glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
+    }
+    
+    // Bonus chaos: random constant color too
+    if(rand() % 10 == 0) { // 10% chance
+        float r = (float)(rand() % 256) / 255.0f;
+        float g = (float)(rand() % 256) / 255.0f;
+        float b = (float)(rand() % 256) / 255.0f;
+        float a = (float)(rand() % 256) / 255.0f;
+        glBlendColor(r, g, b, a);
+    }
+}
 // Function to generate random point lights
 void generateRandomPointLights() {
     // Clear existing random lights
@@ -498,6 +775,7 @@ int game3d(int argc, char *argv[], const std::string &type) {
     glDepthFunc(GL_LESS);
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -582,13 +860,35 @@ int game3d(int argc, char *argv[], const std::string &type) {
 
     // Generate dynamic shapes with mathematical transformations
     generateDynamicShapes();
-
+    //Timers::single(randomBlending, 5);
+    // Pure chaos - all tones
+    //Timers::single(randomTone, 1000);
+    //Timers::single(dynamicToneShift, 4200);
+    std::function<void()> toggleCullFace = []() {
+        static int enabled = GL_FRONT;
+        if (enabled == GL_FRONT) {
+            glCullFace(GL_BACK);
+        } else if (enabled == GL_BACK) {
+            glCullFace(GL_FRONT);
+        } else {
+            glCullFace(GL_FRONT_AND_BACK);
+        }
+        enabled = enabled == GL_FRONT ? GL_BACK : enabled == GL_BACK ? GL_FRONT_AND_BACK : GL_FRONT;
+        static bool clockwise = true;
+        if (clockwise) {
+            glFrontFace(GL_CW);
+        } else {
+            glFrontFace(GL_CCW);
+        }
+        clockwise = !clockwise;
+    };
+    Timers::single(toggleCullFace, 3000);
     // Game loop
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-
+        Timers::tick();
         processInput(window);
 
         glClearColor(0.05f, 0.05f, 0.1f, 1.0f);

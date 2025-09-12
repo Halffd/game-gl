@@ -255,9 +255,6 @@
         if (linearZ >= fogEnd) {
             discard;
         }
-        if(texColor.a < 0.3){
-            discard;
-        }
         FragColor = vec4(result, texColor.a);
     }
 
