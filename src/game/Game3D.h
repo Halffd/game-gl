@@ -54,6 +54,16 @@ public:
     std::vector<glm::vec3> rotationSpeeds;
 
     std::vector<std::shared_ptr<m3D::PrimitiveShape> > dynamicShapes;
+    struct OrbitalData {
+        std::shared_ptr<m3D::PrimitiveShape> body;
+        float orbitRadius;
+        float orbitSpeed;
+        float rotationSpeed;
+        float currentAngle;
+        std::shared_ptr<m3D::PrimitiveShape> parentBody;
+    };
+    std::vector<OrbitalData> orbitalBodies;
+
     std::vector<std::shared_ptr<m3D::DynamicTransform> > dynamicTransforms;
     bool useDynamicShapes;
     bool showDynamicShapesWindow;

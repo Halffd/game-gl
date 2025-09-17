@@ -11,6 +11,8 @@
 #include "../scene/TransformComponent.h"
 #include "../render/primitives/curved/Sphere.h"
 
+#include <random>
+
 const unsigned SCREEN_WIDTH = 1280;
 const unsigned SCREEN_HEIGHT = 720;
 
@@ -107,19 +109,117 @@ void Game3D::init() {
 void Game3D::initSolarSystemScene() {
     std::cout << "Initializing Solar System Scene" << std::endl;
 
-    // Create a sun (yellow sphere)
-    auto sun = std::make_shared<m3D::Sphere>("Sun", glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(2.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+    // Sun
+    auto sun = std::make_shared<m3D::Sphere>("Sun", glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(5.0f), glm::vec3(1.0f, 1.0f, 0.0f));
     scene.AddObject(sun);
-
-    // Set sun as point light
     renderer.pointLight.enabled = true;
     renderer.pointLight.position = sun->position;
-    renderer.pointLight.diffuse = glm::vec3(1.0f, 1.0f, 0.8f); // Yellowish light
+    renderer.pointLight.diffuse = glm::vec3(1.0f, 1.0f, 0.8f);
     renderer.pointLight.specular = glm::vec3(1.0f, 1.0f, 0.8f);
 
-    // Create Earth (blue sphere) orbiting the sun
-    auto earth = std::make_shared<m3D::Sphere>("Earth", glm::vec3(10.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.5f), glm::vec3(0.0f, 0.0f, 1.0f));
+    // Mercury
+    auto mercury = std::make_shared<m3D::Sphere>("Mercury", glm::vec3(8.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.3f), glm::vec3(0.5f, 0.5f, 0.5f));
+    scene.AddObject(mercury);
+    orbitalBodies.push_back({mercury, 8.0f, 0.5f, 1.0f, 0.0f, sun});
+
+    // Venus
+    auto venus = std::make_shared<m3D::Sphere>("Venus", glm::vec3(12.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.7f), glm::vec3(0.8f, 0.4f, 0.0f));
+    scene.AddObject(venus);
+    orbitalBodies.push_back({venus, 12.0f, 0.4f, 0.8f, 0.0f, sun});
+
+    // Earth
+    auto earth = std::make_shared<m3D::Sphere>("Earth", glm::vec3(16.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.8f), glm::vec3(0.0f, 0.0f, 1.0f));
     scene.AddObject(earth);
+    orbitalBodies.push_back({earth, 16.0f, 0.3f, 0.6f, 0.0f, sun});
+    // Earth's Moon
+    auto moon = std::make_shared<m3D::Sphere>("Moon", glm::vec3(16.0f + 2.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.2f), glm::vec3(0.7f, 0.7f, 0.7f));
+    scene.AddObject(moon);
+    orbitalBodies.push_back({moon, 2.0f, 1.0f, 1.5f, 0.0f, earth});
+
+    // Mars
+    auto mars = std::make_shared<m3D::Sphere>("Mars", glm::vec3(20.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.6f), glm::vec3(1.0f, 0.0f, 0.0f));
+    scene.AddObject(mars);
+    orbitalBodies.push_back({mars, 20.0f, 0.25f, 0.5f, 0.0f, sun});
+    // Mars' Moons (Phobos and Deimos)
+    auto phobos = std::make_shared<m3D::Sphere>("Phobos", glm::vec3(20.0f + 1.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.1f), glm::vec3(0.6f, 0.3f, 0.0f));
+    scene.AddObject(phobos);
+    orbitalBodies.push_back({phobos, 1.0f, 1.5f, 2.0f, 0.0f, mars});
+    auto deimos = std::make_shared<m3D::Sphere>("Deimos", glm::vec3(20.0f + 1.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.08f), glm::vec3(0.5f, 0.2f, 0.0f));
+    scene.AddObject(deimos);
+    orbitalBodies.push_back({deimos, 1.5f, 1.2f, 2.5f, 0.5f, mars});
+
+    // Jupiter
+    auto jupiter = std::make_shared<m3D::Sphere>("Jupiter", glm::vec3(30.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(2.5f), glm::vec3(0.8f, 0.6f, 0.4f));
+    scene.AddObject(jupiter);
+    orbitalBodies.push_back({jupiter, 30.0f, 0.15f, 0.3f, 0.0f, sun});
+    // Jupiter's Moons
+    auto io = std::make_shared<m3D::Sphere>("Io", glm::vec3(30.0f + 3.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.3f), glm::vec3(1.0f, 0.8f, 0.0f));
+    scene.AddObject(io);
+    orbitalBodies.push_back({io, 3.0f, 0.8f, 1.0f, 0.0f, jupiter});
+    auto europa = std::make_shared<m3D::Sphere>("Europa", glm::vec3(30.0f + 3.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.25f), glm::vec3(0.6f, 0.6f, 0.8f));
+    scene.AddObject(europa);
+    orbitalBodies.push_back({europa, 3.5f, 0.7f, 0.9f, 0.8f, jupiter});
+    auto ganymede = std::make_shared<m3D::Sphere>("Ganymede", glm::vec3(30.0f + 4.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.4f), glm::vec3(0.7f, 0.7f, 0.6f));
+    scene.AddObject(ganymede);
+    orbitalBodies.push_back({ganymede, 4.0f, 0.6f, 0.8f, 1.2f, jupiter});
+    auto callisto = std::make_shared<m3D::Sphere>("Callisto", glm::vec3(30.0f + 4.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.35f), glm::vec3(0.5f, 0.4f, 0.3f));
+    scene.AddObject(callisto);
+    orbitalBodies.push_back({callisto, 4.5f, 0.5f, 0.7f, 1.5f, jupiter});
+
+    // Saturn
+    auto saturn = std::make_shared<m3D::Sphere>("Saturn", glm::vec3(40.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(2.0f), glm::vec3(0.9f, 0.9f, 0.7f));
+    scene.AddObject(saturn);
+    orbitalBodies.push_back({saturn, 40.0f, 0.1f, 0.2f, 0.0f, sun});
+
+    // Uranus
+    auto uranus = std::make_shared<m3D::Sphere>("Uranus", glm::vec3(48.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.5f), glm::vec3(0.6f, 0.8f, 0.9f));
+    scene.AddObject(uranus);
+    orbitalBodies.push_back({uranus, 48.0f, 0.07f, 0.15f, 0.0f, sun});
+
+    // Neptune
+    auto neptune = std::make_shared<m3D::Sphere>("Neptune", glm::vec3(55.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.5f), glm::vec3(0.2f, 0.2f, 0.8f));
+    scene.AddObject(neptune);
+    orbitalBodies.push_back({neptune, 55.0f, 0.05f, 0.1f, 0.0f, sun});
+
+    // Pluto
+    auto pluto = std::make_shared<m3D::Sphere>("Pluto", glm::vec3(60.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.1f), glm::vec3(0.8f, 0.7f, 0.6f));
+    scene.AddObject(pluto);
+    orbitalBodies.push_back({pluto, 60.0f, 0.04f, 0.08f, 0.0f, sun});
+
+    // Asteroid Belt (between Mars and Jupiter)
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> radiusDist(22.0f, 28.0f); // Between Mars (20) and Jupiter (30)
+    std::uniform_real_distribution<float> angleDist(0.0f, 2.0f * glm::pi<float>());
+    std::uniform_real_distribution<float> speedDist(0.01f, 0.1f);
+    std::uniform_real_distribution<float> sizeDist(0.05f, 0.2f);
+
+    for (int i = 0; i < 1000; ++i) {
+        float orbitR = radiusDist(gen);
+        float angle = angleDist(gen);
+        float speed = speedDist(gen);
+        float size = sizeDist(gen);
+
+        glm::vec3 asteroidPosition = glm::vec3(
+            orbitR * cos(angle),
+            0.0f, // Asteroids are generally on the ecliptic plane
+            orbitR * sin(angle)
+        );
+        auto asteroid = std::make_shared<m3D::Sphere>("Asteroid", asteroidPosition, glm::vec3(0.0f), glm::vec3(size), glm::vec3(0.3f, 0.2f, 0.1f));
+        scene.AddObject(asteroid);
+        orbitalBodies.push_back({asteroid, orbitR, speed, 0.5f, angle, sun});
+    }
+
+    // Stars (static background)
+    std::uniform_real_distribution<float> starPosDist(-1.0f, 1.0f);
+    std::uniform_real_distribution<float> starSizeDist(0.05f, 0.15f);
+    float starFieldRadius = 1000.0f;
+
+    for (int i = 0; i < 2000; ++i) {
+        glm::vec3 starPosition = glm::normalize(glm::vec3(starPosDist(gen), starPosDist(gen), starPosDist(gen))) * starFieldRadius;
+        auto star = std::make_shared<m3D::Sphere>("Star", starPosition, glm::vec3(0.0f), glm::vec3(starSizeDist(gen)), glm::vec3(1.0f, 1.0f, 1.0f));
+        scene.AddObject(star);
+    }
 }
 
 void Game3D::run() {
@@ -136,6 +236,19 @@ void Game3D::run() {
         Gui::Start();
 
         // render UI windows
+
+        // Update orbital bodies
+        for (auto& orbitalData : orbitalBodies) {
+            orbitalData.currentAngle += orbitalData.orbitSpeed * deltaTime;
+            glm::vec3 centerOfOrbit = orbitalData.parentBody ? orbitalData.parentBody->position : glm::vec3(0.0f);
+            
+            float x = centerOfOrbit.x + orbitalData.orbitRadius * cos(orbitalData.currentAngle);
+            float z = centerOfOrbit.z + orbitalData.orbitRadius * sin(orbitalData.currentAngle);
+            orbitalData.body->position = glm::vec3(x, centerOfOrbit.y, z);
+
+            // Rotate the body around its own axis
+            orbitalData.body->rotation.y += orbitalData.rotationSpeed * deltaTime;
+        }
         
         scene.update(deltaTime);
         renderer.render(scene, camera);
