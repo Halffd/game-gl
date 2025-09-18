@@ -10,11 +10,12 @@
 #include "../scene/ModelComponent.h"
 #include "../scene/TransformComponent.h"
 #include "../render/primitives/curved/Sphere.h"
+#include "render/primitives/basic/Cube.h"
 
 #include <random>
 
-const unsigned SCREEN_WIDTH = 1280;
-const unsigned SCREEN_HEIGHT = 720;
+const unsigned SCREEN_WIDTH = 1600;
+const unsigned SCREEN_HEIGHT = 900;
 
 // callbacks
 static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
@@ -36,7 +37,7 @@ Game3D::Game3D()
       showCartesianPlane(false),
       showTriangleContours(false),
       runMode(true),
-      baseMovementSpeed(2.5f),
+      baseMovementSpeed(6.5f),
       window(nullptr)
 {
 }
@@ -53,7 +54,7 @@ void Game3D::init() {
 
     window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "3D Model Viewer", nullptr, nullptr);
     if (window == nullptr) {
-        std::cout << "Failed to create GLFW window" << std::endl;
+        std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return;
     }
@@ -86,7 +87,12 @@ void Game3D::init() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
+    if(!m_framebuffer) {
+        m_framebuffer = std::make_shared<Framebuffer>();
+    }
+    if(!m_screenQuad) {
+        m_screenQuad = std::make_shared<VO::Quad>();
+    }
     Gui::Init(window);
 
     char cwd[1024];
@@ -96,7 +102,9 @@ void Game3D::init() {
 
     ResourceManager::LoadShader("3d.vs", "3d.fs", nullptr, "model");
     ResourceManager::LoadShader("3d.vs", "outline.fs", nullptr, "outline");
-
+    m_framebuffer->create(SCREEN_WIDTH, SCREEN_HEIGHT);
+    m_postProcessShader.Compile("fb.vs", "fb.fs");
+    m_screenQuad->setup();
     renderer.init();
 
     if (useSolarSystemScene) {
@@ -105,84 +113,106 @@ void Game3D::init() {
         loadModels(std::string(cwd) + "/models", std::string(cwd) + "/bin/models");
     }
 }
-
 void Game3D::initSolarSystemScene() {
     std::cout << "Initializing Solar System Scene" << std::endl;
 
+    // Create a single sphere mesh to be shared by all celestial bodies
+    auto sphere = std::make_shared<m3D::Sphere>("Sphere", glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f));
+    sphereMesh = sphere->getMesh();
+
     // Sun
-    auto sun = std::make_shared<m3D::Sphere>("Sun", glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(5.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+    auto sun = std::make_shared<m3D::PrimitiveShape>("Sun", glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(5.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+    sun->setMesh(sphereMesh);
     scene.AddObject(sun);
     renderer.pointLight.enabled = true;
     renderer.pointLight.position = sun->position;
     renderer.pointLight.diffuse = glm::vec3(1.0f, 1.0f, 0.8f);
     renderer.pointLight.specular = glm::vec3(1.0f, 1.0f, 0.8f);
+    renderer.pointLight.linear = 0.0014f;
+    renderer.pointLight.quadratic = 0.000007f;
 
     // Mercury
-    auto mercury = std::make_shared<m3D::Sphere>("Mercury", glm::vec3(8.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.3f), glm::vec3(0.5f, 0.5f, 0.5f));
+    auto mercury = std::make_shared<m3D::PrimitiveShape>("Mercury", glm::vec3(8.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.3f), glm::vec3(0.5f, 0.5f, 0.5f));
+    mercury->setMesh(sphereMesh);
     scene.AddObject(mercury);
     orbitalBodies.push_back({mercury, 8.0f, 0.5f, 1.0f, 0.0f, sun});
 
     // Venus
-    auto venus = std::make_shared<m3D::Sphere>("Venus", glm::vec3(12.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.7f), glm::vec3(0.8f, 0.4f, 0.0f));
+    auto venus = std::make_shared<m3D::PrimitiveShape>("Venus", glm::vec3(12.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.7f), glm::vec3(0.8f, 0.4f, 0.0f));
+    venus->setMesh(sphereMesh);
     scene.AddObject(venus);
     orbitalBodies.push_back({venus, 12.0f, 0.4f, 0.8f, 0.0f, sun});
 
     // Earth
-    auto earth = std::make_shared<m3D::Sphere>("Earth", glm::vec3(16.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.8f), glm::vec3(0.0f, 0.0f, 1.0f));
+    auto earth = std::make_shared<m3D::PrimitiveShape>("Earth", glm::vec3(16.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.8f), glm::vec3(0.0f, 0.0f, 1.0f));
+    earth->setMesh(sphereMesh);
     scene.AddObject(earth);
     orbitalBodies.push_back({earth, 16.0f, 0.3f, 0.6f, 0.0f, sun});
     // Earth's Moon
-    auto moon = std::make_shared<m3D::Sphere>("Moon", glm::vec3(16.0f + 2.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.2f), glm::vec3(0.7f, 0.7f, 0.7f));
+    auto moon = std::make_shared<m3D::PrimitiveShape>("Moon", glm::vec3(16.0f + 2.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.2f), glm::vec3(0.7f, 0.7f, 0.7f));
+    moon->setMesh(sphereMesh);
     scene.AddObject(moon);
     orbitalBodies.push_back({moon, 2.0f, 1.0f, 1.5f, 0.0f, earth});
 
     // Mars
-    auto mars = std::make_shared<m3D::Sphere>("Mars", glm::vec3(20.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.6f), glm::vec3(1.0f, 0.0f, 0.0f));
+    auto mars = std::make_shared<m3D::PrimitiveShape>("Mars", glm::vec3(20.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.6f), glm::vec3(1.0f, 0.0f, 0.0f));
+    mars->setMesh(sphereMesh);
     scene.AddObject(mars);
     orbitalBodies.push_back({mars, 20.0f, 0.25f, 0.5f, 0.0f, sun});
     // Mars' Moons (Phobos and Deimos)
-    auto phobos = std::make_shared<m3D::Sphere>("Phobos", glm::vec3(20.0f + 1.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.1f), glm::vec3(0.6f, 0.3f, 0.0f));
+    auto phobos = std::make_shared<m3D::PrimitiveShape>("Phobos", glm::vec3(20.0f + 1.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.1f), glm::vec3(0.6f, 0.3f, 0.0f));
+    phobos->setMesh(sphereMesh);
     scene.AddObject(phobos);
     orbitalBodies.push_back({phobos, 1.0f, 1.5f, 2.0f, 0.0f, mars});
-    auto deimos = std::make_shared<m3D::Sphere>("Deimos", glm::vec3(20.0f + 1.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.08f), glm::vec3(0.5f, 0.2f, 0.0f));
+    auto deimos = std::make_shared<m3D::PrimitiveShape>("Deimos", glm::vec3(20.0f + 1.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.08f), glm::vec3(0.5f, 0.2f, 0.0f));
+    deimos->setMesh(sphereMesh);
     scene.AddObject(deimos);
     orbitalBodies.push_back({deimos, 1.5f, 1.2f, 2.5f, 0.5f, mars});
 
     // Jupiter
-    auto jupiter = std::make_shared<m3D::Sphere>("Jupiter", glm::vec3(30.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(2.5f), glm::vec3(0.8f, 0.6f, 0.4f));
+    auto jupiter = std::make_shared<m3D::PrimitiveShape>("Jupiter", glm::vec3(30.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(2.5f), glm::vec3(0.8f, 0.6f, 0.4f));
+    jupiter->setMesh(sphereMesh);
     scene.AddObject(jupiter);
     orbitalBodies.push_back({jupiter, 30.0f, 0.15f, 0.3f, 0.0f, sun});
     // Jupiter's Moons
-    auto io = std::make_shared<m3D::Sphere>("Io", glm::vec3(30.0f + 3.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.3f), glm::vec3(1.0f, 0.8f, 0.0f));
+    auto io = std::make_shared<m3D::PrimitiveShape>("Io", glm::vec3(30.0f + 3.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.3f), glm::vec3(1.0f, 0.8f, 0.0f));
+    io->setMesh(sphereMesh);
     scene.AddObject(io);
     orbitalBodies.push_back({io, 3.0f, 0.8f, 1.0f, 0.0f, jupiter});
-    auto europa = std::make_shared<m3D::Sphere>("Europa", glm::vec3(30.0f + 3.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.25f), glm::vec3(0.6f, 0.6f, 0.8f));
+    auto europa = std::make_shared<m3D::PrimitiveShape>("Europa", glm::vec3(30.0f + 3.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.25f), glm::vec3(0.6f, 0.6f, 0.8f));
+    europa->setMesh(sphereMesh);
     scene.AddObject(europa);
     orbitalBodies.push_back({europa, 3.5f, 0.7f, 0.9f, 0.8f, jupiter});
-    auto ganymede = std::make_shared<m3D::Sphere>("Ganymede", glm::vec3(30.0f + 4.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.4f), glm::vec3(0.7f, 0.7f, 0.6f));
+    auto ganymede = std::make_shared<m3D::PrimitiveShape>("Ganymede", glm::vec3(30.0f + 4.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.4f), glm::vec3(0.7f, 0.7f, 0.6f));
+    ganymede->setMesh(sphereMesh);
     scene.AddObject(ganymede);
     orbitalBodies.push_back({ganymede, 4.0f, 0.6f, 0.8f, 1.2f, jupiter});
-    auto callisto = std::make_shared<m3D::Sphere>("Callisto", glm::vec3(30.0f + 4.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.35f), glm::vec3(0.5f, 0.4f, 0.3f));
+    auto callisto = std::make_shared<m3D::PrimitiveShape>("Callisto", glm::vec3(30.0f + 4.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.35f), glm::vec3(0.5f, 0.4f, 0.3f));
+    callisto->setMesh(sphereMesh);
     scene.AddObject(callisto);
     orbitalBodies.push_back({callisto, 4.5f, 0.5f, 0.7f, 1.5f, jupiter});
 
     // Saturn
-    auto saturn = std::make_shared<m3D::Sphere>("Saturn", glm::vec3(40.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(2.0f), glm::vec3(0.9f, 0.9f, 0.7f));
+    auto saturn = std::make_shared<m3D::PrimitiveShape>("Saturn", glm::vec3(40.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(2.0f), glm::vec3(0.9f, 0.9f, 0.7f));
+    saturn->setMesh(sphereMesh);
     scene.AddObject(saturn);
     orbitalBodies.push_back({saturn, 40.0f, 0.1f, 0.2f, 0.0f, sun});
 
     // Uranus
-    auto uranus = std::make_shared<m3D::Sphere>("Uranus", glm::vec3(48.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.5f), glm::vec3(0.6f, 0.8f, 0.9f));
+    auto uranus = std::make_shared<m3D::PrimitiveShape>("Uranus", glm::vec3(48.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.5f), glm::vec3(0.6f, 0.8f, 0.9f));
+    uranus->setMesh(sphereMesh);
     scene.AddObject(uranus);
     orbitalBodies.push_back({uranus, 48.0f, 0.07f, 0.15f, 0.0f, sun});
 
     // Neptune
-    auto neptune = std::make_shared<m3D::Sphere>("Neptune", glm::vec3(55.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.5f), glm::vec3(0.2f, 0.2f, 0.8f));
+    auto neptune = std::make_shared<m3D::PrimitiveShape>("Neptune", glm::vec3(55.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.5f), glm::vec3(0.2f, 0.2f, 0.8f));
+    neptune->setMesh(sphereMesh);
     scene.AddObject(neptune);
     orbitalBodies.push_back({neptune, 55.0f, 0.05f, 0.1f, 0.0f, sun});
 
     // Pluto
-    auto pluto = std::make_shared<m3D::Sphere>("Pluto", glm::vec3(60.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.1f), glm::vec3(0.8f, 0.7f, 0.6f));
+    auto pluto = std::make_shared<m3D::PrimitiveShape>("Pluto", glm::vec3(60.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.1f), glm::vec3(0.8f, 0.7f, 0.6f));
+    pluto->setMesh(sphereMesh);
     scene.AddObject(pluto);
     orbitalBodies.push_back({pluto, 60.0f, 0.04f, 0.08f, 0.0f, sun});
 
@@ -194,7 +224,7 @@ void Game3D::initSolarSystemScene() {
     std::uniform_real_distribution<float> speedDist(0.01f, 0.1f);
     std::uniform_real_distribution<float> sizeDist(0.05f, 0.2f);
 
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < maxAsteroids; ++i) {
         float orbitR = radiusDist(gen);
         float angle = angleDist(gen);
         float speed = speedDist(gen);
@@ -205,10 +235,35 @@ void Game3D::initSolarSystemScene() {
             0.0f, // Asteroids are generally on the ecliptic plane
             orbitR * sin(angle)
         );
-        auto asteroid = std::make_shared<m3D::Sphere>("Asteroid", asteroidPosition, glm::vec3(0.0f), glm::vec3(size), glm::vec3(0.3f, 0.2f, 0.1f));
+        auto asteroid = std::make_shared<m3D::PrimitiveShape>("Asteroid", asteroidPosition, glm::vec3(0.0f), glm::vec3(size), glm::vec3(0.3f, 0.2f, 0.1f));
+        asteroid->setMesh(sphereMesh);
         scene.AddObject(asteroid);
         orbitalBodies.push_back({asteroid, orbitR, speed, 0.5f, angle, sun});
     }
+
+    // Kuiper Belt
+    std::uniform_real_distribution<float> kuiperRadiusDist(65.0f, 150.0f);
+    std::uniform_real_distribution<float> kuiperAngleDist(0.0f, 2.0f * glm::pi<float>());
+    std::uniform_real_distribution<float> kuiperSpeedDist(0.005f, 0.05f);
+    std::uniform_real_distribution<float> kuiperSizeDist(0.1f, 0.5f);
+
+    for (int i = 0; i < 200; ++i) { // Add 200 Kuiper belt objects
+        float orbitR = kuiperRadiusDist(gen);
+        float angle = kuiperAngleDist(gen);
+        float speed = kuiperSpeedDist(gen);
+        float size = kuiperSizeDist(gen);
+
+        glm::vec3 kuiperPosition = glm::vec3(
+            orbitR * cos(angle),
+            0.0f, 
+            orbitR * sin(angle)
+        );
+        auto kuiperObject = std::make_shared<m3D::PrimitiveShape>("KuiperObject", kuiperPosition, glm::vec3(0.0f), glm::vec3(size), glm::vec3(0.5f, 0.3f, 0.2f));
+        kuiperObject->setMesh(sphereMesh);
+        scene.AddObject(kuiperObject);
+        orbitalBodies.push_back({kuiperObject, orbitR, speed, 0.2f, angle, sun});
+    }
+
 
     // Stars (static background)
     std::uniform_real_distribution<float> starPosDist(-1.0f, 1.0f);
@@ -217,27 +272,26 @@ void Game3D::initSolarSystemScene() {
 
     for (int i = 0; i < 2000; ++i) {
         glm::vec3 starPosition = glm::normalize(glm::vec3(starPosDist(gen), starPosDist(gen), starPosDist(gen))) * starFieldRadius;
-        auto star = std::make_shared<m3D::Sphere>("Star", starPosition, glm::vec3(0.0f), glm::vec3(starSizeDist(gen)), glm::vec3(1.0f, 1.0f, 1.0f));
+        auto star = std::make_shared<m3D::PrimitiveShape>("Star", starPosition, glm::vec3(0.0f), glm::vec3(starSizeDist(gen)), glm::vec3(1.0f, 1.0f, 1.0f));
+        star->setMesh(sphereMesh);
         scene.AddObject(star);
     }
 }
-
 void Game3D::run() {
     while (!glfwWindowShouldClose(window)) {
+        // Timing
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         Timers::tick();
         processInput();
 
-        glClearColor(0.05f, 0.05f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        // FIRST PASS: Render scene to framebuffer
+        m_framebuffer->bind();
+        m_framebuffer->clear(0.05f, 0.05f, 0.1f);  // This already does glClear internally
+        glEnable(GL_DEPTH_TEST);
 
-        Gui::Start();
-
-        // render UI windows
-
-        // Update orbital bodies
+        // Update and render scene
         for (auto& orbitalData : orbitalBodies) {
             orbitalData.currentAngle += orbitalData.orbitSpeed * deltaTime;
             glm::vec3 centerOfOrbit = orbitalData.parentBody ? orbitalData.parentBody->position : glm::vec3(0.0f);
@@ -245,15 +299,27 @@ void Game3D::run() {
             float x = centerOfOrbit.x + orbitalData.orbitRadius * cos(orbitalData.currentAngle);
             float z = centerOfOrbit.z + orbitalData.orbitRadius * sin(orbitalData.currentAngle);
             orbitalData.body->position = glm::vec3(x, centerOfOrbit.y, z);
-
-            // Rotate the body around its own axis
             orbitalData.body->rotation.y += orbitalData.rotationSpeed * deltaTime;
         }
         
         scene.update(deltaTime);
         renderer.render(scene, camera);
 
+        // Render GUI to framebuffer too (if you want it in the effect)
+        Gui::Start();
+        // ... your GUI rendering code ...
         Gui::Render();
+
+        // SECOND PASS: Render framebuffer texture to screen
+        m_framebuffer->unbind();  // Bind default framebuffer (0)
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f); 
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDisable(GL_DEPTH_TEST);
+        
+        // Draw the screen quad with framebuffer texture
+        m_postProcessShader.Use();
+        m_framebuffer->bindColorTexture(0);
+        m_screenQuad->draw();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -263,7 +329,6 @@ void Game3D::run() {
     Gui::Clean();
     glfwTerminate();
 }
-
 void Game3D::processInput()
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)

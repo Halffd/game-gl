@@ -9,6 +9,8 @@
 #include <glm/glm.hpp>
 #include "../render/Model.h"
 #include "../render/primitives/PrimitiveShapes.h"
+#include "render/Framebuffer.hpp"
+#include "render/primitives/2d/2D.hpp"
 
 struct GLFWwindow;
 
@@ -27,7 +29,9 @@ private:
     void initSolarSystemScene();
     void loadModels(const std::string& modelBasePath, const std::string& binModelBasePath);
     bool loadModel(const std::string& name, const std::string& relativePath, const std::string& modelRoot, const std::string& binRoot, const glm::vec3& position, const glm::vec3& rotation, const glm::vec3& scale);
-
+    std::shared_ptr<Framebuffer> m_framebuffer;
+    std::shared_ptr<VO::Quad> m_screenQuad;
+    Shader m_postProcessShader;
 
 public:
     Camera camera;
@@ -69,10 +73,13 @@ public:
     bool showDynamicShapesWindow;
     bool useSolarSystemScene;
 
+    std::shared_ptr<m3D::Mesh> sphereMesh;
+
     bool showCartesianPlane;
     bool showTriangleContours;
     bool runMode;
     float baseMovementSpeed;
+    int maxAsteroids = 100;
 
 private:
     Scene scene;

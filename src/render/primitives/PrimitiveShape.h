@@ -144,6 +144,8 @@ public:
     // Getter and setter for color
     glm::vec3 GetColor() const { return color; }
     void SetColor(const glm::vec3& newColor) { color = newColor; }
+    std::shared_ptr<Mesh> getMesh() const { return mesh; }
+    void setMesh(std::shared_ptr<Mesh> newMesh) { mesh = newMesh; }
 };
 
 } // namespace m3D
