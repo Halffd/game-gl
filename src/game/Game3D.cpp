@@ -99,14 +99,21 @@ void Game3D::init() {
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
         ResourceManager::root = cwd;
     }
-
+    std::cout << "Root directory: " << ResourceManager::root << std::endl;
+    std::cout << "Loading shader: model" << std::endl;
     ResourceManager::LoadShader("3d.vs", "3d.fs", nullptr, "model");
+    std::cout << "Loading shader: outline" << std::endl;
     ResourceManager::LoadShader("3d.vs", "outline.fs", nullptr, "outline");
-    m_framebuffer->create(SCREEN_WIDTH, SCREEN_HEIGHT);
-    m_postProcessShader.Compile("fb.vs", "fb.fs");
+    std::cout << "Creating framebuffer" << std::endl;
+    m_framebuffer->create(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    std::cout << "Loading shader: fb" << std::endl;
+    ResourceManager::LoadShader("fb.vs", "fb.fs", nullptr, "fb");
+    m_postProcessShader = ResourceManager::GetShader("fb");
+    std::cout << "Creating screen quad" << std::endl;
     m_screenQuad->setup();
+    std::cout << "Initializing renderer" << std::endl;
     renderer.init();
-
+    std::cout << "Loading models" << std::endl;
     if (useSolarSystemScene) {
         initSolarSystemScene();
     } else {
@@ -318,6 +325,7 @@ void Game3D::run() {
         
         // Draw the screen quad with framebuffer texture
         m_postProcessShader.Use();
+        m_postProcessShader.SetInteger("screenTexture", 0);
         m_framebuffer->bindColorTexture(0);
         m_screenQuad->draw();
 
