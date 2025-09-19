@@ -32,7 +32,7 @@ private:
     std::shared_ptr<Framebuffer> m_framebuffer;
     std::shared_ptr<VO::Quad> m_screenQuad;
     Shader m_postProcessShader;
-
+    glm::vec2 m_framebufferSize;
 public:
     Camera camera;
     bool firstMouse;

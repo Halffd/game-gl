@@ -105,7 +105,11 @@ void Game3D::init() {
     std::cout << "Loading shader: outline" << std::endl;
     ResourceManager::LoadShader("3d.vs", "outline.fs", nullptr, "outline");
     std::cout << "Creating framebuffer" << std::endl;
-    m_framebuffer->create(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    float aspectRatio = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
+    int fbWidth = 400;
+    int fbHeight = fbWidth / aspectRatio;
+    m_framebufferSize = glm::vec2(fbWidth, fbHeight);
+    m_framebuffer->create(m_framebufferSize.x, m_framebufferSize.y);
     std::cout << "Loading shader: fb" << std::endl;
     ResourceManager::LoadShader("fb.vs", "fb.fs", nullptr, "fb");
     m_postProcessShader = ResourceManager::GetShader("fb");
@@ -295,6 +299,7 @@ void Game3D::run() {
 
         // FIRST PASS: Render scene to framebuffer
         m_framebuffer->bind();
+        glViewport(0, 0, m_framebufferSize.x, m_framebufferSize.y);
         m_framebuffer->clear(0.05f, 0.05f, 0.1f);  // This already does glClear internally
         glEnable(GL_DEPTH_TEST);
 
@@ -319,6 +324,7 @@ void Game3D::run() {
 
         // SECOND PASS: Render framebuffer texture to screen
         m_framebuffer->unbind();  // Bind default framebuffer (0)
+        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f); 
         glClear(GL_COLOR_BUFFER_BIT);
         glDisable(GL_DEPTH_TEST);
