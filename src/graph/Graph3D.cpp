@@ -10,7 +10,7 @@
 
 Graph3D::Graph3D(const std::string& name) : Graph(name), camera(glm::vec3(5.0f, 5.0f, 5.0f)), inputType(CARTESIAN_Z_EQ_FXY) {
     strncpy(equationBuffer, name.c_str(), sizeof(equationBuffer));
-    ResourceManager::LoadShader("shaders/heatmap.vs", "shaders/heatmap.fs", std::string("surface"));
+    ResourceManager::LoadShader("heatmap.vs", "heatmap.fs", std::string("surface"));
     surfaceShader = ResourceManager::GetShader("surface");
 
     glGenVertexArrays(1, &vao);
@@ -173,7 +173,6 @@ void Graph3D::render() {
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
-    Gui::Start();
     ImGui::Begin("Graph3D");
     ImGui::InputText("Equation", equationBuffer, sizeof(equationBuffer));
     ImGui::RadioButton("z = f(x,y)", (int*)&inputType, CARTESIAN_Z_EQ_FXY);

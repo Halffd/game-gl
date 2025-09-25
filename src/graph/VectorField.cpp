@@ -12,7 +12,7 @@ VectorField::VectorField(const std::string& name) : Graph(name), camera(glm::vec
     strncpy(equationBufferY, "-x", sizeof(equationBufferY));
     strncpy(equationBufferZ, "0", sizeof(equationBufferZ));
 
-    ResourceManager::LoadShader("shaders/vector.vs", "shaders/vector.fs", std::string("vector"));
+    ResourceManager::LoadShader("vector.vs", "vector.fs", std::string("vector"));
     vectorShader = ResourceManager::GetShader("vector");
 
     glGenVertexArrays(1, &vao);
@@ -144,7 +144,6 @@ void VectorField::render() {
     glDrawArrays(GL_LINES, 0, arrowVertices.size() / 6); // 6 floats per vertex (pos + color)
     glBindVertexArray(0);
 
-    Gui::Start();
     ImGui::Begin("VectorField");
     ImGui::InputText("Vx", equationBufferX, sizeof(equationBufferX));
     ImGui::InputText("Vy", equationBufferY, sizeof(equationBufferY));

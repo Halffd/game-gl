@@ -10,7 +10,7 @@
 
 Graph2D::Graph2D(const std::string& name) : Graph(name), inputType(CARTESIAN_Y_EQ_FX) {
     strncpy(equationBuffer, name.c_str(), sizeof(equationBuffer));
-    ResourceManager::LoadShader("shaders/line_heatmap.vs", "shaders/line_heatmap.fs", "line");
+    ResourceManager::LoadShader("line_heatmap.vs", "line_heatmap.fs", "line");
     lineShader = ResourceManager::GetShader("line");
 
     glGenVertexArrays(1, &vao);
@@ -121,7 +121,6 @@ void Graph2D::render() {
     glDrawArrays(GL_LINE_STRIP, 0, lineVertices.size());
     glBindVertexArray(0);
 
-    Gui::Start();
     ImGui::Begin("Graph2D");
     ImGui::InputText("Equation", equationBuffer, sizeof(equationBuffer));
     ImGui::RadioButton("y = f(x)", (int*)&inputType, CARTESIAN_Y_EQ_FX);
