@@ -12,7 +12,7 @@
 // Forward declarations
 class GameObject;
 class BallObject;
-class Particle;
+struct Particle;
 class Level;
 
 enum GameMode {

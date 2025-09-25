@@ -15,12 +15,6 @@ log() {
 # Create necessary directories for builds and zips
 mkdir -p "$BIN_DIR/linux" "$BIN_DIR/windows/32" "$BIN_DIR/windows/64" "$BUILD_DIR/zip"
 
-# Check for command-line arguments
-if [ "$#" -lt 1 ]; then
-    echo "Usage: $0 {all|linux|windows [32|64]}"
-    exit 1
-fi
-
 # Build process based on the argument provided
 case "$1" in
     all)
@@ -106,9 +100,12 @@ case "$1" in
         fi
         ;;
     *)
-        echo "Invalid argument: $1"
-        echo "Usage: $0 {all|linux|windows [32|64]}"
-        exit 1
+        cd "$BUILD_DIR"
+        # Configure and build
+        cmake ..  # Adjust the path as necessary
+        cmake --build .  # Compile the project
+        cd ..
+        exit 0
         ;;
 esac
 

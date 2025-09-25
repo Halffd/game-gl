@@ -1,13 +1,7 @@
 #include <iostream>
 #include "game/Game.h"
 #include "game/Game3D.h"
-#include "graph/Graph.h"
-#include "graph/Graph2D.h"
-#include "graph/Graph3D.h"
-
-void run_graph(Graph* graph);
-
-#include "graph_main.cpp"
+#include "graph/GraphApp.h"
 
 int main(int argc, char *argv[])
 {
@@ -21,13 +15,9 @@ int main(int argc, char *argv[])
 
     std::string mode = argv[1];
 
-    if (mode == "--graph2d") {
-        Graph2D graph("sin(x)");
-        run_graph(&graph);
-        return 0;
-    } else if (mode == "--graph3d") {
-        Graph3D graph("sin(x*x+y*y)");
-        run_graph(&graph);
+    if (mode == "--graph") {
+        GraphApp app;
+        app.run();
         return 0;
     } else if (mode == "2d") {
         // return game2d(argc, argv, type);
@@ -38,7 +28,7 @@ int main(int argc, char *argv[])
         game.run();
         return 0;
     } else {
-        std::cout << "Invalid mode. Use --graph2d, --graph3d, 2d or 3d." << std::endl;
+        std::cout << "Invalid mode. Use --graph, 2d or 3d." << std::endl;
         return -1;
     }
 }

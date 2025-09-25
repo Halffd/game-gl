@@ -1,14 +1,16 @@
 #include "graph/Graph3D.h"
+#include "../../include_libs/tinyexpr/tinyexpr.h"
 #include "asset/ResourceManager.h"
-#include "include_libs/tinyexpr/tinyexpr.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "ui/Gui.h"
 #include "imgui.h"
 #include <GLFW/glfw3.h>
+#include <cfloat>
+#include <cmath>
 
-Graph3D::Graph3D(const std::string& name) : Graph(name), camera(glm::vec3(5.0f, 5.0f, 5.0f)) {
+Graph3D::Graph3D(const std::string& name) : Graph(name), camera(glm::vec3(5.0f, 5.0f, 5.0f)), inputType(CARTESIAN_Z_EQ_FXY) {
     strncpy(equationBuffer, name.c_str(), sizeof(equationBuffer));
-    ResourceManager::LoadShader("shaders/primitive.vs", "shaders/primitive.fs", "surface");
+    ResourceManager::LoadShader("shaders/heatmap.vs", "shaders/heatmap.fs", std::string("surface"));
     surfaceShader = ResourceManager::GetShader("surface");
 
     glGenVertexArrays(1, &vao);
@@ -30,11 +32,27 @@ Graph3D::Graph3D(const std::string& name) : Graph(name), camera(glm::vec3(5.0f, 
 }
 
 void Graph3D::generateMesh() {
-    double x, y;
-    te_variable vars[] = {{"x", &x}, {"y", &y}};
+    clearMesh();
+
+    double var1, var2;
+    te_variable vars[3];
+    int var_count = 0;
+
+    switch (inputType) {
+        case CARTESIAN_Z_EQ_FXY:
+            vars[0] = {"x", &var1, TE_VARIABLE, 0};
+            vars[1] = {"y", &var2, TE_VARIABLE, 0};
+            var_count = 2;
+            break;
+        case SPHERICAL_R_EQ_FTHETAPHI:
+            vars[0] = {"theta", &var1, TE_VARIABLE, 0};
+            vars[1] = {"phi", &var2, TE_VARIABLE, 0};
+            var_count = 2;
+            break;
+    }
 
     int err;
-    te_expr *expr = te_compile(equationBuffer, vars, 2, &err);
+    te_expr *expr = te_compile(equationBuffer, vars, var_count, &err);
 
     if (expr) {
         vertices.clear();
@@ -43,14 +61,46 @@ void Graph3D::generateMesh() {
         int grid_size = 50;
         float step = 0.2f;
 
-        for (int i = 0; i < grid_size; i++) {
-            for (int j = 0; j < grid_size; j++) {
-                x = (i - grid_size / 2) * step;
-                y = (j - grid_size / 2) * step;
-                float z = te_eval(expr);
-                vertices.push_back((i - grid_size / 2) * step);
-                vertices.push_back(z);
-                vertices.push_back((j - grid_size / 2) * step);
+        zMin = FLT_MAX;
+        zMax = FLT_MIN;
+
+        switch (inputType) {
+            case CARTESIAN_Z_EQ_FXY: {
+                for (int i = 0; i < grid_size; i++) {
+                    for (int j = 0; j < grid_size; j++) {
+                        var1 = (i - grid_size / 2) * step; // x
+                        var2 = (j - grid_size / 2) * step; // y
+                        float z = te_eval(expr);
+                        vertices.push_back((i - grid_size / 2) * step);
+                        vertices.push_back(z);
+                        vertices.push_back((j - grid_size / 2) * step);
+
+                        if (z < zMin) zMin = z;
+                        if (z > zMax) zMax = z;
+                    }
+                }
+                break;
+            }
+            case SPHERICAL_R_EQ_FTHETAPHI: {
+                for (int i = 0; i < grid_size; i++) {
+                    for (int j = 0; j < grid_size; j++) {
+                        var1 = (float)i / (grid_size - 1) * 2 * M_PI; // theta from 0 to 2PI
+                        var2 = (float)j / (grid_size - 1) * M_PI;   // phi from 0 to PI
+                        float r = te_eval(expr);
+
+                        float x_val = r * sin(var2) * cos(var1);
+                        float y_val = r * cos(var2);
+                        float z_val = r * sin(var2) * sin(var1);
+
+                        vertices.push_back(x_val);
+                        vertices.push_back(y_val);
+                        vertices.push_back(z_val);
+
+                        if (y_val < zMin) zMin = y_val;
+                        if (y_val > zMax) zMax = y_val;
+                    }
+                }
+                break;
             }
         }
 
@@ -111,8 +161,13 @@ void Graph3D::render() {
     surfaceShader.SetMatrix4("model", model);
     surfaceShader.SetVector3f("objectColor", settings.color);
     surfaceShader.SetVector3f("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-    surfaceShader.SetVector3f("lightPos", camera.Position);
     surfaceShader.SetVector3f("viewPos", camera.Position);
+    surfaceShader.SetFloat("zMin", zMin);
+    surfaceShader.SetFloat("zMax", zMax);
+    surfaceShader.SetFloat("zMin", zMin);
+    surfaceShader.SetFloat("zMax", zMax);
+    surfaceShader.SetFloat("zMin", zMin);
+    surfaceShader.SetFloat("zMax", zMax);
 
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
@@ -121,6 +176,9 @@ void Graph3D::render() {
     Gui::Start();
     ImGui::Begin("Graph3D");
     ImGui::InputText("Equation", equationBuffer, sizeof(equationBuffer));
+    ImGui::RadioButton("z = f(x,y)", (int*)&inputType, CARTESIAN_Z_EQ_FXY);
+    ImGui::SameLine();
+    ImGui::RadioButton("r = f(theta,phi)", (int*)&inputType, SPHERICAL_R_EQ_FTHETAPHI);
     if (ImGui::Button("Generate")) {
         functionName = equationBuffer;
         generateMesh();
@@ -128,3 +186,4 @@ void Graph3D::render() {
     ImGui::End();
     Gui::Render();
 }
+

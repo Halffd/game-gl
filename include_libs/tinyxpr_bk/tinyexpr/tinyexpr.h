@@ -1,8 +1,7 @@
-// SPDX-License-Identifier: Zlib
 /*
- * TINYEXPR - Tiny recursive descent parser and evaluation engine in C
+ * TINYEXPR - Tiny recursive descent expression parser, compiler, and evaluation engine for math expressions.
  *
- * Copyright (c) 2015-2020 Lewis Van Winkle
+ * Copyright (c) 2015-2018 Lewis Van Winkle
  *
  * http://CodePlea.com
  *
@@ -23,15 +22,12 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef TINYEXPR_H
-#define TINYEXPR_H
-
+#ifndef __TINYEXPR_H__
+#define __TINYEXPR_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 
 typedef struct te_expr {
     int type;
@@ -49,8 +45,14 @@ enum {
     TE_CLOSURE0 = 16, TE_CLOSURE1, TE_CLOSURE2, TE_CLOSURE3,
     TE_CLOSURE4, TE_CLOSURE5, TE_CLOSURE6, TE_CLOSURE7,
 
-    TE_FLAG_PURE = 32
+    TE_FLAG_PURE = 32,
+    TE_FLAG_DEFAULT = 0,
+
+    TE_CUSTOM = 64,
+
+    TE_NULL = 0
 };
+
 
 typedef struct te_variable {
     const char *name;
@@ -61,7 +63,7 @@ typedef struct te_variable {
 
 
 
-/* Parses the input expression, evaluates it, and frees it. */
+/* Parses the input expression, evaluates it, and returns the result. */
 /* Returns NaN on error. */
 double te_interp(const char *expression, int *error);
 
@@ -72,9 +74,6 @@ te_expr *te_compile(const char *expression, const te_variable *variables, int va
 /* Evaluates the expression. */
 double te_eval(const te_expr *n);
 
-/* Prints debugging information on the syntax tree. */
-void te_print(const te_expr *n);
-
 /* Frees the expression. */
 /* This is safe to call on NULL pointers. */
 void te_free(te_expr *n);
@@ -84,4 +83,4 @@ void te_free(te_expr *n);
 }
 #endif
 
-#endif /*TINYEXPR_H*/
+#endif /*__TINYEXPR_H__*/
