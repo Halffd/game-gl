@@ -42,6 +42,7 @@ Renderer3D::Renderer3D()
       useSpecularMap(true),
       useDetailMap(false),
       useScatterMap(false),
+      useCelShading(false),
       pointLightBrightness(5.0f),
       dirLightBrightness(0.5f),
       spotLightBrightness(0.7f),
@@ -119,6 +120,7 @@ void Renderer3D::setLightingUniforms(Shader &shader, Camera& camera) {
     shader.SetInteger("useSpecularMap", useSpecularMap ? 1 : 0);
     shader.SetInteger("useDetailMap", useDetailMap ? 1 : 0);
     shader.SetInteger("useScatterMap", useScatterMap ? 1 : 0);
+    shader.SetInteger("useCelShading", useCelShading ? 1 : 0);
 
     // Set light brightness adjustment uniforms
     shader.SetFloat("pointLightBrightness", pointLightBrightness);

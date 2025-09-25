@@ -199,7 +199,7 @@ namespace m3D
             }
             
             // Load textures
-            vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+            vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", scene);
             textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
             
             // If no diffuse textures but has diffuse color, create a texture from the color
@@ -214,17 +214,17 @@ namespace m3D
             }
             
             // Load other texture types
-            vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+            vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular", scene);
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
             
             // Try both HEIGHT and NORMALS for normal maps (GLTF often uses NORMALS)
-            std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+            std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal", scene);
             if (normalMaps.empty()) {
-                normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
+                normalMaps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal", scene);
             }
             textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
             
-            std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
+            std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height", scene);
             textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
         }
         
@@ -232,13 +232,71 @@ namespace m3D
         return Mesh(vertices, indices, textures);
     }
 
-    vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, const std::string &typeName)
+    vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, const std::string &typeName, const aiScene* scene)
     {
         vector<Texture> textures;
         for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
         {
             aiString str;
             mat->GetTexture(type, i, &str);
+
+            // Check if the texture is embedded
+            if (str.C_Str()[0] == '*') {
+                int textureIndex = atoi(str.C_Str() + 1);
+                if (textureIndex >= 0 && textureIndex < scene->mNumTextures) {
+                    const aiTexture* embeddedTexture = scene->mTextures[textureIndex];
+                    
+                    // Check if texture is compressed (mHeight == 0) or raw data (mHeight > 0)
+                    if (embeddedTexture->mHeight == 0) {
+                        // Compressed texture data
+                        // Create a copy of the data to avoid double-free issues
+                        std::vector<unsigned char> textureData(embeddedTexture->mWidth);
+                        std::memcpy(textureData.data(), embeddedTexture->pcData, embeddedTexture->mWidth);
+                        
+                        // Load the texture from memory
+                        int width, height, nrComponents;
+                        stbi_set_flip_vertically_on_load(false);
+                        unsigned char* data = stbi_load_from_memory(
+                            textureData.data(), static_cast<int>(textureData.size()),
+                            &width, &height, &nrComponents, 0);
+                        
+                        Texture texture;
+                        if (data) {
+                            texture.id = createTextureFromMemory(
+                                data, width, height, nrComponents, gammaCorrection);
+                            stbi_image_free(data);
+                        } else {
+                            std::cout << "Failed to load embedded texture: " << str.C_Str() << std::endl;
+                            // Fallback to a default texture
+                            texture.id = createColorTexture(0.8f, 0.8f, 0.8f);
+                        }
+                        texture.type = typeName;
+                        texture.path = str.C_Str();
+                        textures.push_back(texture);
+                        textures_loaded.push_back(texture);
+                    } else {
+                        // Raw texture data (not compressed)
+                        size_t dataSize = embeddedTexture->mWidth * embeddedTexture->mHeight * 4; // RGBA
+                        std::vector<unsigned char> textureData(embeddedTexture->mWidth * embeddedTexture->mHeight * 4);
+                        std::memcpy(textureData.data(), embeddedTexture->pcData, dataSize);
+                        
+                        Texture texture;
+                        texture.id = createTextureFromMemory(
+                            textureData.data(),
+                            static_cast<int>(embeddedTexture->mWidth),
+                            static_cast<int>(embeddedTexture->mHeight),
+                            4, // RGBA
+                            gammaCorrection
+                        );
+                        texture.type = typeName;
+                        texture.path = str.C_Str();
+                        textures.push_back(texture);
+                        textures_loaded.push_back(texture);
+                    }
+                    continue; // Skip to next texture
+                }
+            }
+
             bool skip = false;
             for (unsigned int j = 0; j < textures_loaded.size(); j++)
             {
@@ -260,6 +318,40 @@ namespace m3D
             }
         }
         return textures;
+    }
+
+    unsigned int Model::createTextureFromMemory(unsigned char* data, int width, int height, int nrComponents, bool gamma)
+    {
+        unsigned int textureID;
+        glGenTextures(1, &textureID);
+
+        if (data)
+        {
+            GLenum format;
+            if (nrComponents == 1)
+                format = GL_RED;
+            else if (nrComponents == 3)
+                format = GL_RGB;
+            else if (nrComponents == 4)
+                format = GL_RGBA;
+            else
+                format = GL_RGB; // Default fallback
+
+            glBindTexture(GL_TEXTURE_2D, textureID);
+            glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+        else
+        {
+            std::cout << "Texture failed to load from memory" << std::endl;
+        }
+
+        return textureID;
     }
 
     unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma)

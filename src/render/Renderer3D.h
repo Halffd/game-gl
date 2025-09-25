@@ -64,6 +64,7 @@ public:
     bool useSpecularMap;
     bool useDetailMap;
     bool useScatterMap;
+    bool useCelShading;
     float pointLightBrightness;
     float dirLightBrightness;
     float spotLightBrightness;

@@ -67,7 +67,7 @@ uniform bool useRandomPointLights;
 uniform float pointLightBrightness = 0.2; // Default: 20% of original (80% reduction)
 uniform float dirLightBrightness = 1.4;   // Default: 140% of original (40% increase)
 uniform float spotLightBrightness = 1.8;  // Default: 180% of original (80% increase)
-bool useCelShading = true;
+uniform bool useCelShading;
 
 // Other uniforms
 uniform vec3 viewPos;

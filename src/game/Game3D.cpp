@@ -1,4 +1,5 @@
 #include "Game3D.h"
+#include <ctime>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -362,6 +363,11 @@ void Game3D::processInput()
         camera.ProcessKeyboard(Camera_Movement::CAMERA_LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(Camera_Movement::CAMERA_RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS){
+        auto now = std::chrono::system_clock::now();
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+        m_framebuffer->screenshot("screenshot_" + std::to_string(ms) + ".png");
+    }
 }
 
 void Game3D::mouse_callback(double xposIn, double yposIn)

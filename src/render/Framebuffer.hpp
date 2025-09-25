@@ -1,11 +1,16 @@
 #ifndef FRAMEBUFFER_HPP
 #define FRAMEBUFFER_HPP
 
+#include <algorithm>
+#include <cstring>
 #include <glad/glad.h>
 #include <iostream>
 #include <vector>
+#include <memory>
 #include "util/Util.h"
-
+#include "stb_image_write.h"
+#include <ctime>
+#include <chrono>
 class Framebuffer {
 private:
     GLuint m_fbo = 0;
@@ -97,7 +102,75 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glCheckError(__FILE__, __LINE__);
     }
+    /**
+     * @brief Save framebuffer contents to image file
+     * @param filename Output file path (supports .png, .jpg, .bmp, .tga)
+     * @param flipVertically OpenGL textures are upside down by default
+     * @return true if successful
+     */
+     bool screenshot(const std::string& filename, bool flipVertically = true) const {
+        if (m_fbo == 0) {
+            std::cerr << "ERROR::FRAMEBUFFER: Cannot screenshot - framebuffer not initialized!" << std::endl;
+            return false;
+        }
+        
+        // Bind this framebuffer to read from it
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
+        
+        // Allocate buffer for pixel data
+        std::unique_ptr<unsigned char[]> pixels(new unsigned char[m_width * m_height * 3]);
+        
+        // Read pixels from framebuffer
+        glReadPixels(0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, pixels.get());
+        glCheckError(__FILE__, __LINE__);
+        
+        // Flip vertically if requested (OpenGL origin is bottom-left)
+        if (flipVertically) {
+            flipImageVertically(pixels.get(), m_width, m_height, 3);
+        }
+        
+        // Determine file format and save
+        bool success = false;
+        std::string ext = getFileExtension(filename);
+        
+        if (ext == "png") {
+            success = stbi_write_png(filename.c_str(), m_width, m_height, 3, pixels.get(), m_width * 3);
+        } else if (ext == "jpg" || ext == "jpeg") {
+            success = stbi_write_jpg(filename.c_str(), m_width, m_height, 3, pixels.get(), 90); // 90% quality
+        } else if (ext == "bmp") {
+            success = stbi_write_bmp(filename.c_str(), m_width, m_height, 3, pixels.get());
+        } else if (ext == "tga") {
+            success = stbi_write_tga(filename.c_str(), m_width, m_height, 3, pixels.get());
+        } else {
+            std::cerr << "ERROR::FRAMEBUFFER: Unsupported file format: " << ext << std::endl;
+            success = false;
+        }
+        
+        // Restore default framebuffer
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        
+        if (success) {
+            std::cout << "Screenshot saved: " << filename << " (" << m_width << "x" << m_height << ")" << std::endl;
+        } else {
+            std::cerr << "ERROR::FRAMEBUFFER: Failed to save screenshot: " << filename << std::endl;
+        }
+        
+        return success;
+    }
     
+    /**
+     * @brief Get raw pixel data from framebuffer
+     * @param outPixels Output buffer (must be allocated: width * height * 3 bytes)
+     * @param format GL_RGB, GL_RGBA, etc.
+     * @param type GL_UNSIGNED_BYTE, GL_FLOAT, etc.
+     */
+    void getPixelData(void* outPixels, GLenum format = GL_RGB, GLenum type = GL_UNSIGNED_BYTE) const {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
+        glReadPixels(0, 0, m_width, m_height, format, type, outPixels);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        glCheckError(__FILE__, __LINE__);
+    }
+
     /**
      * @brief Bind the color texture for sampling
      */
@@ -131,7 +204,32 @@ public:
     int getWidth() const { return m_width; }
     int getHeight() const { return m_height; }
     
-private:
+    
+    // Helper functions
+    static void flipImageVertically(unsigned char* data, int width, int height, int channels) {
+        int rowSize = width * channels;
+        std::unique_ptr<unsigned char[]> temp(new unsigned char[rowSize]);
+        
+        for (int y = 0; y < height / 2; ++y) {
+            unsigned char* row1 = data + y * rowSize;
+            unsigned char* row2 = data + (height - 1 - y) * rowSize;
+
+            // Swap rows
+            std::memcpy(temp.get(), row1, rowSize);
+            std::memcpy(row1, row2, rowSize);
+            std::memcpy(row2, temp.get(), rowSize);
+        }
+    }
+    
+    static std::string getFileExtension(const std::string& filename) {
+        size_t dotPos = filename.find_last_of('.');
+        if (dotPos == std::string::npos) return "";
+        
+        std::string ext = filename.substr(dotPos + 1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        return ext;
+    }
+    private:
     void cleanup() {
         if (m_colorTexture) {
             glDeleteTextures(1, &m_colorTexture);
@@ -250,6 +348,60 @@ public:
         }
     }
     
+
+    /**
+     * @brief Screenshot specific color attachment
+     */
+     bool screenshotAttachment(int attachment, const std::string& filename, bool flipVertically = true) const {
+        if (attachment < 0 || static_cast<size_t>(attachment) >= m_colorTextures.size()) {
+            std::cerr << "ERROR::FRAMEBUFFER: Invalid attachment index: " << attachment << std::endl;
+            return false;
+        }
+        
+        // Set read buffer to specific attachment
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
+        glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment);
+        
+        // Allocate buffer for pixel data
+        std::unique_ptr<unsigned char[]> pixels(new unsigned char[m_width * m_height * 4]);
+        
+        // Read pixels from framebuffer
+        glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.get());
+        glCheckError(__FILE__, __LINE__);
+        
+        // Flip vertically if requested (OpenGL origin is bottom-left)
+        if (flipVertically) {
+            Framebuffer::flipImageVertically(pixels.get(), m_width, m_height, 4);
+        }
+        
+        // Determine file format and save
+        bool success = false;
+        std::string ext = Framebuffer::getFileExtension(filename);
+        
+        if (ext == "png") {
+            success = stbi_write_png(filename.c_str(), m_width, m_height, 4, pixels.get(), m_width * 4);
+        } else if (ext == "jpg" || ext == "jpeg") {
+            success = stbi_write_jpg(filename.c_str(), m_width, m_height, 4, pixels.get(), 90); // 90% quality
+        } else if (ext == "bmp") {
+            success = stbi_write_bmp(filename.c_str(), m_width, m_height, 4, pixels.get());
+        } else if (ext == "tga") {
+            success = stbi_write_tga(filename.c_str(), m_width, m_height, 4, pixels.get());
+        } else {
+            std::cerr << "ERROR::FRAMEBUFFER: Unsupported file format: " << ext << std::endl;
+            success = false;
+        }
+        
+        // Restore default framebuffer
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+        
+        if (success) {
+            std::cout << "Screenshot saved: " << filename << " (" << m_width << "x" << m_height << ")" << std::endl;
+        } else {
+            std::cerr << "ERROR::FRAMEBUFFER: Failed to save screenshot: " << filename << std::endl;
+        }
+        
+        return success;
+    }
 private:
     void cleanup() {
         for (auto tex : m_colorTextures) {
