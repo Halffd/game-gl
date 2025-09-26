@@ -11,6 +11,7 @@
 #include "../render/primitives/PrimitiveShapes.h"
 #include "render/Framebuffer.hpp"
 #include "render/primitives/2d/2D.hpp"
+#include "render/objects/Mirror.h"
 
 struct GLFWwindow;
 
@@ -54,6 +55,9 @@ public:
 
     std::vector<std::string> modelNames;
 
+
+    std::unique_ptr<Mirror> m_rearViewMirror;
+    bool m_showMirror = true;
     std::vector<std::shared_ptr<m3D::PrimitiveShape> > primitiveShapes;
     std::vector<glm::vec3> rotationSpeeds;
 

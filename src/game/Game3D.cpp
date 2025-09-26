@@ -118,6 +118,12 @@ void Game3D::init() {
     m_screenQuad->setup();
     std::cout << "Initializing renderer" << std::endl;
     renderer.init();
+    std::cout << "Creating rear-view mirror" << std::endl;
+    m_rearViewMirror = std::make_unique<Mirror>();
+    if (!m_rearViewMirror->initialize()) {
+        std::cerr << "Failed to initialize rear-view mirror!" << std::endl;
+        m_rearViewMirror.reset(); // Clean up on failure
+    }
     std::cout << "Loading models" << std::endl;
     if (useSolarSystemScene) {
         initSolarSystemScene();
@@ -298,13 +304,7 @@ void Game3D::run() {
         Timers::tick();
         processInput();
 
-        // FIRST PASS: Render scene to framebuffer
-        m_framebuffer->bind();
-        glViewport(0, 0, m_framebufferSize.x, m_framebufferSize.y);
-        m_framebuffer->clear(0.05f, 0.05f, 0.1f);  // This already does glClear internally
-        glEnable(GL_DEPTH_TEST);
-
-        // Update and render scene
+        // Update orbital mechanics
         for (auto& orbitalData : orbitalBodies) {
             orbitalData.currentAngle += orbitalData.orbitSpeed * deltaTime;
             glm::vec3 centerOfOrbit = orbitalData.parentBody ? orbitalData.parentBody->position : glm::vec3(0.0f);
@@ -314,27 +314,52 @@ void Game3D::run() {
             orbitalData.body->position = glm::vec3(x, centerOfOrbit.y, z);
             orbitalData.body->rotation.y += orbitalData.rotationSpeed * deltaTime;
         }
-        
         scene.update(deltaTime);
+
+        // MIRROR PASS: Render rear-view to mirror framebuffer (if enabled)
+        if (m_rearViewMirror && m_showMirror) {
+            glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 
+                                                  (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 
+                                                  0.1f, 1000.0f);
+            
+            m_rearViewMirror->renderMirrorView(camera.GetViewMatrix(), projection, 
+                [&](const glm::mat4& mirrorView, const glm::mat4& proj) {
+                    // Create temporary camera for mirror rendering
+                    Camera tempCamera = camera; // Copy current camera
+                    // Override the view matrix for mirror rendering
+                    renderer.renderWithCustomView(scene, tempCamera, mirrorView, proj);
+                });
+        }
+
+        // MAIN PASS: Render scene to main framebuffer
+        m_framebuffer->bind();
+        glViewport(0, 0, m_framebufferSize.x, m_framebufferSize.y);
+        m_framebuffer->clear(0.05f, 0.05f, 0.1f);
+        glEnable(GL_DEPTH_TEST);
+        
         renderer.render(scene, camera);
 
-        // Render GUI to framebuffer too (if you want it in the effect)
-        Gui::Start();
-        // ... your GUI rendering code ...
-        Gui::Render();
-
-        // SECOND PASS: Render framebuffer texture to screen
-        m_framebuffer->unbind();  // Bind default framebuffer (0)
+        // SCREEN PASS: Render framebuffer to screen with post-processing
+        m_framebuffer->unbind();
         glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f); 
         glClear(GL_COLOR_BUFFER_BIT);
         glDisable(GL_DEPTH_TEST);
         
-        // Draw the screen quad with framebuffer texture
+        // Draw the main scene
         m_postProcessShader.Use();
         m_postProcessShader.SetInteger("screenTexture", 0);
         m_framebuffer->bindColorTexture(0);
         m_screenQuad->draw();
+
+        // Draw mirror overlay on top
+        if (m_rearViewMirror && m_showMirror) {
+            m_rearViewMirror->drawMirror(SCREEN_WIDTH, SCREEN_HEIGHT);
+        }
+
+        // GUI
+        Gui::Start();
+        Gui::Render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

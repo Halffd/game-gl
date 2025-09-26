@@ -57,7 +57,47 @@ Renderer3D::Renderer3D()
 void Renderer3D::init() {
     setupGround();
 }
+void Renderer3D::renderWithCustomView(Scene& scene, Camera& camera, 
+    const glm::mat4& customView, 
+    const glm::mat4& projection) {
 
+    // Store original camera position
+    glm::vec3 originalPosition = camera.Position;
+    glm::vec3 originalFront = camera.Front;
+
+    // Extract position and direction from custom view
+    glm::mat4 invCustomView = glm::inverse(customView);
+    glm::vec3 customCameraPos = glm::vec3(invCustomView[3]);
+    glm::vec3 customCameraFront = -glm::vec3(customView[2]);
+
+    // Temporarily modify camera for lighting calculations
+    camera.Position = customCameraPos;
+    camera.Front = customCameraFront;
+
+    // Use your existing render method but override matrices
+    Shader shader = ResourceManager::GetShader("model");
+    shader.Use();
+    shader.SetMatrix4("view", customView);
+    shader.SetMatrix4("projection", projection);
+
+    setLightingUniforms(shader, camera);
+
+    // Render ground and scene
+    glStencilMask(0x00);
+    renderGround(shader);
+
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+    scene.draw(shader);
+
+    // Restore original camera state
+    camera.Position = originalPosition;
+    camera.Front = originalFront;
+
+    // Reset OpenGL state
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 0, 0xFF);
+    }
 void Renderer3D::render(Scene& scene, Camera& camera) {
     // Configure shader for rendering
     Shader shader = ResourceManager::GetShader("model");

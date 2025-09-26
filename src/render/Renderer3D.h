@@ -71,6 +71,9 @@ public:
     std::vector<PointLight> randomPointLights;
     bool useRandomPointLights;
 
+    void renderWithCustomView(Scene& scene, Camera& camera, 
+        const glm::mat4& customView, 
+        const glm::mat4& projection);
 private:
     unsigned int groundVAO;
     unsigned int groundVBO;
