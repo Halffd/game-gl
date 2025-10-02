@@ -117,10 +117,16 @@ void Game3D::init() {
     std::cout << "Initializing renderer" << std::endl;
     renderer.init();
     std::cout << "Creating rear-view mirror" << std::endl;
-    m_rearViewMirror = std::make_unique<Mirror>();
-    if (!m_rearViewMirror->initialize()) {
-        std::cerr << "Failed to initialize rear-view mirror!" << std::endl;
-        m_rearViewMirror.reset(); // Clean up on failure
+    m_showMirror = false;
+    maxAsteroids = 25;
+    if (m_showMirror) {
+        m_rearViewMirror = std::make_unique<Mirror>();
+        if (!m_rearViewMirror->initialize()) {
+            std::cerr << "Failed to initialize rear-view mirror!" << std::endl;
+            m_rearViewMirror.reset(); // Clean up on failure
+        }
+    } else {
+        m_rearViewMirror = nullptr;
     }
     std::cout << "Loading models" << std::endl;
     if (useSolarSystemScene) {
