@@ -103,8 +103,6 @@ void Game3D::init() {
     std::cout << "Root directory: " << ResourceManager::root << std::endl;
     std::cout << "Loading shader: model" << std::endl;
     ResourceManager::LoadShader("3d.vs", "3d.fs", nullptr, "model");
-    std::cout << "Loading shader: outline" << std::endl;
-    ResourceManager::LoadShader("3d.vs", "outline.fs", nullptr, "outline");
     std::cout << "Creating framebuffer" << std::endl;
     float aspectRatio = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
     int fbWidth = 400;
