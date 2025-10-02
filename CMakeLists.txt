@@ -47,6 +47,9 @@ set(GLAD_SOURCE src/glad.c)
 # Add tinyexpr.c explicitly
 set(TINYEXPR_SOURCE include_libs/tinyexpr/tinyexpr.c)
 
+# Add stb_image_write_impl.cpp explicitly
+set(STB_IMAGE_WRITE_IMPL_SOURCE src/stb_image_write_impl.cpp)
+
 # ImGui files
 set(IMGUI_FILES
     include_libs/imgui/imgui.cpp
@@ -60,7 +63,7 @@ set(IMGUI_FILES
 )
 
 # Main executable
-add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${IMGUI_FILES} ${GLAD_SOURCE} ${TINYEXPR_SOURCE})
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${IMGUI_FILES} ${GLAD_SOURCE} ${TINYEXPR_SOURCE} ${STB_IMAGE_WRITE_IMPL_SOURCE})
 
 # Find required packages
 find_package(PkgConfig REQUIRED)
