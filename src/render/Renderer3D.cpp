@@ -75,7 +75,7 @@ void Renderer3D::renderWithCustomView(Scene& scene, Camera& camera,
     camera.Front = customCameraFront;
 
     // Use your existing render method but override matrices
-    Shader shader = ResourceManager::GetShader("model");
+    Shader &shader = ResourceManager::GetShader("model");
     shader.Use();
     shader.SetMatrix4("view", customView);
     shader.SetMatrix4("projection", projection);
@@ -100,7 +100,7 @@ void Renderer3D::renderWithCustomView(Scene& scene, Camera& camera,
     }
 void Renderer3D::render(Scene& scene, Camera& camera) {
     // Configure shader for rendering
-    Shader shader = ResourceManager::GetShader("model");
+    Shader &shader = ResourceManager::GetShader("model");
     shader.Use();
 
     // Set camera uniforms
@@ -134,7 +134,7 @@ void Renderer3D::render(Scene& scene, Camera& camera) {
     glDisable(GL_DEPTH_TEST);
 
     // Get the outline shader
-    Shader outlineShader = ResourceManager::GetShader("outline");
+    Shader &outlineShader = ResourceManager::GetShader("outline");
 
     // Explicitly activate the shader before rendering
     outlineShader.Use();

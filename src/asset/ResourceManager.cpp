@@ -9,7 +9,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
-std::map<std::string, Shader> ResourceManager::Shaders;
+std::map<std::string, std::shared_ptr<Shader>> ResourceManager::Shaders;
 std::map<std::string, Texture1D> ResourceManager::Textures1D;
 std::map<std::string, std::shared_ptr<Texture2D>> ResourceManager::Textures2D;
 std::map<std::string, Texture3D> ResourceManager::Textures3D;
@@ -117,11 +117,11 @@ const char *ResourceManager::GetPath(const std::string &filename)
     return GetFullPath(path);
 }
 
-Shader ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, std::string name)
+Shader& ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, std::string name)
 {
     return LoadShader(vShaderFile, fShaderFile, nullptr, name);
 }
-Shader ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile, std::string name)
+Shader& ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile, std::string name)
 {
     if (!includes(vShaderFile, ":"))
     {
@@ -131,17 +131,24 @@ Shader ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderF
     {
         fShaderFile = GetShaderPath(fShaderFile);
     }
-    Shaders[name] = loadShaderFromFile(vShaderFile, fShaderFile, gShaderFile);
-    return Shaders[name];
+    auto shader = std::make_shared<Shader>();
+    loadShaderFromFile(*shader, vShaderFile, fShaderFile, gShaderFile);
+    Shaders[name] = shader;
+    return *shader;
 }
 
-Shader ResourceManager::GetShader(std::string name)
+Shader& ResourceManager::GetShader(std::string name)
 {
-    return Shaders[name];
+    auto it = Shaders.find(name);
+    if (it == Shaders.end())
+    {
+        throw std::runtime_error("Shader not found: " + name);
+    }
+    return *it->second;
 }
 Shader *ResourceManager::ShaderP(std::string &name)
 {
-    return &Shaders[name]; // Assuming Shaders is a map or similar structure
+    return Shaders[name].get(); // Assuming Shaders is a map or similar structure
 }
 
 Texture1D ResourceManager::LoadTexture1D(const char *file, bool alpha, std::string name,
@@ -240,7 +247,7 @@ void ResourceManager::LoadAllTexturesFromDirectory()
 void ResourceManager::Clear() {
     // Clear shaders
     for (auto& iter : Shaders) {
-        glDeleteProgram(iter.second.ID);
+        glDeleteProgram(iter.second->ID);
     }
 
     // Clear 1D textures
@@ -260,7 +267,7 @@ void ResourceManager::Clear() {
         glDeleteTextures(1, &iter.second.ID);
     }
 }
-Shader ResourceManager::loadShaderFromFile(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile)
+void ResourceManager::loadShaderFromFile(Shader &shader, const char *vShaderFile, const char *fShaderFile, const char *gShaderFile)
 {
     std::string vertexCode, fragmentCode, geometryCode;
     try
@@ -318,7 +325,6 @@ Shader ResourceManager::loadShaderFromFile(const char *vShaderFile, const char *
     const char *vShaderCode = vertexCode.c_str();
     const char *fShaderCode = fragmentCode.c_str();
     const char *gShaderCode = geometryCode.c_str();
-    Shader shader;
     try {
         shader.Compile(vShaderCode, fShaderCode, gShaderFile != nullptr ? gShaderCode : nullptr);
         std::cout << "Shader compilation successful" << std::endl;
@@ -326,7 +332,6 @@ Shader ResourceManager::loadShaderFromFile(const char *vShaderFile, const char *
         std::cout << "ERROR::SHADER: Failed to compile shader: " << e.what() << std::endl;
         throw;
     }
-    return shader;
 }
 
 Texture1D ResourceManager::loadTexture1DFromFile(const char *file, bool alpha,

@@ -19,7 +19,7 @@ const unsigned SCREEN_WIDTH = 1600;
 const unsigned SCREEN_HEIGHT = 900;
 
 // callbacks
-static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+static void framebufferSizeCallback([[maybe_unused]] GLFWwindow* window, int width, int height);
 
 Game3D::Game3D()
     : camera(glm::vec3(0.0f, 20.0f, 30.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, -33.68f),
@@ -39,7 +39,8 @@ Game3D::Game3D()
       showTriangleContours(false),
       runMode(true),
       baseMovementSpeed(6.5f),
-      window(nullptr)
+      window(nullptr),
+      m_postProcessShader(nullptr)
 {
 }
 
@@ -103,23 +104,24 @@ void Game3D::init() {
     std::cout << "Root directory: " << ResourceManager::root << std::endl;
     std::cout << "Loading shader: model" << std::endl;
     ResourceManager::LoadShader("3d.vs", "3d.fs", nullptr, "model");
+    ResourceManager::LoadShader("outline.vs", "outline.fs", nullptr, "outline");
     std::cout << "Creating framebuffer" << std::endl;
     float aspectRatio = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
-    int fbWidth = 400;
+    int fbWidth = 1200;
     int fbHeight = fbWidth / aspectRatio;
     m_framebufferSize = glm::vec2(fbWidth, fbHeight);
     m_framebuffer->create(m_framebufferSize.x, m_framebufferSize.y);
     std::cout << "Loading shader: fb" << std::endl;
     ResourceManager::LoadShader("fb.vs", "fb.fs", nullptr, "fb");
-    m_postProcessShader = ResourceManager::GetShader("fb");
+    m_postProcessShader = &ResourceManager::GetShader("fb");
     std::cout << "Creating screen quad" << std::endl;
     m_screenQuad->setup();
     std::cout << "Initializing renderer" << std::endl;
     renderer.init();
-    std::cout << "Creating rear-view mirror" << std::endl;
     m_showMirror = false;
     maxAsteroids = 25;
     if (m_showMirror) {
+        std::cout << "Creating rear-view mirror" << std::endl;
         m_rearViewMirror = std::make_unique<Mirror>();
         if (!m_rearViewMirror->initialize()) {
             std::cerr << "Failed to initialize rear-view mirror!" << std::endl;
@@ -138,14 +140,78 @@ void Game3D::init() {
 void Game3D::initSolarSystemScene() {
     std::cout << "Initializing Solar System Scene" << std::endl;
 
+    // Load the planet shader
+    static Shader planetShader;
+    
+    // Define shader sources
+    const char* vertexSource = R"(
+        #version 330 core
+        #extension GL_ARB_separate_shader_objects : enable
+
+        layout (location = 0) in vec3 aPos;
+
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+
+        void main()
+        {
+            gl_Position = projection * view * model * vec4(aPos, 1.0);
+        }
+    )";
+
+    const char* fragmentSource = R"(
+        #version 330 core
+        #extension GL_ARB_separate_shader_objects : enable
+
+        precision highp float;
+
+        out vec4 FragColor;
+
+        uniform vec3 color;
+
+        void main()
+        {
+            FragColor = vec4(color, 1.0);
+        }
+    )";
+    
+    // Compile shader
+    planetShader.Compile(vertexSource, fragmentSource);
+    
+    if (planetShader.ID == 0) {
+        std::cerr << "Failed to compile planet shader!" << std::endl;
+        return; // Exit if shader compilation fails
+    }
+    
+    // Verify shader is ready to use
+    if (glIsProgram(planetShader.ID) != GL_TRUE) {
+        std::cerr << "ERROR::SHADER::PROGRAM:: Invalid shader program ID" << std::endl;
+        return;
+    }
+
     // Create a single sphere mesh to be shared by all celestial bodies
     auto sphere = std::make_shared<m3D::Sphere>("Sphere", glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f));
     sphereMesh = sphere->getMesh();
-
-    // Sun
-    auto sun = std::make_shared<m3D::PrimitiveShape>("Sun", glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(5.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+    
+    // Set up projection matrix (will be updated in render loop)
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
+    
+    // Sun (special case - doesn't use the planet shader)
+    auto sun = std::make_shared<m3D::PrimitiveShape>("Sun", glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(5.0f), glm::vec3(1.0f, 0.8f, 0.4f));
     sun->setMesh(sphereMesh);
+    
+    // Set up the sun's shader
+    sun->setCustomShader(&planetShader);
+    
+    // Set initial shader uniforms
+    planetShader.Use();
+    planetShader.SetMatrix4("projection", projection);
+    planetShader.SetVector3f("color", glm::vec3(1.0f, 0.8f, 0.4f));
+    
     scene.AddObject(sun);
+    
+    // Set up sun lighting
     renderer.pointLight.enabled = true;
     renderer.pointLight.position = sun->position;
     renderer.pointLight.diffuse = glm::vec3(1.0f, 1.0f, 0.8f);
@@ -154,20 +220,38 @@ void Game3D::initSolarSystemScene() {
     renderer.pointLight.quadratic = 0.000007f;
 
     // Mercury
-    auto mercury = std::make_shared<m3D::PrimitiveShape>("Mercury", glm::vec3(8.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.3f), glm::vec3(0.5f, 0.5f, 0.5f));
+    auto mercury = std::make_shared<m3D::PrimitiveShape>("Mercury", glm::vec3(8.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.3f), glm::vec3(0.6f, 0.6f, 0.6f));
     mercury->setMesh(sphereMesh);
+    mercury->setCustomShader(&planetShader);
+    mercury->setShaderVec3("baseColor1", glm::vec3(0.7f, 0.6f, 0.5f));
+    mercury->setShaderVec3("baseColor2", glm::vec3(0.4f, 0.4f, 0.4f));
+    mercury->setShaderVec3("highlightColor", glm::vec3(0.9f, 0.9f, 0.8f));
+    mercury->setShaderFloat("shininess", 32.0f);
+    mercury->setShaderFloat("gradientFactor", 0.7f);
     scene.AddObject(mercury);
     orbitalBodies.push_back({mercury, 8.0f, 0.5f, 1.0f, 0.0f, sun});
 
     // Venus
-    auto venus = std::make_shared<m3D::PrimitiveShape>("Venus", glm::vec3(12.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.7f), glm::vec3(0.8f, 0.4f, 0.0f));
+    auto venus = std::make_shared<m3D::PrimitiveShape>("Venus", glm::vec3(12.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.7f), glm::vec3(0.9f, 0.6f, 0.3f));
     venus->setMesh(sphereMesh);
+    venus->setCustomShader(&planetShader);
+    venus->setShaderVec3("baseColor1", glm::vec3(0.9f, 0.6f, 0.3f));
+    venus->setShaderVec3("baseColor2", glm::vec3(0.7f, 0.4f, 0.1f));
+    venus->setShaderVec3("highlightColor", glm::vec3(1.0f, 0.9f, 0.8f));
+    venus->setShaderFloat("shininess", 64.0f);
+    venus->setShaderFloat("gradientFactor", 0.8f);
     scene.AddObject(venus);
     orbitalBodies.push_back({venus, 12.0f, 0.4f, 0.8f, 0.0f, sun});
 
     // Earth
-    auto earth = std::make_shared<m3D::PrimitiveShape>("Earth", glm::vec3(16.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.8f), glm::vec3(0.0f, 0.0f, 1.0f));
+    auto earth = std::make_shared<m3D::PrimitiveShape>("Earth", glm::vec3(16.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.8f), glm::vec3(0.2f, 0.5f, 0.9f));
     earth->setMesh(sphereMesh);
+    earth->setCustomShader(&planetShader);
+    earth->setShaderVec3("baseColor1", glm::vec3(0.2f, 0.5f, 0.9f));
+    earth->setShaderVec3("baseColor2", glm::vec3(0.1f, 0.3f, 0.6f));
+    earth->setShaderVec3("highlightColor", glm::vec3(0.8f, 0.9f, 1.0f));
+    earth->setShaderFloat("shininess", 128.0f);
+    earth->setShaderFloat("gradientFactor", 0.9f);
     scene.AddObject(earth);
     orbitalBodies.push_back({earth, 16.0f, 0.3f, 0.6f, 0.0f, sun});
     // Earth's Moon
@@ -177,8 +261,14 @@ void Game3D::initSolarSystemScene() {
     orbitalBodies.push_back({moon, 2.0f, 1.0f, 1.5f, 0.0f, earth});
 
     // Mars
-    auto mars = std::make_shared<m3D::PrimitiveShape>("Mars", glm::vec3(20.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.6f), glm::vec3(1.0f, 0.0f, 0.0f));
+    auto mars = std::make_shared<m3D::PrimitiveShape>("Mars", glm::vec3(20.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.6f), glm::vec3(0.8f, 0.4f, 0.2f));
     mars->setMesh(sphereMesh);
+    mars->setCustomShader(&planetShader);
+    mars->setShaderVec3("baseColor1", glm::vec3(0.8f, 0.4f, 0.2f));
+    mars->setShaderVec3("baseColor2", glm::vec3(0.5f, 0.2f, 0.1f));
+    mars->setShaderVec3("highlightColor", glm::vec3(1.0f, 0.8f, 0.6f));
+    mars->setShaderFloat("shininess", 32.0f);
+    mars->setShaderFloat("gradientFactor", 0.6f);
     scene.AddObject(mars);
     orbitalBodies.push_back({mars, 20.0f, 0.25f, 0.5f, 0.0f, sun});
     // Mars' Moons (Phobos and Deimos)
@@ -192,8 +282,14 @@ void Game3D::initSolarSystemScene() {
     orbitalBodies.push_back({deimos, 1.5f, 1.2f, 2.5f, 0.5f, mars});
 
     // Jupiter
-    auto jupiter = std::make_shared<m3D::PrimitiveShape>("Jupiter", glm::vec3(30.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(2.5f), glm::vec3(0.8f, 0.6f, 0.4f));
+    auto jupiter = std::make_shared<m3D::PrimitiveShape>("Jupiter", glm::vec3(30.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(2.5f), glm::vec3(0.9f, 0.7f, 0.5f));
     jupiter->setMesh(sphereMesh);
+    jupiter->setCustomShader(&planetShader);
+    jupiter->setShaderVec3("baseColor1", glm::vec3(0.9f, 0.7f, 0.5f));
+    jupiter->setShaderVec3("baseColor2", glm::vec3(0.7f, 0.5f, 0.3f));
+    jupiter->setShaderVec3("highlightColor", glm::vec3(1.0f, 0.9f, 0.8f));
+    jupiter->setShaderFloat("shininess", 16.0f);
+    jupiter->setShaderFloat("gradientFactor", 0.5f);  // Subtle gradient for gas giant
     scene.AddObject(jupiter);
     orbitalBodies.push_back({jupiter, 30.0f, 0.15f, 0.3f, 0.0f, sun});
     // Jupiter's Moons
@@ -351,8 +447,8 @@ void Game3D::run() {
         glDisable(GL_DEPTH_TEST);
         
         // Draw the main scene
-        m_postProcessShader.Use();
-        m_postProcessShader.SetInteger("screenTexture", 0);
+        m_postProcessShader->Use();
+        m_postProcessShader->SetInteger("screenTexture", 0);
         m_framebuffer->bindColorTexture(0);
         m_screenQuad->draw();
 
@@ -399,8 +495,7 @@ void Game3D::processInput()
     }
 }
 
-void Game3D::mouse_callback(double xposIn, double yposIn)
-{
+void Game3D::mouse_callback([[maybe_unused]] double xposIn, double yposIn) {
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
 
@@ -423,8 +518,7 @@ void Game3D::mouse_callback(double xposIn, double yposIn)
     }
 }
 
-void Game3D::scroll_callback(double xoffset, double yoffset)
-{
+void Game3D::scroll_callback(double /*xoffset*/, double yoffset) {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
@@ -522,7 +616,6 @@ void Game3D::loadModels(const std::string& modelBasePath, const std::string& bin
     }
 }
 
-static void framebufferSizeCallback(GLFWwindow* window, int width, int height)
-{
+static void framebufferSizeCallback(GLFWwindow* /*window*/, int width, int height) {
     glViewport(0, 0, width, height);
 }

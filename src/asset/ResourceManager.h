@@ -35,15 +35,15 @@ public:
     static std::string root;
 
     // Resource maps
-    static std::map<std::string, Shader>    Shaders;
+    static std::map<std::string, std::shared_ptr<Shader>> Shaders;
     static std::map<std::string, Texture1D> Textures1D;
     static std::map<std::string, std::shared_ptr<Texture2D>> Textures2D;
     static std::map<std::string, Texture3D> Textures3D;
 
     // Shader management
-    static Shader    LoadShader(const char *vShaderFile, const char *fShaderFile, std::string name);
-    static Shader    LoadShader(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile, std::string name);
-    static Shader    GetShader(std::string name);
+    static Shader&    LoadShader(const char *vShaderFile, const char *fShaderFile, std::string name);
+    static Shader&    LoadShader(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile, std::string name);
+    static Shader&   GetShader(std::string name);
     static Shader*   ShaderP(std::string& name);
 
     // Texture management
@@ -79,7 +79,7 @@ public:
 private:
     ResourceManager() { }
 
-    static Shader    loadShaderFromFile(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile = nullptr);
+    static void      loadShaderFromFile(Shader &shader, const char *vShaderFile, const char *fShaderFile, const char *gShaderFile = nullptr);
     static Texture1D loadTexture1DFromFile(const char *file, bool alpha, GLint sWrap, GLint minFilter, GLint magFilter);
     static Texture2D loadTexture2DFromFile(const char *file, bool alpha = false,
                                            GLint sWrap = GL_REPEAT, GLint tWrap = GL_REPEAT,

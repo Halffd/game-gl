@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
+#include "../render/Shader.h"
 #include "../render/Model.h"
 #include "../render/primitives/PrimitiveShapes.h"
 #include "render/Framebuffer.hpp"
@@ -32,7 +33,7 @@ private:
     bool loadModel(const std::string& name, const std::string& relativePath, const std::string& modelRoot, const std::string& binRoot, const glm::vec3& position, const glm::vec3& rotation, const glm::vec3& scale);
     std::shared_ptr<Framebuffer> m_framebuffer;
     std::shared_ptr<VO::Quad> m_screenQuad;
-    Shader m_postProcessShader;
+    Shader* m_postProcessShader;
     glm::vec2 m_framebufferSize;
 public:
     Camera camera;
@@ -78,6 +79,7 @@ public:
     bool useSolarSystemScene;
 
     std::shared_ptr<m3D::Mesh> sphereMesh;
+    Shader planetShader;  // Shader for rendering planets with gradients
 
     bool showCartesianPlane;
     bool showTriangleContours;
