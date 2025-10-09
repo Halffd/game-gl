@@ -40,7 +40,9 @@ Game3D::Game3D()
       runMode(true),
       baseMovementSpeed(6.5f),
       window(nullptr),
-      m_postProcessShader(nullptr)
+      m_postProcessShader(nullptr),
+      useFramebuffer(false),
+      planetShader()
 {
 }
 
@@ -141,43 +143,7 @@ void Game3D::initSolarSystemScene() {
     std::cout << "Initializing Solar System Scene" << std::endl;
 
     // Load the planet shader
-    static Shader planetShader;
-    
-    // Define shader sources
-    const char* vertexSource = R"(
-        #version 330 core
-        #extension GL_ARB_separate_shader_objects : enable
-
-        layout (location = 0) in vec3 aPos;
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-
-        void main()
-        {
-            gl_Position = projection * view * model * vec4(aPos, 1.0);
-        }
-    )";
-
-    const char* fragmentSource = R"(
-        #version 330 core
-        #extension GL_ARB_separate_shader_objects : enable
-
-        precision highp float;
-
-        out vec4 FragColor;
-
-        uniform vec3 color;
-
-        void main()
-        {
-            FragColor = vec4(color, 1.0);
-        }
-    )";
-    
-    // Compile shader
-    planetShader.Compile(vertexSource, fragmentSource);
+    Shader& planetShader = ResourceManager::LoadShader("planet.vs", "planet.fs", nullptr, "planet");
     
     if (planetShader.ID == 0) {
         std::cerr << "Failed to compile planet shader!" << std::endl;
@@ -197,17 +163,16 @@ void Game3D::initSolarSystemScene() {
     // Set up projection matrix (will be updated in render loop)
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
     
-    // Sun (special case - doesn't use the planet shader)
+    // Sun
     auto sun = std::make_shared<m3D::PrimitiveShape>("Sun", glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(5.0f), glm::vec3(1.0f, 0.8f, 0.4f));
     sun->setMesh(sphereMesh);
-    
-    // Set up the sun's shader
     sun->setCustomShader(&planetShader);
+    sun->setShaderVec3("baseColor1", glm::vec3(1.0f, 0.8f, 0.4f));
+    sun->setShaderVec3("baseColor2", glm::vec3(0.8f, 0.6f, 0.2f));
+    sun->setShaderFloat("gradientFactor", 1.0f);
     
-    // Set initial shader uniforms
     planetShader.Use();
     planetShader.SetMatrix4("projection", projection);
-    planetShader.SetVector3f("color", glm::vec3(1.0f, 0.8f, 0.4f));
     
     scene.AddObject(sun);
     
@@ -257,6 +222,10 @@ void Game3D::initSolarSystemScene() {
     // Earth's Moon
     auto moon = std::make_shared<m3D::PrimitiveShape>("Moon", glm::vec3(16.0f + 2.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.2f), glm::vec3(0.7f, 0.7f, 0.7f));
     moon->setMesh(sphereMesh);
+    moon->setCustomShader(&planetShader);
+    moon->setShaderVec3("baseColor1", glm::vec3(0.7f, 0.7f, 0.7f));
+    moon->setShaderVec3("baseColor2", glm::vec3(0.5f, 0.5f, 0.5f));
+    moon->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(moon);
     orbitalBodies.push_back({moon, 2.0f, 1.0f, 1.5f, 0.0f, earth});
 
@@ -274,10 +243,18 @@ void Game3D::initSolarSystemScene() {
     // Mars' Moons (Phobos and Deimos)
     auto phobos = std::make_shared<m3D::PrimitiveShape>("Phobos", glm::vec3(20.0f + 1.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.1f), glm::vec3(0.6f, 0.3f, 0.0f));
     phobos->setMesh(sphereMesh);
+    phobos->setCustomShader(&planetShader);
+    phobos->setShaderVec3("baseColor1", glm::vec3(0.6f, 0.3f, 0.0f));
+    phobos->setShaderVec3("baseColor2", glm::vec3(0.4f, 0.2f, 0.0f));
+    phobos->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(phobos);
     orbitalBodies.push_back({phobos, 1.0f, 1.5f, 2.0f, 0.0f, mars});
     auto deimos = std::make_shared<m3D::PrimitiveShape>("Deimos", glm::vec3(20.0f + 1.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.08f), glm::vec3(0.5f, 0.2f, 0.0f));
     deimos->setMesh(sphereMesh);
+    deimos->setCustomShader(&planetShader);
+    deimos->setShaderVec3("baseColor1", glm::vec3(0.5f, 0.2f, 0.0f));
+    deimos->setShaderVec3("baseColor2", glm::vec3(0.3f, 0.1f, 0.0f));
+    deimos->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(deimos);
     orbitalBodies.push_back({deimos, 1.5f, 1.2f, 2.5f, 0.5f, mars});
 
@@ -295,42 +272,74 @@ void Game3D::initSolarSystemScene() {
     // Jupiter's Moons
     auto io = std::make_shared<m3D::PrimitiveShape>("Io", glm::vec3(30.0f + 3.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.3f), glm::vec3(1.0f, 0.8f, 0.0f));
     io->setMesh(sphereMesh);
+    io->setCustomShader(&planetShader);
+    io->setShaderVec3("baseColor1", glm::vec3(1.0f, 0.8f, 0.0f));
+    io->setShaderVec3("baseColor2", glm::vec3(0.8f, 0.6f, 0.0f));
+    io->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(io);
     orbitalBodies.push_back({io, 3.0f, 0.8f, 1.0f, 0.0f, jupiter});
     auto europa = std::make_shared<m3D::PrimitiveShape>("Europa", glm::vec3(30.0f + 3.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.25f), glm::vec3(0.6f, 0.6f, 0.8f));
     europa->setMesh(sphereMesh);
+    europa->setCustomShader(&planetShader);
+    europa->setShaderVec3("baseColor1", glm::vec3(0.6f, 0.6f, 0.8f));
+    europa->setShaderVec3("baseColor2", glm::vec3(0.4f, 0.4f, 0.6f));
+    europa->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(europa);
     orbitalBodies.push_back({europa, 3.5f, 0.7f, 0.9f, 0.8f, jupiter});
     auto ganymede = std::make_shared<m3D::PrimitiveShape>("Ganymede", glm::vec3(30.0f + 4.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.4f), glm::vec3(0.7f, 0.7f, 0.6f));
     ganymede->setMesh(sphereMesh);
+    ganymede->setCustomShader(&planetShader);
+    ganymede->setShaderVec3("baseColor1", glm::vec3(0.7f, 0.7f, 0.6f));
+    ganymede->setShaderVec3("baseColor2", glm::vec3(0.5f, 0.5f, 0.4f));
+    ganymede->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(ganymede);
     orbitalBodies.push_back({ganymede, 4.0f, 0.6f, 0.8f, 1.2f, jupiter});
     auto callisto = std::make_shared<m3D::PrimitiveShape>("Callisto", glm::vec3(30.0f + 4.5f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.35f), glm::vec3(0.5f, 0.4f, 0.3f));
     callisto->setMesh(sphereMesh);
+    callisto->setCustomShader(&planetShader);
+    callisto->setShaderVec3("baseColor1", glm::vec3(0.5f, 0.4f, 0.3f));
+    callisto->setShaderVec3("baseColor2", glm::vec3(0.3f, 0.2f, 0.1f));
+    callisto->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(callisto);
     orbitalBodies.push_back({callisto, 4.5f, 0.5f, 0.7f, 1.5f, jupiter});
 
     // Saturn
     auto saturn = std::make_shared<m3D::PrimitiveShape>("Saturn", glm::vec3(40.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(2.0f), glm::vec3(0.9f, 0.9f, 0.7f));
     saturn->setMesh(sphereMesh);
+    saturn->setCustomShader(&planetShader);
+    saturn->setShaderVec3("baseColor1", glm::vec3(0.9f, 0.9f, 0.7f));
+    saturn->setShaderVec3("baseColor2", glm::vec3(0.7f, 0.7f, 0.5f));
+    saturn->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(saturn);
     orbitalBodies.push_back({saturn, 40.0f, 0.1f, 0.2f, 0.0f, sun});
 
     // Uranus
     auto uranus = std::make_shared<m3D::PrimitiveShape>("Uranus", glm::vec3(48.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.5f), glm::vec3(0.6f, 0.8f, 0.9f));
     uranus->setMesh(sphereMesh);
+    uranus->setCustomShader(&planetShader);
+    uranus->setShaderVec3("baseColor1", glm::vec3(0.6f, 0.8f, 0.9f));
+    uranus->setShaderVec3("baseColor2", glm::vec3(0.4f, 0.6f, 0.7f));
+    uranus->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(uranus);
     orbitalBodies.push_back({uranus, 48.0f, 0.07f, 0.15f, 0.0f, sun});
 
     // Neptune
     auto neptune = std::make_shared<m3D::PrimitiveShape>("Neptune", glm::vec3(55.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.5f), glm::vec3(0.2f, 0.2f, 0.8f));
     neptune->setMesh(sphereMesh);
+    neptune->setCustomShader(&planetShader);
+    neptune->setShaderVec3("baseColor1", glm::vec3(0.2f, 0.2f, 0.8f));
+    neptune->setShaderVec3("baseColor2", glm::vec3(0.1f, 0.1f, 0.6f));
+    neptune->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(neptune);
     orbitalBodies.push_back({neptune, 55.0f, 0.05f, 0.1f, 0.0f, sun});
 
     // Pluto
     auto pluto = std::make_shared<m3D::PrimitiveShape>("Pluto", glm::vec3(60.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.1f), glm::vec3(0.8f, 0.7f, 0.6f));
     pluto->setMesh(sphereMesh);
+    pluto->setCustomShader(&planetShader);
+    pluto->setShaderVec3("baseColor1", glm::vec3(0.8f, 0.7f, 0.6f));
+    pluto->setShaderVec3("baseColor2", glm::vec3(0.6f, 0.5f, 0.4f));
+    pluto->setShaderFloat("gradientFactor", 0.5f);
     scene.AddObject(pluto);
     orbitalBodies.push_back({pluto, 60.0f, 0.04f, 0.08f, 0.0f, sun});
 
@@ -378,6 +387,11 @@ void Game3D::initSolarSystemScene() {
         );
         auto kuiperObject = std::make_shared<m3D::PrimitiveShape>("KuiperObject", kuiperPosition, glm::vec3(0.0f), glm::vec3(size), glm::vec3(0.5f, 0.3f, 0.2f));
         kuiperObject->setMesh(sphereMesh);
+        kuiperObject->setCustomShader(&planetShader);
+        kuiperObject->setShaderVec3("baseColor1", glm::vec3(0.3f, 0.3f, 0.4f));
+        kuiperObject->setShaderVec3("baseColor2", glm::vec3(0.1f, 0.1f, 0.2f));
+        kuiperObject->setShaderFloat("gradientFactor", 0.4f);
+        kuiperObject->setShaderFloat("shininess", 4.0f);
         scene.AddObject(kuiperObject);
         orbitalBodies.push_back({kuiperObject, orbitR, speed, 0.2f, angle, sun});
     }
@@ -392,6 +406,10 @@ void Game3D::initSolarSystemScene() {
         glm::vec3 starPosition = glm::normalize(glm::vec3(starPosDist(gen), starPosDist(gen), starPosDist(gen))) * starFieldRadius;
         auto star = std::make_shared<m3D::PrimitiveShape>("Star", starPosition, glm::vec3(0.0f), glm::vec3(starSizeDist(gen)), glm::vec3(1.0f, 1.0f, 1.0f));
         star->setMesh(sphereMesh);
+        star->setCustomShader(&planetShader);
+        star->setShaderVec3("baseColor1", glm::vec3(1.0f, 1.0f, 0.8f)); // Light yellow
+        star->setShaderVec3("baseColor2", glm::vec3(1.0f, 1.0f, 1.0f)); // White
+        star->setShaderFloat("gradientFactor", 2.0f); // Make the gradient more pronounced
         scene.AddObject(star);
     }
 }

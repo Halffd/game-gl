@@ -58,7 +58,7 @@ public:
     
     // Shader management
     void setCustomShader(Shader* shader);
-    Shader* getShader() const;
+    Shader* getShader() const override;
     void setShaderVec3(const std::string& name, const glm::vec3& value);
     void setShaderFloat(const std::string& name, float value);
     

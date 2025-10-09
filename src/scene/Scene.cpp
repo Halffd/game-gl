@@ -28,3 +28,7 @@ void Scene::draw(Shader& shader) {
         object->Draw(shader);
     }
 }
+
+std::vector<std::shared_ptr<SceneObject>>& Scene::getObjects() {
+    return objects;
+}

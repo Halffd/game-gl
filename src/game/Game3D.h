@@ -86,6 +86,7 @@ public:
     bool runMode;
     float baseMovementSpeed;
     int maxAsteroids = 100;
+    bool useFramebuffer;
 
 private:
     Scene scene;

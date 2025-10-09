@@ -14,6 +14,8 @@ public:
     void update(float dt);
     void draw(Shader& shader);
 
+    std::vector<std::shared_ptr<SceneObject>>& getObjects();
+
 private:
     std::vector<std::unique_ptr<Entity>> entities;
     std::vector<std::shared_ptr<SceneObject>> objects;

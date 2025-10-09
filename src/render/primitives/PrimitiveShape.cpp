@@ -49,24 +49,21 @@ PrimitiveShape::PrimitiveShape(const std::string& name,
 
 void PrimitiveShape::Draw(Shader& shader) {
     if (!visible || !mesh) {
-        std::cout << "Not drawing " << name << ": visible=" << visible << ", mesh=" << (mesh ? "valid" : "null") << std::endl;
         return;
     }
     
-    // Activate shader
-    shader.Use();
-    
-    // Set model matrix
     shader.SetMatrix4("model", GetModelMatrix());
     
-    // Set material properties
-    shader.SetVector3f("material.color", color.x, color.y, color.z);
-    shader.SetFloat("material.ambient", GetMaterialProperty("ambient"));
-    shader.SetFloat("material.diffuse", GetMaterialProperty("diffuse"));
-    shader.SetFloat("material.specular", GetMaterialProperty("specular"));
-    shader.SetFloat("material.shininess", GetMaterialProperty("shininess"));
+    // Only set custom parameters if the shader is the custom shader
+    if (customShader && shader.ID == customShader->ID) {
+        for (const auto& pair : shaderVec3Params) {
+            shader.SetVector3f(pair.first.c_str(), pair.second);
+        }
+        for (const auto& pair : shaderFloatParams) {
+            shader.SetFloat(pair.first.c_str(), pair.second);
+        }
+    }
     
-    // Draw the mesh
     mesh->Draw(shader);
 }
 

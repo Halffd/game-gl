@@ -100,30 +100,38 @@ void Renderer3D::renderWithCustomView(Scene& scene, Camera& camera,
     }
 void Renderer3D::render(Scene& scene, Camera& camera) {
     // Configure shader for rendering
-    Shader &shader = ResourceManager::GetShader("model");
-    shader.Use();
+    Shader &defaultShader = ResourceManager::GetShader("model");
 
     // Set camera uniforms
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float) SCREEN_WIDTH / (float) SCREEN_HEIGHT,
                                             0.1f, 1000.0f);
     glm::mat4 view = camera.GetViewMatrix();
-    shader.SetMatrix4("projection", projection);
-    shader.SetMatrix4("view", view);
-
-    // Set lighting uniforms
-    setLightingUniforms(shader, camera);
 
     // PHASE 1: Render regular objects and mark them in stencil buffer
     glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
     // Render the ground
-    renderGround(shader);
+    defaultShader.Use();
+    defaultShader.SetMatrix4("projection", projection);
+    defaultShader.SetMatrix4("view", view);
+    setLightingUniforms(defaultShader, camera);
+    renderGround(defaultShader);
+
     // 1st. render pass, draw objects as normal, writing to the stencil buffer
     // --------------------------------------------------------------------
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
     glStencilMask(0xFF);
     
-    scene.draw(shader);
-
+    for (auto& object : scene.getObjects()) {
+        Shader* customShader = object->getShader();
+        Shader& activeShader = customShader ? *customShader : defaultShader;
+        
+        activeShader.Use();
+        activeShader.SetMatrix4("projection", projection);
+        activeShader.SetMatrix4("view", view);
+        setLightingUniforms(activeShader, camera);
+        
+        object->Draw(activeShader);
+    }
 
     // 2nd. render pass: now draw slightly scaled versions of the objects, this time disabling stencil writing.
     // Because the stencil buffer is now filled with several 1s. The parts of the buffer that are 1 are not drawn, thus only drawing
@@ -144,7 +152,11 @@ void Renderer3D::render(Scene& scene, Camera& camera) {
     const float outlineScale = 1.03f; // 5% larger
 
     // Render model outlines
-    scene.draw(outlineShader);
+    for (auto& object : scene.getObjects()) {
+        // We need to set the model matrix for the outline shader
+        outlineShader.SetMatrix4("model", object->GetModelMatrix());
+        object->Draw(outlineShader);
+    }
 
     // restore state
     glStencilMask(0xFF);

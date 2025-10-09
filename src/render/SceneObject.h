@@ -28,6 +28,8 @@ public:
     
     // Virtual draw function to be implemented by derived classes
     virtual void Draw(Shader& shader) = 0;
+
+    virtual Shader* getShader() const { return nullptr; }
     
     // Get model matrix based on position, rotation, and scale
     glm::mat4 GetModelMatrix() const {
