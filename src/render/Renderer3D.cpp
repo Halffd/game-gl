@@ -133,6 +133,16 @@ void Renderer3D::render(Scene& scene, Camera& camera) {
         object->Draw(activeShader);
     }
 
+    for (auto& entity : scene.getEntities()) {
+        for (auto& component : entity->getComponents()) {
+            defaultShader.Use();
+            defaultShader.SetMatrix4("projection", projection);
+            defaultShader.SetMatrix4("view", view);
+            setLightingUniforms(defaultShader, camera);
+            component->draw(defaultShader);
+        }
+    }
+
     // 2nd. render pass: now draw slightly scaled versions of the objects, this time disabling stencil writing.
     // Because the stencil buffer is now filled with several 1s. The parts of the buffer that are 1 are not drawn, thus only drawing
     // the objects' size differences, making it look like borders.

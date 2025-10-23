@@ -4,7 +4,7 @@
 #define PI 3.14159265359f
 
 CelestialBody::CelestialBody(float mass, float radius, float rotationPeriod, float axialTilt)
-    : mass(mass), radius(radius), rotationPeriod(rotationPeriod), axialTilt(axialTilt), sphereModel(nullptr) {
+    : mass(mass), radius(radius), rotationPeriod(rotationPeriod), axialTilt(axialTilt), VAO(0), VBO(0), texture(0), sphereModel(nullptr) {
     position = glm::vec3(0.0f);
     velocity = glm::vec3(0.0f);
     currentRotation = 0.0f;
@@ -23,9 +23,10 @@ CelestialBody::~CelestialBody() {
     }
 
     // Clean up model if it was created internally
-    //if (sphereModel) {
-    //    delete sphereModel;
-    //}
+    if (sphereModel) {
+        delete sphereModel;
+        sphereModel = nullptr;
+    }
 }
 
 void CelestialBody::Update(float deltaTime) {
@@ -62,8 +63,14 @@ void CelestialBody::Draw(Shader &shader) {
     SetupMaterial(shader);
 
     // Draw the sphere
-    //if (sphereModel)
-    //    sphereModel->Draw(shader);
+    if (sphereModel)
+        sphereModel->Draw(shader);
+    else {
+        // Fallback: Draw using VAO/VBO if no model is available
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 0, GL_UNSIGNED_INT, 0); // This needs proper index count
+        glBindVertexArray(0);
+    }
 }
 
 void CelestialBody::SetupSphere() {
@@ -78,5 +85,5 @@ void CelestialBody::SetupSphere() {
 
     // For now, we'll leave this as a placeholder to be implemented
     // based on how your engine handles primitive shapes
-    std::cout << "Note: Sphere generation needs to be implemented based on your engine's model system\n";
+    // std::cout << "Note: Sphere generation needs to be implemented based on your engine's model system\n";
 }

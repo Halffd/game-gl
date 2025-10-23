@@ -5,12 +5,11 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec3 LocalPos;
 
-// Planet properties
-uniform vec3 baseColor1;      // Primary color
-uniform vec3 baseColor2;      // Secondary color for gradient
-uniform vec3 highlightColor;  // Highlight/specular color
-uniform float shininess;      // Controls the sharpness of the highlight
-uniform float gradientFactor; // Controls the gradient blend (0.0 to 1.0)
+// Star properties
+uniform vec3 starColor;        // Base color of the star
+uniform float luminosity;      // Overall brightness/luminosity
+uniform float temperature;     // Surface temperature (for color calculation)
+uniform float shininess;       // Controls the sharpness of the highlight
 
 // NEW: Blinn-Phong toggle
 uniform bool useBlinnPhong = true; // Toggle between Phong and Blinn-Phong
@@ -67,43 +66,6 @@ float random(vec3 pos) {
     return fract(sin(dot(pos, vec3(12.9898, 78.233, 45.5432))) * 43758.5453);
 }
 
-// Simple noise function for surface detail
-float noise(vec3 pos) {
-    vec3 i = floor(pos);
-    vec3 f = fract(pos);
-    
-    float a = random(i);
-    float b = random(i + vec3(1.0, 0.0, 0.0));
-    float c = random(i + vec3(0.0, 1.0, 0.0));
-    float d = random(i + vec3(1.0, 1.0, 0.0));
-    float e = random(i + vec3(0.0, 0.0, 1.0));
-    float g = random(i + vec3(1.0, 0.0, 1.0));
-    float h = random(i + vec3(0.0, 1.0, 1.0));
-    float j = random(i + vec3(1.0, 1.0, 1.0));
-    
-    vec3 u = f * f * (3.0 - 2.0 * f);
-    
-    return mix(
-        mix(mix(a, b, u.x), mix(c, d, u.x), u.y),
-        mix(mix(e, g, u.x), mix(h, j, u.x), u.y),
-        u.z);
-}
-
-// Fractional Brownian motion for more interesting patterns
-float fbm(vec3 pos) {
-    float total = 0.0;
-    float frequency = 1.0;
-    float amplitude = 0.5;
-    
-    for (int i = 0; i < 4; i++) {
-        total += noise(pos * frequency) * amplitude;
-        frequency *= 2.0;
-        amplitude *= 0.5;
-    }
-    
-    return total;
-}
-
 // NEW: Unified specular calculation function
 float CalculateSpecular(vec3 lightDir, vec3 normal, vec3 viewDir, float shininessValue) {
     if (useBlinnPhong) {
@@ -127,16 +89,9 @@ void main() {
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
     
-    // Generate gradient based on y-coordinate (poles to equator)
-    float gradient = (LocalPos.y + 1.0) * 0.5; // Convert from [-1, 1] to [0, 1]
-    
-    // Add some noise to the gradient for more natural look
-    float noiseValue = fbm(LocalPos * 2.0) * 0.2;
-    gradient = clamp(gradient + noiseValue, 0.0, 1.0);
-    
-    // Blend between the two base colors based on the gradient
-    vec3 diffuseColor = mix(baseColor1, baseColor2, gradient * gradientFactor);
-    vec3 specularColor = highlightColor;
+    // For stars, we want a more uniform color with possible radial gradients
+    vec3 diffuseColor = starColor;
+    vec3 specularColor = vec3(1.0); // Stars are very reflective/light-emitting
 
     // Calculate lighting
     vec3 result = vec3(0.0);
@@ -156,9 +111,9 @@ void main() {
         result += CalcSpotLight(spotLight, norm, FragPos, viewDir, diffuseColor, specularColor);
     }
 
-    // If no lights are enabled, use a basic ambient light
+    // If no lights are enabled, use the star's own luminosity
     if(!useDirLight && !usePointLight && !useSpotLight) {
-        result = diffuseColor * 0.3; // Basic ambient
+        result = starColor * luminosity; // Stars emit their own light
     }
     
     FragColor = vec4(result, 1.0);

@@ -32,3 +32,7 @@ void Scene::draw(Shader& shader) {
 std::vector<std::shared_ptr<SceneObject>>& Scene::getObjects() {
     return objects;
 }
+
+const std::vector<std::unique_ptr<Entity>>& Scene::getEntities() const {
+    return entities;
+}

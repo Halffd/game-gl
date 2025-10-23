@@ -27,7 +27,7 @@ protected:
     
     // OpenGL rendering data
     unsigned int VAO, VBO;
-    m3D::Model sphereModel;      // Using model class for sphere rendering
+    m3D::Model* sphereModel;      // Using model class for sphere rendering (pointer to allow null)
 
 public:
     CelestialBody(float mass, float radius, float rotationPeriod, float axialTilt);
@@ -40,8 +40,15 @@ public:
     
     // Getters
     glm::vec3 GetPosition() const { return position; }
+    glm::vec3 GetVelocity() const { return velocity; }
     float GetMass() const { return mass; }
     float GetRadius() const { return radius; }
+    float GetSchwarzschildRadius() const { return (2.0f * 6.67430e-11f * mass) / (3.0e8f * 3.0e8f); }  // 2GM/c²
+    glm::vec3 GetColor() const { return color; }
+    
+    // Setters
+    void SetPosition(const glm::vec3& pos) { position = pos; }
+    void SetColor(const glm::vec3& col) { color = col; }
     
 protected:
     void SetupSphere();

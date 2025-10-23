@@ -382,7 +382,10 @@ namespace m3D
                 180, 180, 180, 255,  200, 200, 200, 255
             };
             
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, embeddedTexture);
+
+            GLenum embeddedFormat = gamma ? GL_SRGB_ALPHA : GL_RGBA;
+            glTexImage2D(GL_TEXTURE_2D, 0, embeddedFormat, 2, 2, 0, GL_RGBA, 
+             GL_UNSIGNED_BYTE, embeddedTexture);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -487,7 +490,12 @@ namespace m3D
             std::cout << "Created fallback checkerboard texture with ID: " << textureID << std::endl;
             
             glBindTexture(GL_TEXTURE_2D, textureID);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, checkerboard);
+            
+
+GLenum fallbackFormat = gamma ? GL_SRGB_ALPHA : GL_RGBA;
+glTexImage2D(GL_TEXTURE_2D, 0, fallbackFormat, 2, 2, 0, GL_RGBA, 
+             GL_UNSIGNED_BYTE, checkerboard);
+             glGenerateMipmap(GL_TEXTURE_2D);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -500,12 +508,11 @@ namespace m3D
     }
 
     // Helper function to create a texture from a color
-    unsigned int Model::createColorTexture(float r, float g, float b) {
+    unsigned int Model::createColorTexture(float r, float g, float b, bool gamma) {
         unsigned int textureID;
         glGenTextures(1, &textureID);
         glBindTexture(GL_TEXTURE_2D, textureID);
         
-        // Create a simple colored texture
         unsigned char colorTexture[4] = {
             static_cast<unsigned char>(r * 255), 
             static_cast<unsigned char>(g * 255), 
@@ -513,7 +520,9 @@ namespace m3D
             255
         };
         
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, colorTexture);
+        GLenum internalFormat = gamma ? GL_SRGB_ALPHA : GL_RGBA;
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, 1, 1, 0, GL_RGBA, 
+                     GL_UNSIGNED_BYTE, colorTexture);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);

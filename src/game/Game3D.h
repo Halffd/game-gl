@@ -13,15 +13,18 @@
 #include "render/Framebuffer.hpp"
 #include "render/primitives/2d/2D.hpp"
 #include "render/objects/Mirror.h"
-
+#include "render/space/CelestialBody.h"
+#include "render/space/Star.h"
+#include "render/space/Planet.h"
 struct GLFWwindow;
 
 class Game3D {
 public:
     Game3D();
+    ~Game3D();
     void init();
     void run();
-
+    
 private:
     void processInput();
     void mouse_callback(double xpos, double ypos);
@@ -35,6 +38,7 @@ private:
     std::shared_ptr<VO::Quad> m_screenQuad;
     Shader* m_postProcessShader;
     glm::vec2 m_framebufferSize;
+    bool usePhong = false;
 public:
     Camera camera;
     bool firstMouse;
@@ -56,7 +60,12 @@ public:
 
     std::vector<std::string> modelNames;
 
+    std::vector<CelestialBody*> celestialBodies;
+    float timeScale = 1000.0f; // Speed up time for visualization
 
+
+    void updateSolarSystem(float deltaTime);
+    void renderSolarSystem(Shader& shader);
     std::unique_ptr<Mirror> m_rearViewMirror;
     bool m_showMirror = true;
     std::vector<std::shared_ptr<m3D::PrimitiveShape> > primitiveShapes;

@@ -69,6 +69,12 @@ uniform float dirLightBrightness = 1.4;   // Default: 140% of original (40% incr
 uniform float spotLightBrightness = 1.8;  // Default: 180% of original (80% increase)
 uniform bool useCelShading;
 
+// NEW: Blinn-Phong toggle and direct color support
+uniform bool useBlinnPhong = true;         // Toggle between Phong and Blinn-Phong
+uniform bool useDirectColor = false;       // Use direct color instead of textures
+uniform vec3 directDiffuseColor = vec3(0.8, 0.8, 0.8);  // Direct diffuse color
+uniform vec3 directSpecularColor = vec3(1.0, 1.0, 1.0); // Direct specular color
+
 // Other uniforms
 uniform vec3 viewPos;
 uniform bool useNormalMap;
@@ -81,6 +87,8 @@ uniform float shininess;
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
+float CalculateSpecular(vec3 lightDir, vec3 normal, vec3 viewDir, float shininessValue);
+
 float near = 0.1;
 float far  = 100.0;
 uniform vec3 fogColor = vec3(0.7, 0.7, 0.7); // light gray fog
@@ -114,6 +122,7 @@ vec3 calculateCheckerboardNormal(vec2 position, float scale, float height) {
 
     return normalize(normal);
 }
+
 // Recover eye‑space Z from non‑linear depth buffer
 float LinearizeDepth(float d)
 {
@@ -122,11 +131,13 @@ float LinearizeDepth(float d)
     return (2.0 * near * far)
             / (far + near - z_ndc * (far - near));
 }
+
 vec3 ApplyFog(vec3 color, float depth)
 {
     float fogFactor = clamp((fogEnd - depth) / (fogEnd - fogStart), 0.0, 1.0);
     return mix(fogColor, color, fogFactor);
 }
+
 void depthTest()
 {
     // get eye-space Z, then normalize to [0,1] for visualization
@@ -135,6 +146,7 @@ void depthTest()
     // output normalized Z to the fragment shader
     FragColor = vec4(vec3(normalized), 1.0);
 }
+
 vec3 ApplyCelShading(vec3 lightColor, float diffuseIntensity, float specularIntensity, bool useSpecular) {
     // Quantize diffuse into steps
     float levels = 3.0;
@@ -155,29 +167,53 @@ vec3 ApplyCelShading(vec3 lightColor, float diffuseIntensity, float specularInte
     return vec3(quantizedDiffuse, spec, 0.0);
 }
 
+// NEW: Unified specular calculation function
+float CalculateSpecular(vec3 lightDir, vec3 normal, vec3 viewDir, float shininessValue) {
+    if (useBlinnPhong) {
+        // Blinn-Phong: use halfway vector
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        return pow(max(dot(normal, halfwayDir), 0.0), shininessValue);
+    } else {
+        // Classic Phong: use reflection vector
+        vec3 reflectDir = reflect(-lightDir, normal);
+        return pow(max(dot(viewDir, reflectDir), 0.0), shininessValue);
+    }
+}
+
 void main()
 {
     // depthTest(); // call depthTest function
-    // Sample the diffuse texture
-    vec4 texColor = texture(texture_diffuse1, TexCoords);
+    
+    // Get diffuse and specular colors
+    vec3 diffuseColor;
+    vec3 specularColor;
+    
+    if (useDirectColor) {
+        // Use direct color uniforms
+        diffuseColor = directDiffuseColor;
+        specularColor = directSpecularColor;
+    } else {
+        // Sample the diffuse texture
+        vec4 texColor = texture(texture_diffuse1, TexCoords);
 
-    // If the texture is completely transparent, discard the fragment
-    if(texColor.a < 0.1)
-        discard;
+        // If the texture is completely transparent, discard the fragment
+        if(texColor.a < 0.1)
+            discard;
 
-    // Get diffuse color
-    vec3 diffuseColor = texColor.rgb;
+        // Get diffuse color from texture
+        diffuseColor = texColor.rgb;
 
-    // Apply detail map if available
-    if(useDetailMap) {
-        vec3 detailColor = texture(texture_detail1, TexCoords * 5.0).rgb; // Scale UVs for detail
-        diffuseColor = mix(diffuseColor, detailColor, 0.3); // Blend with 30% detail
-    }
+        // Apply detail map if available
+        if(useDetailMap) {
+            vec3 detailColor = texture(texture_detail1, TexCoords * 5.0).rgb; // Scale UVs for detail
+            diffuseColor = mix(diffuseColor, detailColor, 0.3); // Blend with 30% detail
+        }
 
-    // Get specular color
-    vec3 specularColor = vec3(0.5);
-    if(useSpecularMap) {
-        specularColor = texture(texture_specular1, TexCoords).rgb;
+        // Get specular color
+        specularColor = vec3(0.5);
+        if(useSpecularMap) {
+            specularColor = texture(texture_specular1, TexCoords).rgb;
+        }
     }
 
     // Get normal from normal map, use checkerboard for ground, or use the interpolated normal
@@ -205,9 +241,9 @@ void main()
         viewDir = normalize(viewPos - FragPos);
     }
 
-    // Calculate scatter effect if available
+    // Calculate scatter effect if available (only if not using direct color)
     float scatter = 0.0;
-    if(useScatterMap) {
+    if(useScatterMap && !useDirectColor) {
         scatter = texture(texture_scatter1, TexCoords).r;
     }
 
@@ -236,8 +272,8 @@ void main()
         result += CalcSpotLight(spotLight, norm, FragPos, viewDir, diffuseColor, specularColor);
     }
 
-    // Add scatter effect
-    if(useScatterMap) {
+    // Add scatter effect (only if not using direct color)
+    if(useScatterMap && !useDirectColor) {
         result += diffuseColor * scatter * 0.5;
     }
 
@@ -245,9 +281,8 @@ void main()
     if(!useDirLight && !usePointLight && !useSpotLight && !useRandomPointLights) {
         result = diffuseColor * 0.3; // Basic ambient
     }
+    
     float linearZ = LinearizeDepth(gl_FragCoord.z);
-    //float fade = clamp(1.0 - linearZ / 8.0, 0.0, 1.0); // fades beyond 50 units
-    //result *= fade;
 
     // Apply fog
     result = ApplyFog(result, linearZ);
@@ -255,7 +290,10 @@ void main()
     if (linearZ >= fogEnd) {
         discard;
     }
-    FragColor = vec4(result, texColor.a);
+    
+    // Use texture alpha if available, otherwise full opacity
+    float alpha = useDirectColor ? 1.0 : texture(texture_diffuse1, TexCoords).a;
+    FragColor = vec4(result, alpha);
 }
 
 // Calculates the color when using a directional light
@@ -272,9 +310,9 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 diffuseColor, 
     // Square the diffuse factor to increase intensity
     diff = diff * diff;
 
-    // Specular shading
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    // Specular shading - use the new unified function
+    float effectiveShininess = useBlinnPhong ? shininess * 2.5 : shininess; // Blinn-Phong needs higher exponent
+    float spec = CalculateSpecular(lightDir, normal, viewDir, effectiveShininess);
     // Square the specular factor to increase intensity
     spec = spec * spec;
 
@@ -309,9 +347,9 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
     // Diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
 
-    // Specular shading
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    // Specular shading - use the new unified function
+    float effectiveShininess = useBlinnPhong ? shininess * 2.5 : shininess;
+    float spec = CalculateSpecular(lightDir, normal, viewDir, effectiveShininess);
 
     // Improved attenuation with distance-based falloff
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
@@ -337,7 +375,6 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
         lighting = light.diffuse * diff * diffuseColor + light.specular * spec * specularColor;
     }
     return lighting * attenuation * pointLightBrightness + ambient;
-
 }
 
 // Calculates the color when using a spot light
@@ -361,9 +398,9 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec
     // Diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
 
-    // Specular shading
-    vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    // Specular shading - use the new unified function
+    float effectiveShininess = useBlinnPhong ? shininess * 2.5 : shininess;
+    float spec = CalculateSpecular(lightDir, normal, viewDir, effectiveShininess);
 
     // Attenuation
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));

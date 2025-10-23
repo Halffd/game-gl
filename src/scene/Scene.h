@@ -15,6 +15,7 @@ public:
     void draw(Shader& shader);
 
     std::vector<std::shared_ptr<SceneObject>>& getObjects();
+    const std::vector<std::unique_ptr<Entity>>& getEntities() const;
 
 private:
     std::vector<std::unique_ptr<Entity>> entities;
