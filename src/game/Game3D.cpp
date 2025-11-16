@@ -49,7 +49,7 @@ Game3D::Game3D()
 }
 
 Game3D::~Game3D() {
-    delete m_postProcessShader;
+    // Don't delete m_postProcessShader as it's managed by ResourceManager
     delete skybox;
     delete skyboxCubemap;
     
