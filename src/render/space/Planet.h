@@ -41,6 +41,7 @@ public:
     Planet(float mass, float radius, float rotationPeriod, float axialTilt,
            CelestialBody* parent, float orbitalPeriod, float semiMajorAxis, 
            float eccentricity, float inclination,
+           std::shared_ptr<m3D::Mesh> mesh,
            float argumentOfPeriapsis = 0.0f, 
            float longitudeAscendingNode = 0.0f,
            float meanAnomalyAtEpoch = 0.0f);

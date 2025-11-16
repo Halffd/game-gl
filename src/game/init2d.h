@@ -1,7 +1,3 @@
-//
-// Created by halff on 12/09/2024.
-//
-
 #ifndef INIT_2D_H
 #define INIT_2D_H
 

@@ -16,6 +16,7 @@
 #include "render/space/CelestialBody.h"
 #include "render/space/Star.h"
 #include "render/space/Planet.h"
+#include "render/Skybox.h"
 struct GLFWwindow;
 
 class Game3D {
@@ -67,7 +68,7 @@ public:
     void updateSolarSystem(float deltaTime);
     void renderSolarSystem(Shader& shader);
     std::unique_ptr<Mirror> m_rearViewMirror;
-    bool m_showMirror = true;
+    bool m_showMirror = false;
     std::vector<std::shared_ptr<m3D::PrimitiveShape> > primitiveShapes;
     std::vector<glm::vec3> rotationSpeeds;
 
@@ -86,15 +87,22 @@ public:
     bool useDynamicShapes;
     bool showDynamicShapesWindow;
     bool useSolarSystemScene;
+    bool useSkybox = true; // Enable/disable skybox rendering
 
     std::shared_ptr<m3D::Mesh> sphereMesh;
     Shader planetShader;  // Shader for rendering planets with gradients
+
+    // Skybox functionality
+    Skybox* skybox;
+    Cubemap* skyboxCubemap;
 
     bool showCartesianPlane;
     bool showTriangleContours;
     bool runMode;
     float baseMovementSpeed;
     int maxAsteroids = 100;
+    int maxKuiperBeltObjects = 200;
+    int maxDistantStars = 1000;
     bool useFramebuffer;
 
 private:

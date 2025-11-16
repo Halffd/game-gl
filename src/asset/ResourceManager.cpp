@@ -130,7 +130,9 @@ Shader& ResourceManager::LoadShader(const char *vShaderFile, const char *fShader
     if (!includes(fShaderFile, ":"))
     {
         fShaderFile = GetShaderPath(fShaderFile);
-    }
+    }  
+    
+    //std::cout << "Loading shader: " << vShaderFile << " " << fShaderFile << " " << gShaderFile << std::endl;
     auto shader = std::make_shared<Shader>();
     loadShaderFromFile(*shader, vShaderFile, fShaderFile, gShaderFile);
     Shaders[name] = shader;
@@ -362,6 +364,7 @@ Texture2D ResourceManager::loadTexture2DFromFile(const char *file, bool alpha, G
     unsigned char *data = stbi_load(file, &width, &height, &nrChannels, 0);
     if (!data)
     {
+        printf("Failed to load texture: %s\n", file);
         std::cerr << "Failed to load texture: " << file << std::endl;
         texture.status = -1;
         return texture;

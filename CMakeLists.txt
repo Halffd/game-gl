@@ -131,5 +131,12 @@ add_custom_command(
     ${CMAKE_BINARY_DIR}/models
 )
 
+add_custom_command(
+    TARGET GameEngine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/textures
+    ${CMAKE_BINARY_DIR}/textures
+)
+
 # Print message during build
 message(STATUS "Resource directories will be copied to build directory")

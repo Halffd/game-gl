@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
+#include <memory>
 #include "render/Shader.h"
 #include "render/Model.h"
 
@@ -27,17 +28,17 @@ protected:
     
     // OpenGL rendering data
     unsigned int VAO, VBO;
-    m3D::Model* sphereModel;      // Using model class for sphere rendering (pointer to allow null)
+    std::shared_ptr<m3D::Mesh> sphereMesh; // Shared mesh for rendering
 
 public:
-    CelestialBody(float mass, float radius, float rotationPeriod, float axialTilt);
+    CelestialBody(float mass, float radius, float rotationPeriod, float axialTilt, std::shared_ptr<m3D::Mesh> mesh);
     virtual ~CelestialBody();
-    
+
     virtual void Update(float deltaTime);
     virtual void Draw(Shader &shader);
-    
+
     virtual void SetupMaterial(Shader &shader) = 0;
-    
+
     // Getters
     glm::vec3 GetPosition() const { return position; }
     glm::vec3 GetVelocity() const { return velocity; }
@@ -45,12 +46,12 @@ public:
     float GetRadius() const { return radius; }
     float GetSchwarzschildRadius() const { return (2.0f * 6.67430e-11f * mass) / (3.0e8f * 3.0e8f); }  // 2GM/c²
     glm::vec3 GetColor() const { return color; }
-    
+
     // Setters
     void SetPosition(const glm::vec3& pos) { position = pos; }
     void SetColor(const glm::vec3& col) { color = col; }
-    
-protected:
+
+protected: 
     void SetupSphere();
 };
 

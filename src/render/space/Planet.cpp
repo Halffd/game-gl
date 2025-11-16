@@ -9,9 +9,10 @@
 Planet::Planet(float mass, float radius, float rotationPeriod, float axialTilt,
                CelestialBody* parent, float orbitalPeriod, float semiMajorAxis,
                float eccentricity, float inclination,
+               std::shared_ptr<m3D::Mesh> mesh,
                float argumentOfPeriapsis, float longitudeAscendingNode,
                float meanAnomalyAtEpoch)
-    : CelestialBody(mass, radius, rotationPeriod, axialTilt),
+    : CelestialBody(mass, radius, rotationPeriod, axialTilt, mesh),
       parent(parent), 
       orbitalPeriod(orbitalPeriod), 
       semiMajorAxis(semiMajorAxis),

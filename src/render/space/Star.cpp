@@ -16,8 +16,8 @@ static void RenderQuad();
 #define SOLAR_RADIUS 6.957e8f             // meters
 
 Star::Star(float mass, float radius, float rotationPeriod, float axialTilt,
-           float luminosity, float temperature)
-    : CelestialBody(mass, radius, rotationPeriod, axialTilt),
+           float luminosity, float temperature, std::shared_ptr<m3D::Mesh> mesh)
+    : CelestialBody(mass, radius, rotationPeriod, axialTilt, mesh),
       luminosity(luminosity), 
       temperature(temperature),
       glowVAO(0),

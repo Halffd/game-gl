@@ -124,7 +124,7 @@ private:
 
 public:
     Star(float mass, float radius, float rotationPeriod, float axialTilt, 
-         float luminosity, float temperature);
+         float luminosity, float temperature, std::shared_ptr<m3D::Mesh> mesh);
     ~Star();
     
     // Override methods
