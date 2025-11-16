@@ -3,14 +3,13 @@
 #include <iostream>
 #define PI 3.14159265359f
 
-CelestialBody::CelestialBody(float mass, float radius, float rotationPeriod, float axialTilt)
-    : mass(mass), radius(radius), rotationPeriod(rotationPeriod), axialTilt(axialTilt), VAO(0), VBO(0), texture(0), sphereModel(nullptr) {
+CelestialBody::CelestialBody(float mass, float radius, float rotationPeriod, float axialTilt, std::shared_ptr<m3D::Mesh> mesh)
+    : mass(mass), radius(radius), rotationPeriod(rotationPeriod), axialTilt(axialTilt), VAO(0), VBO(0), texture(0), sphereMesh(mesh) {
     position = glm::vec3(0.0f);
     velocity = glm::vec3(0.0f);
     currentRotation = 0.0f;
     color = glm::vec3(1.0f); // Default white
     texture = 0;
-    SetupSphere();
 }
 
 CelestialBody::~CelestialBody() {
@@ -20,12 +19,6 @@ CelestialBody::~CelestialBody() {
     }
     if (VBO) {
         glDeleteBuffers(1, &VBO);
-    }
-
-    // Clean up model if it was created internally
-    if (sphereModel) {
-        delete sphereModel;
-        sphereModel = nullptr;
     }
 }
 
@@ -63,27 +56,12 @@ void CelestialBody::Draw(Shader &shader) {
     SetupMaterial(shader);
 
     // Draw the sphere
-    if (sphereModel)
-        sphereModel->Draw(shader);
+    if (sphereMesh)
+        sphereMesh->Draw(shader);
     else {
         // Fallback: Draw using VAO/VBO if no model is available
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 0, GL_UNSIGNED_INT, 0); // This needs proper index count
         glBindVertexArray(0);
     }
-}
-
-void CelestialBody::SetupSphere() {
-    // This would ideally load a sphere model or create a UV sphere mesh procedurally
-    // For simplicity, we'll assume there's an existing sphere model or a utility to create one
-
-    // Option 1: Load model from file
-    // sphereModel = new Model("resources/models/sphere/sphere.obj");
-
-    // Option 2: Create procedural sphere (stub - in a real implementation this would create actual geometry)
-    // or use a primitive shape helper from your engine
-
-    // For now, we'll leave this as a placeholder to be implemented
-    // based on how your engine handles primitive shapes
-    // std::cout << "Note: Sphere generation needs to be implemented based on your engine's model system\n";
 }

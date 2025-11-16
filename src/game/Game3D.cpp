@@ -42,12 +42,16 @@ Game3D::Game3D()
       window(nullptr),
       m_postProcessShader(nullptr),
       useFramebuffer(false),
-      planetShader()
+      planetShader(),
+      skybox(nullptr),
+      skyboxCubemap(nullptr)
 {
 }
 
 Game3D::~Game3D() {
     delete m_postProcessShader;
+    delete skybox;
+    delete skyboxCubemap;
     
     for (auto* body : celestialBodies) {
         delete body;
@@ -130,6 +134,40 @@ void Game3D::init() {
     m_screenQuad->setup();
     std::cout << "Initializing renderer" << std::endl;
     renderer.init();
+
+    // Initialize skybox
+    std::cout << "Initializing skybox..." << std::endl;
+    skyboxCubemap = new Cubemap();
+
+    // Set up the skybox texture parameters
+    skyboxCubemap->Internal_Format = GL_RGB;
+    skyboxCubemap->Image_Format = GL_RGB;
+    skyboxCubemap->Wrap_S = GL_CLAMP_TO_EDGE;
+    skyboxCubemap->Wrap_T = GL_CLAMP_TO_EDGE;
+    skyboxCubemap->Wrap_R = GL_CLAMP_TO_EDGE;
+    skyboxCubemap->Filter_Min = GL_LINEAR;
+    skyboxCubemap->Filter_Max = GL_LINEAR;
+
+    // Load the skybox texture faces
+    std::vector<std::string> faces = {
+        ResourceManager::GetTexturePath("skybox/right.jpg"),
+        ResourceManager::GetTexturePath("skybox/left.jpg"),
+        ResourceManager::GetTexturePath("skybox/top.jpg"),
+        ResourceManager::GetTexturePath("skybox/bottom.jpg"),
+        ResourceManager::GetTexturePath("skybox/front.jpg"),
+        ResourceManager::GetTexturePath("skybox/back.jpg")
+    };
+
+    if (skyboxCubemap->Load(faces)) {
+        std::cout << "Skybox cubemap loaded successfully!" << std::endl;
+        skybox = new Skybox();
+        skybox->cubemap = skyboxCubemap;
+    } else {
+        std::cerr << "Failed to load skybox cubemap!" << std::endl;
+        delete skyboxCubemap;
+        skyboxCubemap = nullptr;
+    }
+
     m_showMirror = false;
     maxAsteroids = 25;
     if (m_showMirror) {
@@ -192,7 +230,8 @@ void Game3D::initSolarSystemScene() {
         25.05f * DAY,           // Rotation period
         0.0f,                   // No axial tilt
         1.0f,                   // Solar luminosity (normalized)
-        5778.0f                 // Surface temperature (K) - G-type star
+        5778.0f,                // Surface temperature (K) - G-type star
+        sphereMesh
     );
     
     sun->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -220,6 +259,7 @@ void Game3D::initSolarSystemScene() {
         0.387f * AU,            // Semi-major axis
         0.2056f,                // Eccentricity (high!)
         7.005f * PI / 180.0f,   // Inclination
+        sphereMesh,
         29.124f * PI / 180.0f,  // Argument of periapsis
         48.331f * PI / 180.0f,  // Longitude of ascending node
         0.0f                    // Mean anomaly at epoch
@@ -240,6 +280,7 @@ void Game3D::initSolarSystemScene() {
         0.723f * AU,
         0.0067f,                // Nearly circular
         3.39f * PI / 180.0f,
+        sphereMesh,
         54.884f * PI / 180.0f,
         76.680f * PI / 180.0f,
         0.0f
@@ -259,6 +300,7 @@ void Game3D::initSolarSystemScene() {
         AU,                     // 1 AU
         0.0167f,                // Low eccentricity
         0.0f,                   // Reference plane
+        sphereMesh,
         102.94f * PI / 180.0f,
         0.0f,
         0.0f
@@ -278,6 +320,7 @@ void Game3D::initSolarSystemScene() {
         3.844e8f,               // 384,400 km
         0.0549f,
         5.145f * PI / 180.0f,
+        sphereMesh,
         0.0f,
         0.0f,
         0.0f
@@ -298,6 +341,7 @@ void Game3D::initSolarSystemScene() {
         1.524f * AU,
         0.0934f,
         1.850f * PI / 180.0f,
+        sphereMesh,
         286.502f * PI / 180.0f,
         49.558f * PI / 180.0f,
         0.0f
@@ -310,7 +354,7 @@ void Game3D::initSolarSystemScene() {
     Planet* phobos = new Planet(
         1.0659e16f, 11.267e3f, 7.65f * 3600.0f, 0.0f,
         mars, 7.65f * 3600.0f, 9.376e6f, 0.0151f, 1.093f * PI / 180.0f,
-        0.0f, 0.0f, 0.0f
+        sphereMesh, 0.0f, 0.0f, 0.0f
     );
     phobos->SetColor(glm::vec3(0.5f, 0.3f, 0.2f));
     mars->AddSatellite(phobos);
@@ -319,7 +363,7 @@ void Game3D::initSolarSystemScene() {
     Planet* deimos = new Planet(
         1.4762e15f, 6.2e3f, 30.3f * 3600.0f, 0.0f,
         mars, 30.3f * 3600.0f, 2.3459e7f, 0.00033f, 1.793f * PI / 180.0f,
-        0.0f, 0.0f, 0.0f
+        sphereMesh, 0.0f, 0.0f, 0.0f
     );
     deimos->SetColor(glm::vec3(0.4f, 0.2f, 0.1f));
     mars->AddSatellite(deimos);
@@ -336,6 +380,7 @@ void Game3D::initSolarSystemScene() {
         5.204f * AU,
         0.0489f,
         1.303f * PI / 180.0f,
+        sphereMesh,
         273.867f * PI / 180.0f,
         100.464f * PI / 180.0f,
         0.0f
@@ -348,7 +393,7 @@ void Game3D::initSolarSystemScene() {
     Planet* io = new Planet(
         8.9319e22f, 1.8216e6f, 42.5f * 3600.0f, 0.0f,
         jupiter, 42.5f * 3600.0f, 4.217e8f, 0.0041f, 0.05f * PI / 180.0f,
-        0.0f, 0.0f, 0.0f
+        sphereMesh, 0.0f, 0.0f, 0.0f
     );
     io->SetColor(glm::vec3(1.0f, 0.8f, 0.2f));
     jupiter->AddSatellite(io);
@@ -357,7 +402,7 @@ void Game3D::initSolarSystemScene() {
     Planet* europa = new Planet(
         4.7998e22f, 1.5608e6f, 85.2f * 3600.0f, 0.0f,
         jupiter, 85.2f * 3600.0f, 6.711e8f, 0.009f, 0.47f * PI / 180.0f,
-        0.0f, 0.0f, 0.0f
+        sphereMesh, 0.0f, 0.0f, 0.0f
     );
     europa->SetColor(glm::vec3(0.6f, 0.6f, 0.8f));
     jupiter->AddSatellite(europa);
@@ -366,7 +411,7 @@ void Game3D::initSolarSystemScene() {
     Planet* ganymede = new Planet(
         1.4819e23f, 2.6341e6f, 172.0f * 3600.0f, 0.0f,
         jupiter, 172.0f * 3600.0f, 1.0704e9f, 0.0013f, 0.2f * PI / 180.0f,
-        0.0f, 0.0f, 0.0f
+        sphereMesh, 0.0f, 0.0f, 0.0f
     );
     ganymede->SetColor(glm::vec3(0.7f, 0.7f, 0.6f));
     jupiter->AddSatellite(ganymede);
@@ -375,7 +420,7 @@ void Game3D::initSolarSystemScene() {
     Planet* callisto = new Planet(
         1.0759e23f, 2.4103e6f, 400.5f * 3600.0f, 0.0f,
         jupiter, 400.5f * 3600.0f, 1.8827e9f, 0.0074f, 0.19f * PI / 180.0f,
-        0.0f, 0.0f, 0.0f
+        sphereMesh, 0.0f, 0.0f, 0.0f
     );
     callisto->SetColor(glm::vec3(0.5f, 0.4f, 0.3f));
     jupiter->AddSatellite(callisto);
@@ -392,6 +437,7 @@ void Game3D::initSolarSystemScene() {
         9.537f * AU,
         0.0565f,
         2.485f * PI / 180.0f,
+        sphereMesh,
         339.392f * PI / 180.0f,
         113.665f * PI / 180.0f,
         0.0f
@@ -400,7 +446,7 @@ void Game3D::initSolarSystemScene() {
     saturn->SetColor(glm::vec3(0.9f, 0.9f, 0.7f));
     
     // Add Saturn's iconic rings
-    Texture2D ringTexture = ResourceManager::LoadTexture2D("textures/saturn_rings.png", "", true);
+    Texture2D ringTexture = ResourceManager::LoadTexture2D("saturn_rings.png", "", true);
     saturn->EnableRings(ringTexture.ID, 7.4e7f * SIZE_SCALE, 1.4e8f * SIZE_SCALE);
     
     celestialBodies.push_back(saturn);
@@ -416,6 +462,7 @@ void Game3D::initSolarSystemScene() {
         19.191f * AU,
         0.04717f,
         0.773f * PI / 180.0f,
+        sphereMesh,
         96.998857f * PI / 180.0f,
         74.006f * PI / 180.0f,
         0.0f
@@ -435,6 +482,7 @@ void Game3D::initSolarSystemScene() {
         30.07f * AU,
         0.008678f,
         1.767f * PI / 180.0f,
+        sphereMesh,
         273.187f * PI / 180.0f,
         131.784f * PI / 180.0f,
         0.0f
@@ -454,6 +502,7 @@ void Game3D::initSolarSystemScene() {
         39.482f * AU,
         0.2488f,                // Very eccentric
         17.16f * PI / 180.0f,   // Highly inclined
+        sphereMesh,
         113.834f * PI / 180.0f,
         110.299f * PI / 180.0f,
         0.0f
@@ -493,6 +542,7 @@ void Game3D::initSolarSystemScene() {
             semiMajor,
             eccentricity,
             inclination,
+            sphereMesh,
             angleDist(gen),        // Random periapsis
             angleDist(gen),        // Random ascending node
             meanAnomaly
@@ -507,9 +557,9 @@ void Game3D::initSolarSystemScene() {
     std::uniform_real_distribution<float> kuiperSizeDist(50000.0f, 1000000.0f); // 50km to 1000km
     std::uniform_real_distribution<float> kuiperInclinationDist(0.0f, 30.0f * PI / 180.0f);
     
-    std::cout << "Generating 200 Kuiper Belt objects..." << std::endl;
+    std::cout << "Generating " << maxKuiperBeltObjects << " Kuiper Belt objects..." << std::endl;
     
-    for (int i = 0; i < 200; ++i) {
+    for (int i = 0; i < maxKuiperBeltObjects; ++i) {
         float semiMajor = kuiperRadiusDist(gen);
         float eccentricity = eccentricityDist(gen);
         float inclination = kuiperInclinationDist(gen);
@@ -528,6 +578,7 @@ void Game3D::initSolarSystemScene() {
             semiMajor,
             eccentricity,
             inclination,
+            sphereMesh,
             angleDist(gen),
             angleDist(gen),
             meanAnomaly
@@ -544,9 +595,9 @@ void Game3D::initSolarSystemScene() {
     std::uniform_real_distribution<float> starRadiusDist(0.1f * SOLAR_RADIUS, 100.0f * SOLAR_RADIUS);
     float starFieldRadius = 5000.0f * AU; // Very far away
     
-    std::cout << "Generating 2000 background stars..." << std::endl;
+    std::cout << "Generating " << maxDistantStars << " background stars..." << std::endl;
     
-    for (int i = 0; i < 2000; ++i) {
+    for (int i = 0; i < maxDistantStars; ++i) {
         // Random position on celestial sphere
         glm::vec3 starDirection = glm::normalize(glm::vec3(
             starPosDist(gen), 
@@ -568,7 +619,8 @@ void Game3D::initSolarSystemScene() {
             (10.0f + (rand() % 100)) * DAY, // Random rotation 10-110 days
             0.0f,
             luminosity,
-            temp
+            temp,
+            sphereMesh
         );
         
         backgroundStar->SetPosition(starPosition);
@@ -677,7 +729,14 @@ void Game3D::run() {
         glViewport(0, 0, m_framebufferSize.x, m_framebufferSize.y);
         m_framebuffer->clear(0.05f, 0.05f, 0.1f);
         glEnable(GL_DEPTH_TEST);
-        
+
+        // Render skybox first (if enabled)
+        if (skybox && useSkybox) {
+            // Use the same projection as main camera
+            glm::mat4 projection = camera.GetProjectionMatrix();
+            skybox->render(camera.GetViewMatrix(), projection);
+        }
+
         renderer.render(scene, camera);
 
         // SCREEN PASS: Render framebuffer to screen with post-processing

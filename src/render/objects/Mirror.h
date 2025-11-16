@@ -3,6 +3,7 @@
 #include "render/Framebuffer.hpp"
 #include "render/Shader.h"
 #include "render/primitives/2d/2D.hpp"
+#include "asset/ResourceManager.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <fstream>
@@ -151,94 +152,14 @@ private:
     }
     
     Shader loadMirrorShader() {
-        // Create shader from source files
-        Shader shader;
-        
-        // Load vertex shader
-        std::string vertexCode;
-        std::ifstream vShaderFile;
-        vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         try {
-            vShaderFile.open("shaders/mirror.vs");
-            std::stringstream vShaderStream;
-            vShaderStream << vShaderFile.rdbuf();
-            vShaderFile.close();
-            vertexCode = vShaderStream.str();
-        } catch (std::ifstream::failure& e) {
-            std::cerr << "ERROR::SHADER::VERTEX::FILE_NOT_SUCCESSFULLY_READ: " << e.what() << std::endl;
+            // Load shader using ResourceManager which handles file path resolution
+            Shader& shader = ResourceManager::LoadShader("mirror.vs", "mirror.fs", "mirror");
+            return shader;
+        } catch (std::exception& e) {
+            std::cerr << "ERROR::SHADER::LOADING_FAILED: " << e.what() << std::endl;
             return Shader();
         }
-        
-        // Load fragment shader
-        std::string fragmentCode;
-        std::ifstream fShaderFile;
-        fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        try {
-            fShaderFile.open("shaders/mirror.fs");
-            std::stringstream fShaderStream;
-            fShaderStream << fShaderFile.rdbuf();
-            fShaderFile.close();
-            fragmentCode = fShaderStream.str();
-        } catch (std::ifstream::failure& e) {
-            std::cerr << "ERROR::SHADER::FRAGMENT::FILE_NOT_SUCCESSFULLY_READ: " << e.what() << std::endl;
-            return Shader();
-        }
-        
-        // Compile shaders
-        const char* vShaderCode = vertexCode.c_str();
-        const char* fShaderCode = fragmentCode.c_str();
-        
-        // Compile vertex shader
-        unsigned int vertex, fragment;
-        int success;
-        char infoLog[512];
-        
-        vertex = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex, 1, &vShaderCode, NULL);
-        glCompileShader(vertex);
-        glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-            std::cerr << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-            return Shader();
-        }
-        
-        // Compile fragment shader
-        fragment = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment, 1, &fShaderCode, NULL);
-        glCompileShader(fragment);
-        glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-            std::cerr << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-            glDeleteShader(vertex);
-            return Shader();
-        }
-        
-        // Link shaders
-        unsigned int ID = glCreateProgram();
-        glAttachShader(ID, vertex);
-        glAttachShader(ID, fragment);
-        glLinkProgram(ID);
-        glGetProgramiv(ID, GL_LINK_STATUS, &success);
-        if (!success) {
-            glGetProgramInfoLog(ID, 512, NULL, infoLog);
-            std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-            glDeleteShader(vertex);
-            glDeleteShader(fragment);
-            return Shader();
-        }
-        
-        // Clean up shaders
-        glDeleteShader(vertex);
-        glDeleteShader(fragment);
-        
-        // Create and return shader
-        shader.ID = ID;
-        shader.Use();
-        shader.SetInteger("mirrorTexture", 0);
-        
-        return shader;
     }
     
     void cleanup() {
