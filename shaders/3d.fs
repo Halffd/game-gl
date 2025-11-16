@@ -285,11 +285,11 @@ void main()
     float linearZ = LinearizeDepth(gl_FragCoord.z);
 
     // Apply fog
-    result = ApplyFog(result, linearZ);
+    //result = ApplyFog(result, linearZ);
 
-    if (linearZ >= fogEnd) {
-        discard;
-    }
+    //if (linearZ >= fogEnd) {
+    //    discard;
+    //}
     
     // Use texture alpha if available, otherwise full opacity
     float alpha = useDirectColor ? 1.0 : texture(texture_diffuse1, TexCoords).a;
