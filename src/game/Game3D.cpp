@@ -733,7 +733,9 @@ void Game3D::run() {
         // Render skybox first (if enabled)
         if (skybox && useSkybox) {
             // Use the same projection as main camera
-            glm::mat4 projection = camera.GetProjectionMatrix();
+            glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
+                                                  (float)m_framebufferSize.x / (float)m_framebufferSize.y,
+                                                  0.1f, 1000.0f);
             skybox->render(camera.GetViewMatrix(), projection);
         }
 

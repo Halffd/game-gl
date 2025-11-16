@@ -2,6 +2,7 @@
 
 #include "Shader.h"
 #include "../asset/Cubemap.h"
+#include "../asset/ResourceManager.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -21,14 +22,14 @@ public:
     ~Skybox() {
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
-        delete skyboxShader;
+        // Don't delete skyboxShader here since it's managed by ResourceManager
         delete cubemap; // Note: Cubemap might be shared, so this should be used carefully
     }
 
     void setup() {
-        // Initialize the skybox shader
-        skyboxShader = new Shader();
-        skyboxShader->Compile("shaders/skybox.vs", "shaders/skybox.fs", nullptr);
+        // Get the skybox shader using ResourceManager
+        ResourceManager::LoadShader("skybox.vs", "skybox.fs", "skybox");
+        skyboxShader = &ResourceManager::GetShader("skybox");
 
         // Define the vertices for a cube
         float skyboxVertices[] = {
