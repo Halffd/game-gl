@@ -730,7 +730,9 @@ void Game3D::run() {
         m_framebuffer->clear(0.05f, 0.05f, 0.1f);
         glEnable(GL_DEPTH_TEST);
 
-        // Render skybox first (if enabled)
+        renderer.render(scene, camera);
+
+        // Render skybox last (if enabled) for performance
         if (skybox && useSkybox) {
             // Use the same projection as main camera
             glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
@@ -738,8 +740,6 @@ void Game3D::run() {
                                                   0.1f, 1000.0f);
             skybox->render(camera.GetViewMatrix(), projection);
         }
-
-        renderer.render(scene, camera);
 
         // SCREEN PASS: Render framebuffer to screen with post-processing
         m_framebuffer->unbind();

@@ -93,13 +93,21 @@ public:
             return;
         }
 
-        // Disable depth writing
+        // Save current depth function
+        GLint currentDepthFunc;
+        glGetIntegerv(GL_DEPTH_FUNC, &currentDepthFunc);
+
+        // Change depth function to GL_LEQUAL for skybox rendering
+        // This allows the skybox to pass depth test when depth value is exactly equal to depth buffer
+        glDepthFunc(GL_LEQUAL);
+
+        // Disable depth writing but keep depth testing active (for early depth testing optimization)
         glDepthMask(GL_FALSE);
 
         // Use the skybox shader
         skyboxShader->Use();
 
-        // Remove translation from the view matrix
+        // Remove translation from the view matrix to keep skybox centered at origin
         glm::mat4 viewWithoutTranslation = glm::mat4(glm::mat3(view));
 
         // Set uniforms
@@ -116,7 +124,8 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
-        // Re-enable depth writing
+        // Re-enable depth writing and restore previous depth function
         glDepthMask(GL_TRUE);
+        glDepthFunc(currentDepthFunc); // Restore original depth function
     }
 };
