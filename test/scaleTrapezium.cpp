@@ -10,7 +10,8 @@
 #include <math.h>
 #include <vector>
 #include "Vertex.hpp"
-#include "Shader.hpp"
+#include "render/Shader.h"
+#include "asset/ResourceManager.h"
 #include "Util.hpp"
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height)
@@ -73,7 +74,8 @@ int main()
     glViewport(0, 0, width, height);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
-    Shader shader("shader.vs", "shader.fs");
+    ResourceManager::LoadShader("shader.vs", "shader.fs", "test_shader");
+    Shader& shader = ResourceManager::GetShader("test_shader");
     VAO vao;
     vao.bind();
 
@@ -135,17 +137,19 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Use the shader program
-        shader.use();
+        shader.Use();
         float timeValue = glfwGetTime();
         float colorValue = (std::sin(timeValue) / 2.0f) + 0.5f;
-        int vertexColorLocation = shader.get("uniformColor");
+        int vertexColorLocation = glGetUniformLocation(shader.ID, "uniformColor");
         //lo << vertexColorLocation << "\n";
         std::vector<float> color = {colorValue, colorValue, colorValue, 1.0f};
         float mixFactor = 0.1f + (std::cos(timeValue) / 2.9f + 0.5f) * 0.85f;
-        shader.setFloat("mixFactor", mixFactor);
-        shader.setFloat("uniformColor", color);
-        //shader.setFloat("offset", pos);
-        shader.setFloat("scale", pos);
+        shader.SetFloat("mixFactor", mixFactor);
+        // For setting color vector, we need to handle it differently
+        // shader.SetVector4f("uniformColor", color[0], color[1], color[2], color[3], false);
+        shader.SetVector4f("uniformColor", color[0], color[1], color[2], color[3]);
+        //shader.SetFloat("offset", pos);
+        shader.SetFloat("scale", pos);
         //glUniform4f(vertexColorLocation, color[0], color[1], color[2], color[3]);
         // Bind the VAO
         

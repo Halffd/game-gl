@@ -76,6 +76,10 @@ public:
     static std::string getExecutableName();
     static std::string getExecutableDir();
 
+    // Internal path resolution
+    static std::string resolveShaderPath(const std::string& filename);
+    static std::string resolveTexturePath(const std::string& filename);
+
 private:
     ResourceManager() { }
 

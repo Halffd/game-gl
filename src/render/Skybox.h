@@ -20,8 +20,13 @@ public:
     }
 
     ~Skybox() {
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO);
+        // Only try to delete OpenGL objects if they were actually created
+        if (VAO != 0) {
+            glDeleteVertexArrays(1, &VAO);
+        }
+        if (VBO != 0) {
+            glDeleteBuffers(1, &VBO);
+        }
         // Don't delete skyboxShader here since it's managed by ResourceManager
         delete cubemap; // Note: Cubemap might be shared, so this should be used carefully
     }

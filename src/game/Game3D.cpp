@@ -14,6 +14,7 @@
 #include "render/primitives/basic/Cube.h"
 
 #include <random>
+#include "../render/ReflectionRenderer.h"
 
 const unsigned SCREEN_WIDTH = 1600;
 const unsigned SCREEN_HEIGHT = 900;
@@ -41,6 +42,7 @@ Game3D::Game3D()
       baseMovementSpeed(6.5f),
       window(nullptr),
       m_postProcessShader(nullptr),
+      m_reflectionRenderer(nullptr),
       useFramebuffer(false),
       planetShader(),
       skybox(nullptr),
@@ -167,6 +169,9 @@ void Game3D::init() {
         delete skyboxCubemap;
         skyboxCubemap = nullptr;
     }
+
+    // Initialize reflection renderer
+    m_reflectionRenderer = std::make_unique<ReflectionRenderer>();
 
     m_showMirror = false;
     maxAsteroids = 25;
@@ -679,6 +684,8 @@ for (auto* body : celestialBodies) {
 
 }
 void Game3D::run() {
+    lastFrame = static_cast<float>(glfwGetTime());
+
     while (!glfwWindowShouldClose(window)) {
         // Timing
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -686,6 +693,26 @@ void Game3D::run() {
         lastFrame = currentFrame;
         Timers::tick();
         processInput();
+
+        // FPS calculation
+        frameCount++;
+        avgFrameTime += deltaTime;
+
+        if (currentFrame - lastFPSUpdate >= 1.0f) { // Update every second
+            fps = static_cast<int>(frameCount / (currentFrame - lastFPSUpdate));
+            avgFrameTime /= frameCount;
+
+            frameCount = 0;
+            lastFPSUpdate = currentFrame;
+
+            // Store frame times for history (last 100 frames)
+            frameTimes.push_back(avgFrameTime * 1000.0f); // Convert to milliseconds
+            if (frameTimes.size() > 100) {
+                frameTimes.erase(frameTimes.begin());
+            }
+
+            avgFrameTime = 0.0f;
+        }
 
         // Update orbital mechanics
         for (auto& orbitalData : orbitalBodies) {
@@ -732,6 +759,20 @@ void Game3D::run() {
 
         renderer.render(scene, camera);
 
+        // Render reflective objects
+        if (m_reflectionRenderer && skyboxCubemap) {
+            // Simple reflective cube at position (0, 5, -5)
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(0.0f, 5.0f, -5.0f));
+            model = glm::scale(model, glm::vec3(2.0f));
+
+            glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
+                                                  (float)m_framebufferSize.x / (float)m_framebufferSize.y,
+                                                  0.1f, 1000.0f);
+            m_reflectionRenderer->renderReflection(model, camera.GetViewMatrix(), projection,
+                                                  camera.Position, skyboxCubemap->ID);
+        }
+
         // Render skybox last (if enabled) for performance
         if (skybox && useSkybox) {
             // Use the same projection as main camera
@@ -761,6 +802,46 @@ void Game3D::run() {
 
         // GUI
         Gui::Start();
+
+        // Reflection model selection window
+        if (showReflectionWindow && m_reflectionRenderer) {
+            ImGui::Begin("Reflection Model Selection", &showReflectionWindow);
+
+            if (ImGui::Button("Toggle Reflection Window")) {
+                showReflectionWindow = !showReflectionWindow;
+            }
+
+            // Model selection dropdown
+            int currentIdx = m_reflectionRenderer->getCurrentModelIndex();
+            std::string currentModel = m_reflectionRenderer->getCurrentModelName();
+
+            if (ImGui::BeginCombo("Reflection Model", currentModel.c_str())) {
+                for (int i = 0; i < m_reflectionRenderer->getModelCount(); i++) {
+                    std::string modelName = m_reflectionRenderer->getModelName(i);
+                    bool isSelected = (currentIdx == i);
+                    if (ImGui::Selectable(modelName.c_str(), isSelected)) {
+                        m_reflectionRenderer->setModelByIndex(i);
+                    }
+                    if (isSelected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::Text("Current model: %s", currentModel.c_str());
+
+            ImGui::End();
+        }
+
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("Tools")) {
+                ImGui::MenuItem("Reflection Models", nullptr, &showReflectionWindow);
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+
         Gui::Render();
 
         glfwSwapBuffers(window);
@@ -780,6 +861,12 @@ void Game3D::processInput()
     if (toggleKey(GLFW_KEY_ENTER, enterToggle)) {
         toggleCursor();
         std::cout << "Cursor mode toggled: " << (cursorEnabled ? "Enabled" : "Disabled") << std::endl;
+    }
+
+    static bool perfToggle = false;
+    if (toggleKey(GLFW_KEY_F1, perfToggle)) {
+        showPerformanceOverlay = !showPerformanceOverlay;
+        std::cout << "Performance overlay: " << (showPerformanceOverlay ? "ON" : "OFF") << std::endl;
     }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -806,6 +893,15 @@ void Game3D::processInput()
         } else {
             glDisable(GL_FRAMEBUFFER_SRGB);
         }
+    }
+
+    // Toggle reflection window with F2
+    static bool reflectionWindowToggle = false;
+    static bool lastReflectionWindowToggle = false;
+    toggleKey(GLFW_KEY_F2, reflectionWindowToggle);
+    if (reflectionWindowToggle != lastReflectionWindowToggle) {
+        lastReflectionWindowToggle = reflectionWindowToggle;
+        showReflectionWindow = !showReflectionWindow;
     }
 }
 

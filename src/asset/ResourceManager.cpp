@@ -20,8 +20,12 @@ std::string ResourceManager::root = "";
 // Implement full path handling for shaders and textures
 const char *ResourceManager::GetFullPath(const std::string &filename)
 {
-    char *buffer = new char[BUFFER_SIZE];
-    std::strcpy(buffer, (filename).c_str());
+    // Use a thread-local static buffer to avoid memory leaks
+    // This is only safe because the path is used immediately for file operations
+    static thread_local char buffer[BUFFER_SIZE];
+    size_t len = std::min(filename.length(), (size_t)(BUFFER_SIZE - 1));
+    std::memcpy(buffer, filename.c_str(), len);
+    buffer[len] = '\0';
     std::cout << "GetFullPath: " << buffer << std::endl;
     return buffer;
 }
@@ -62,12 +66,12 @@ const char *ResourceManager::GetShaderPath(const std::string &filename)
     } else {
         path = root + "/shaders/" + filename;
     }
-    
+
     // Check if the file exists
     std::ifstream fileCheck(path);
     if (!fileCheck.good()) {
         std::cout << "WARNING: Shader file does not exist at path: " << path << std::endl;
-        
+
         // Try bin/shaders as an alternative
         std::string binPath = root + "/bin/shaders/" + filename;
         std::ifstream binFileCheck(binPath);
@@ -78,7 +82,7 @@ const char *ResourceManager::GetShaderPath(const std::string &filename)
     } else {
         std::cout << "Shader file exists at: " << path << std::endl;
     }
-    
+
     return GetFullPath(path);
 }
 
@@ -123,18 +127,39 @@ Shader& ResourceManager::LoadShader(const char *vShaderFile, const char *fShader
 }
 Shader& ResourceManager::LoadShader(const char *vShaderFile, const char *fShaderFile, const char *gShaderFile, std::string name)
 {
+    // Make copies of the original paths to avoid overwriting issues
+    std::string origVShader = vShaderFile ? vShaderFile : "";
+    std::string origFShader = fShaderFile ? fShaderFile : "";
+    std::string origGShader = gShaderFile ? gShaderFile : "";
+
+    const char* resolvedVShader = vShaderFile;
+    const char* resolvedFShader = fShaderFile;
+    const char* resolvedGShader = gShaderFile;
+
     if (!includes(vShaderFile, ":"))
     {
-        vShaderFile = GetShaderPath(vShaderFile);
+        resolvedVShader = GetShaderPath(origVShader.c_str());
+        // Make a copy by converting to string and back to char* to ensure we have separate memory
+        origVShader = std::string(resolvedVShader);
+        resolvedVShader = origVShader.c_str();
     }
     if (!includes(fShaderFile, ":"))
     {
-        fShaderFile = GetShaderPath(fShaderFile);
-    }  
-    
-    //std::cout << "Loading shader: " << vShaderFile << " " << fShaderFile << " " << gShaderFile << std::endl;
+        resolvedFShader = GetShaderPath(origFShader.c_str());
+        // Make a copy by converting to string and back to char* to ensure we have separate memory
+        origFShader = std::string(resolvedFShader);
+        resolvedFShader = origFShader.c_str();
+    }
+    if (gShaderFile && !includes(gShaderFile, ":"))
+    {
+        resolvedGShader = GetShaderPath(origGShader.c_str());
+        origGShader = std::string(resolvedGShader);
+        resolvedGShader = origGShader.c_str();
+    }
+
+    //std::cout << "Loading shader: " << resolvedVShader << " " << resolvedFShader << " " << resolvedGShader << std::endl;
     auto shader = std::make_shared<Shader>();
-    loadShaderFromFile(*shader, vShaderFile, fShaderFile, gShaderFile);
+    loadShaderFromFile(*shader, resolvedVShader, resolvedFShader, resolvedGShader);
     Shaders[name] = shader;
     return *shader;
 }
@@ -454,4 +479,60 @@ std::string ResourceManager::getExecutableDir()
 
     // Return an empty string or handle the error if no slash was found
     return "";
+}
+
+std::string ResourceManager::resolveShaderPath(const std::string& filename)
+{
+    std::string path;
+    if (root.empty()) {
+        path = "shaders/" + filename;
+    } else {
+        path = root + "/shaders/" + filename;
+    }
+
+    // Check if the file exists
+    std::ifstream fileCheck(path);
+    if (!fileCheck.good()) {
+        std::cout << "WARNING: Shader file does not exist at path: " << path << std::endl;
+
+        // Try bin/shaders as an alternative
+        std::string binPath = root + "/bin/shaders/" + filename;
+        std::ifstream binFileCheck(binPath);
+        if (binFileCheck.good()) {
+            std::cout << "Found shader in bin/shaders instead: " << binPath << std::endl;
+            path = binPath;
+        }
+    } else {
+        std::cout << "Shader file exists at: " << path << std::endl;
+    }
+
+    return path;
+}
+
+std::string ResourceManager::resolveTexturePath(const std::string& filename)
+{
+    std::string path;
+    if (root.empty()) {
+        path = "textures/" + filename;
+    } else {
+        path = root + "/textures/" + filename;
+    }
+
+    // Check if the file exists
+    std::ifstream fileCheck(path);
+    if (!fileCheck.good()) {
+        std::cout << "WARNING: Texture file does not exist at path: " << path << std::endl;
+
+        // Try bin/textures as an alternative
+        std::string binPath = root + "/bin/textures/" + filename;
+        std::ifstream binFileCheck(binPath);
+        if (binFileCheck.good()) {
+            std::cout << "Found texture in bin/textures instead: " << binPath << std::endl;
+            path = binPath;
+        }
+    } else {
+        std::cout << "Texture file exists at: " << path << std::endl;
+    }
+
+    return path;
 }

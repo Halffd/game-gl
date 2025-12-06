@@ -7,5 +7,7 @@ uniform samplerCube skybox;
 
 void main()
 {
-    FragColor = texture(skybox, TexCoords);
+    vec4 envColor = texture(skybox, TexCoords);
+    envColor = envColor; // No gamma correction needed for skybox
+    FragColor = envColor;
 }
