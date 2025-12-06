@@ -17,6 +17,7 @@
 #include "render/space/Star.h"
 #include "render/space/Planet.h"
 #include "render/Skybox.h"
+#include "render/ReflectionRenderer.h"
 struct GLFWwindow;
 
 class Game3D {
@@ -38,8 +39,10 @@ private:
     std::shared_ptr<Framebuffer> m_framebuffer;
     std::shared_ptr<VO::Quad> m_screenQuad;
     Shader* m_postProcessShader;
+    std::unique_ptr<ReflectionRenderer> m_reflectionRenderer;
     glm::vec2 m_framebufferSize;
     bool usePhong = false;
+    bool showReflectionWindow = false; // Toggle for reflection model selection GUI
 public:
     Camera camera;
     bool firstMouse;
@@ -104,9 +107,17 @@ public:
     int maxKuiperBeltObjects = 200;
     int maxDistantStars = 1000;
     bool useFramebuffer;
+    bool showPerformanceOverlay = true; // Toggle for FPS and performance counter
 
 private:
     Scene scene;
     Renderer3D renderer;
     GLFWwindow* window;
+
+    // Performance counters
+    float frameCount = 0;
+    float lastFPSUpdate = 0.0f;
+    int fps = 0;
+    float avgFrameTime = 0.0f;
+    std::vector<float> frameTimes;
 };

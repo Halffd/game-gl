@@ -293,7 +293,8 @@ void main()
     
     // Use texture alpha if available, otherwise full opacity
     float alpha = useDirectColor ? 1.0 : texture(texture_diffuse1, TexCoords).a;
-    FragColor = vec4(result, alpha);
+    //FragColor = vec4(result, alpha);
+    FragColor = vec4(result, 1.0);
 }
 
 // Calculates the color when using a directional light
