@@ -83,6 +83,11 @@ uniform bool useDetailMap;
 uniform bool useScatterMap;
 uniform float shininess;
 
+// Reflection uniforms
+uniform samplerCube skybox;
+uniform bool useReflection;
+uniform float reflectivity;
+
 // Function prototypes
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
@@ -281,7 +286,17 @@ void main()
     if(!useDirLight && !usePointLight && !useSpotLight && !useRandomPointLights) {
         result = diffuseColor * 0.3; // Basic ambient
     }
-    
+
+    // Add reflection if enabled
+    if (useReflection && reflectivity > 0.0) {
+        vec3 I = normalize(FragPos - viewPos); // viewPos should be camera position
+        vec3 R = reflect(I, normalize(Normal));
+        vec3 reflectionColor = texture(skybox, R).rgb;
+
+        // Blend reflection with the lit result using the reflectivity factor
+        result = mix(result, reflectionColor, reflectivity);
+    }
+
     float linearZ = LinearizeDepth(gl_FragCoord.z);
 
     // Apply fog
@@ -290,7 +305,7 @@ void main()
     //if (linearZ >= fogEnd) {
     //    discard;
     //}
-    
+
     // Use texture alpha if available, otherwise full opacity
     float alpha = useDirectColor ? 1.0 : texture(texture_diffuse1, TexCoords).a;
     //FragColor = vec4(result, alpha);

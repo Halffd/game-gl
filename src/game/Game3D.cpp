@@ -54,7 +54,12 @@ Game3D::~Game3D() {
     // Don't delete m_postProcessShader as it's managed by ResourceManager
     delete skybox;
     delete skyboxCubemap;
-    
+
+    // Clean up reflection map texture
+    if (reflectionMapTexture != 0) {
+        glDeleteTextures(1, &reflectionMapTexture);
+    }
+
     for (auto* body : celestialBodies) {
         delete body;
     }
@@ -173,6 +178,46 @@ void Game3D::init() {
     // Initialize reflection renderer
     m_reflectionRenderer = std::make_unique<ReflectionRenderer>();
 
+    // Create a simple reflection map texture (grayscale for reflection intensity)
+    // This creates a 4x4 texture with a gradient pattern for reflection intensity
+    unsigned char reflectionMapData[] = {
+        255, 255, 255, 255,   // White (full reflection)
+        192, 192, 192, 255,   // Light gray (75% reflection)
+        128, 128, 128, 255,   // Gray (50% reflection)
+        64, 64, 64, 255,      // Dark gray (25% reflection)
+
+        192, 192, 192, 255,   // Light gray (75% reflection)
+        255, 255, 255, 255,   // White (full reflection)
+        64, 64, 64, 255,      // Dark gray (25% reflection)
+        128, 128, 128, 255,   // Gray (50% reflection)
+
+        128, 128, 128, 255,   // Gray (50% reflection)
+        64, 64, 64, 255,      // Dark gray (25% reflection)
+        255, 255, 255, 255,   // White (full reflection)
+        192, 192, 192, 255,   // Light gray (75% reflection)
+
+        64, 64, 64, 255,      // Dark gray (25% reflection)
+        128, 128, 128, 255,   // Gray (50% reflection)
+        192, 192, 192, 255,   // Light gray (75% reflection)
+        255, 255, 255, 255    // White (full reflection)
+    };
+
+    // Clean up existing reflection map if it exists
+    if (reflectionMapTexture != 0) {
+        glDeleteTextures(1, &reflectionMapTexture);
+        reflectionMapTexture = 0;
+    }
+
+    // Generate and set up the reflection map texture
+    glGenTextures(1, &reflectionMapTexture);
+    glBindTexture(GL_TEXTURE_2D, reflectionMapTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, reflectionMapData);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     m_showMirror = false;
     maxAsteroids = 25;
     if (m_showMirror) {
@@ -210,14 +255,17 @@ void Game3D::initSolarSystemScene() {
     const float SIZE_SCALE = 1.0f / 1e7f;              // Scale radii for visibility
     
     // Load shaders
-    Shader& starShader = ResourceManager::LoadShader("star.vs", "star.fs", nullptr, "star");
-    Shader& planetShader = ResourceManager::LoadShader("planet.vs", "planet.fs", nullptr, "planet");
-    Shader& glowShader = ResourceManager::LoadShader("glow.vs", "glow.fs", nullptr, "glow");
-    Shader& coronaShader = ResourceManager::LoadShader("corona.vs", "corona.fs", nullptr, "corona");
-    Shader& limbDarkeningShader = ResourceManager::LoadShader("limb_darkening.vs", "limb_darkening.fs", nullptr, "limb_darkening");
+    ResourceManager::LoadShader("star.vs", "star.fs", nullptr, "star");
+    ResourceManager::LoadShader("planet.vs", "planet.fs", nullptr, "planet");
+    ResourceManager::LoadShader("glow.vs", "glow.fs", nullptr, "glow");
+    ResourceManager::LoadShader("corona.vs", "corona.fs", nullptr, "corona");
+    ResourceManager::LoadShader("limb_darkening.vs", "limb_darkening.fs", nullptr, "limb_darkening");
     // Additional shaders needed for star effects
     ResourceManager::LoadShader("blur.vs", "blur.fs", nullptr, "blur");
     ResourceManager::LoadShader("bloom.vs", "bloom.fs", nullptr, "bloom");
+
+    // Assign loaded shaders to member variables
+    planetShader = ResourceManager::GetShader("planet");
     
     // Create shared sphere mesh
     auto sphere = std::make_shared<m3D::Sphere>("Sphere", glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f));
@@ -757,6 +805,17 @@ void Game3D::run() {
         m_framebuffer->clear(0.05f, 0.05f, 0.1f);
         glEnable(GL_DEPTH_TEST);
 
+        // Configure reflection for models scene
+        if (!useSolarSystemScene && skyboxCubemap) {
+            renderer.useModelReflection = true;
+            renderer.modelReflectivity = reflectionIntensity;  // Use reflection intensity from UI
+            renderer.skyboxTexture = skyboxCubemap->ID;  // Use the skybox texture for reflections
+        } else {
+            renderer.useModelReflection = false;  // Disable reflection for solar system scene
+            renderer.modelReflectivity = 0.0f;
+            renderer.skyboxTexture = 0;
+        }
+
         renderer.render(scene, camera);
 
         // Render reflective objects
@@ -769,8 +828,10 @@ void Game3D::run() {
             glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom),
                                                   (float)m_framebufferSize.x / (float)m_framebufferSize.y,
                                                   0.1f, 1000.0f);
+            // Render with reflection map settings
             m_reflectionRenderer->renderReflection(model, camera.GetViewMatrix(), projection,
-                                                  camera.Position, skyboxCubemap->ID);
+                                                  camera.Position, skyboxCubemap->ID,
+                                                  reflectionIntensity, useReflectionMap, reflectionMapTexture);
         }
 
         // Render skybox last (if enabled) for performance
@@ -831,15 +892,40 @@ void Game3D::run() {
 
             ImGui::Text("Current model: %s", currentModel.c_str());
 
+            ImGui::Separator();
+
+            // Reflection map controls
+            ImGui::Text("Reflection Settings:");
+            ImGui::Checkbox("Use Reflection Map", &useReflectionMap);
+            ImGui::Checkbox("Use Model Reflections", &renderer.useModelReflection);  // Toggle general model reflections
+            ImGui::SliderFloat("Reflection Intensity", &reflectionIntensity, 0.0f, 2.0f, "%.2f");
+
             ImGui::End();
         }
 
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Tools")) {
                 ImGui::MenuItem("Reflection Models", nullptr, &showReflectionWindow);
+                if (ImGui::MenuItem("Reflection Controls")) {
+                    showReflectionControls = !showReflectionControls;
+                }
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
+        }
+
+        // Additional reflection controls window
+        if (showReflectionControls) {
+            ImGui::Begin("Reflection Controls", &showReflectionControls);
+
+            ImGui::Checkbox("Use Reflection Map", &useReflectionMap);
+            ImGui::SliderFloat("Reflection Intensity", &reflectionIntensity, 0.0f, 2.0f, "%.2f");
+
+            if (ImGui::Button("Toggle Reflection Window")) {
+                showReflectionWindow = !showReflectionWindow;
+            }
+
+            ImGui::End();
         }
 
         Gui::Render();

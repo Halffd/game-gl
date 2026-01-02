@@ -244,6 +244,41 @@ void Renderer3D::setLightingUniforms(Shader &shader, Camera& camera) {
         shader.SetVector3f(("randomPointLights[" + index + "].diffuse").c_str(), randomPointLights[i].diffuse);
         shader.SetVector3f(("randomPointLights[" + index + "].specular").c_str(), randomPointLights[i].specular);
     }
+
+    // Optionally adjust material properties for reflective models in models scene
+    if (useModelReflection) {
+        // Increase shininess for more mirror-like reflections
+        // Check if the uniform exists before setting it to prevent GL_INVALID_OPERATION
+        GLint shininessLoc = glGetUniformLocation(shader.ID, "shininess");
+        if (shininessLoc != -1) {
+            shader.SetFloat("shininess", 128.0f);  // Higher shininess = sharper reflections
+        }
+
+        // Only set reflection uniforms if they exist in this shader
+        GLint skyboxLoc = glGetUniformLocation(shader.ID, "skybox");
+        GLint reflectivityLoc = glGetUniformLocation(shader.ID, "reflectivity");
+        GLint useReflectionLoc = glGetUniformLocation(shader.ID, "useReflection");
+
+        if (skyboxLoc != -1 && reflectivityLoc != -1 && useReflectionLoc != -1) {
+            shader.SetInteger("useReflection", 1);
+            shader.SetFloat("reflectivity", modelReflectivity);
+
+            // Bind skybox to a texture unit (e.g., unit 5 to avoid conflicts)
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+            shader.SetInteger("skybox", 5);
+        }
+    } else {
+        // Only set reflection uniforms if they exist in this shader
+        GLint skyboxLoc = glGetUniformLocation(shader.ID, "skybox");
+        GLint reflectivityLoc = glGetUniformLocation(shader.ID, "reflectivity");
+        GLint useReflectionLoc = glGetUniformLocation(shader.ID, "useReflection");
+
+        if (skyboxLoc != -1 && reflectivityLoc != -1 && useReflectionLoc != -1) {
+            shader.SetInteger("useReflection", 0);
+            shader.SetFloat("reflectivity", 0.0f);
+        }
+    }
 }
 
 void Renderer3D::setupGround() {

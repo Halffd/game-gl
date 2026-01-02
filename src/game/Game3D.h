@@ -43,6 +43,11 @@ private:
     glm::vec2 m_framebufferSize;
     bool usePhong = false;
     bool showReflectionWindow = false; // Toggle for reflection model selection GUI
+    // Reflection map functionality
+    unsigned int reflectionMapTexture = 0;
+    bool useReflectionMap = false;
+    float reflectionIntensity = 0.3f;  // Default to match Renderer3D default
+    bool showReflectionControls = false;
 public:
     Camera camera;
     bool firstMouse;
