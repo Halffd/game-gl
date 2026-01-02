@@ -28,50 +28,50 @@ public:
     }
 
     void setupCube() {
-        // Cube vertices with position and normal
+        // Cube vertices with position, normal, and texture coordinates
         float cubeVertices[] = {
-            // positions          // normals
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            // positions          // normals              // texcoords
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
 
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-             0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
 
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
-             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-             0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-             0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+             0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-             0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+             0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
 
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
         };
 
         glGenVertexArrays(1, &cubeVAO);
@@ -81,11 +81,14 @@ public:
         glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
 
         // Position attribute
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
         // Normal attribute
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
         glEnableVertexAttribArray(1);
+        // Texture coordinate attribute
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(2);
     }
 
     void setupDefaultModels() {
@@ -142,11 +145,20 @@ public:
 
     void renderReflection(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection,
                          const glm::vec3& cameraPos, unsigned int skyboxTexture) {
+        renderReflection(model, view, projection, cameraPos, skyboxTexture, 1.0f, false, 0);
+    }
+
+    void renderReflection(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection,
+                         const glm::vec3& cameraPos, unsigned int skyboxTexture,
+                         float reflectivity, bool useReflectionMap, unsigned int reflectionMapTexture) {
         reflectionShader->Use();
         reflectionShader->SetMatrix4("model", model);
         reflectionShader->SetMatrix4("view", view);
         reflectionShader->SetMatrix4("projection", projection);
         reflectionShader->SetVector3f("cameraPos", cameraPos);
+        reflectionShader->SetFloat("reflectivity", reflectivity);
+        reflectionShader->SetInteger("useReflectionMap", useReflectionMap ? 1 : 0);
+        reflectionShader->SetInteger("useDiffuseTexture", 0); // Default to no diffuse texture
 
         // Render based on selected model type
         switch(currentModelIndex) {
@@ -154,13 +166,26 @@ public:
             case 1: // cube
             default:
                 glBindVertexArray(cubeVAO);
+
+                // Bind skybox to unit 0
+                glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+                reflectionShader->SetInteger("skybox", 0);
+
+                // Bind reflection map to unit 1
+                if (useReflectionMap) {
+                    glActiveTexture(GL_TEXTURE1);
+                    glBindTexture(GL_TEXTURE_2D, reflectionMapTexture);
+                    reflectionShader->SetInteger("reflectionMap", 1);
+                }
+
                 glDrawArrays(GL_TRIANGLES, 0, 36);
                 glBindVertexArray(0);
                 break;
             case 2: // sphere
                 // Render a sphere with reflection
-                renderSphereReflection(model, view, projection, cameraPos, skyboxTexture);
+                renderSphereReflection(model, view, projection, cameraPos, skyboxTexture,
+                                     reflectivity, useReflectionMap, reflectionMapTexture);
                 break;
         }
     }
@@ -168,11 +193,39 @@ public:
 private:
     void renderSphereReflection(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection,
                                const glm::vec3& cameraPos, unsigned int skyboxTexture) {
+        renderSphereReflection(model, view, projection, cameraPos, skyboxTexture, 1.0f, false, 0);
+    }
+
+    void renderSphereReflection(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection,
+                               const glm::vec3& cameraPos, unsigned int skyboxTexture,
+                               float reflectivity, bool useReflectionMap, unsigned int reflectionMapTexture) {
+        reflectionShader->Use();
+        reflectionShader->SetMatrix4("model", model);
+        reflectionShader->SetMatrix4("view", view);
+        reflectionShader->SetMatrix4("projection", projection);
+        reflectionShader->SetVector3f("cameraPos", cameraPos);
+        reflectionShader->SetFloat("reflectivity", reflectivity);
+        reflectionShader->SetInteger("useReflectionMap", useReflectionMap ? 1 : 0);
+        reflectionShader->SetInteger("useDiffuseTexture", 0); // Default to no diffuse texture
+
         // For now, just use a simple sphere implementation
         // In a real implementation, you'd have a sphere VAO/VBO
         glBindVertexArray(cubeVAO); // Use cube VAO as placeholder
+
+        // Bind skybox to unit 0
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
+        reflectionShader->SetInteger("skybox", 0);
+
+        // Bind reflection map to unit 1
+        if (useReflectionMap) {
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, reflectionMapTexture);
+            reflectionShader->SetInteger("reflectionMap", 1);
+        }
+
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
     }
+
 };

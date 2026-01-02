@@ -71,8 +71,13 @@ public:
     std::vector<PointLight> randomPointLights;
     bool useRandomPointLights;
 
-    void renderWithCustomView(Scene& scene, Camera& camera, 
-        const glm::mat4& customView, 
+    // Reflection properties
+    unsigned int skyboxTexture = 0;
+    float modelReflectivity = 0.3f;  // Default to 0.3 (partial reflection)
+    bool useModelReflection = true;  // Whether to enable reflections for models (default on)
+
+    void renderWithCustomView(Scene& scene, Camera& camera,
+        const glm::mat4& customView,
         const glm::mat4& projection);
 private:
     unsigned int groundVAO;
