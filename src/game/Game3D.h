@@ -48,6 +48,10 @@ private:
     bool useReflectionMap = false;
     float reflectionIntensity = 0.3f;  // Default to match Renderer3D default
     bool showReflectionControls = false;
+
+    // Refraction properties
+    bool useRefraction = false;  // Whether to enable refractions for models
+    float refractionRatio = 0.66f;  // Default refraction ratio (glass-like)
 public:
     Camera camera;
     bool firstMouse;

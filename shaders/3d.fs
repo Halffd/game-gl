@@ -88,6 +88,10 @@ uniform samplerCube skybox;
 uniform bool useReflection;
 uniform float reflectivity;
 
+// Refraction uniforms
+uniform bool useRefraction;
+uniform float refractionRatio;  // Ratio of air to material (1.00 / 1.52 for glass)
+
 // Function prototypes
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
@@ -295,6 +299,18 @@ void main()
 
         // Blend reflection with the lit result using the reflectivity factor
         result = mix(result, reflectionColor, reflectivity);
+    }
+
+    // Add refraction if enabled (only apply if not using reflection to avoid conflicts)
+    // For materials that are primarily refractive (like glass), refraction overrides reflection
+    if (useRefraction && refractionRatio > 0.0) {
+        vec3 I = normalize(FragPos - viewPos); // viewPos should be camera position
+        vec3 R = refract(I, normalize(Normal), refractionRatio);
+        vec3 refractionColor = texture(skybox, R).rgb;
+
+        // For refraction, replace the result entirely for transparent materials
+        // Only do this if refraction is explicitly enabled (to avoid overwriting reflection)
+        result = refractionColor;
     }
 
     float linearZ = LinearizeDepth(gl_FragCoord.z);
