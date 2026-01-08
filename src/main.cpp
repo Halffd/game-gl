@@ -2,10 +2,14 @@
 #include "game/Game.h"
 #include "game/Game3D.h"
 #include "graph/GraphApp.h"
+#include "ConfigManager.hpp"
 
 int main(int argc, char *argv[])
 {
     bool loadModelsScene = false; // New flag
+
+    // Initialize configuration system
+    game::cfg().Load();
 
     if (argc < 2) {
         std::cout << "No mode specified, auto-starting in 3D mode..." << std::endl;

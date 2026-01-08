@@ -85,12 +85,12 @@ uniform float shininess;
 
 // Reflection uniforms
 uniform samplerCube skybox;
-uniform bool useReflection;
-uniform float reflectivity;
+uniform bool useReflection = false;  // Disabled by default
+uniform float reflectivity = 0.3;    // Default reflection intensity
 
 // Refraction uniforms
-uniform bool useRefraction;
-uniform float refractionRatio;  // Ratio of air to material (1.00 / 1.52 for glass)
+uniform bool useRefraction = false;  // Disabled by default
+uniform float refractionRatio = 0.66; // Default refraction ratio (glass-like)
 
 // Function prototypes
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);

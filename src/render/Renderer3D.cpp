@@ -2,6 +2,7 @@
 #include <string>
 #include "asset/ResourceManager.h"
 #include <glad/glad.h>
+#include "../ConfigManager.hpp"
 
 const unsigned int SCREEN_WIDTH = 1280;
 const unsigned int SCREEN_HEIGHT = 720;
@@ -52,6 +53,11 @@ Renderer3D::Renderer3D()
       groundTexture(0),
       groundNormalTexture(0)
 {
+    // Load reflection and refraction settings from config
+    useModelReflection = game::cfg().GetUseReflection();
+    useModelRefraction = game::cfg().GetUseRefraction();
+    modelReflectivity = game::cfg().GetReflectionIntensity();
+    modelRefractionRatio = game::cfg().GetRefractionRatio();
 }
 
 void Renderer3D::init() {
@@ -270,6 +276,7 @@ void Renderer3D::setLightingUniforms(Shader &shader, Camera& camera) {
         }
     } else {
         // Only set reflection uniforms if they exist in this shader
+        GLint skyboxLoc = glGetUniformLocation(shader.ID, "skybox");
         GLint useReflectionLoc = glGetUniformLocation(shader.ID, "useReflection");
         GLint reflectivityLoc = glGetUniformLocation(shader.ID, "reflectivity");
 
