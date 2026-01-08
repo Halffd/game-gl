@@ -18,6 +18,7 @@
 #include "render/space/Planet.h"
 #include "render/Skybox.h"
 #include "render/ReflectionRenderer.h"
+#include "../ConfigManager.hpp"
 struct GLFWwindow;
 
 class Game3D {
@@ -26,7 +27,7 @@ public:
     ~Game3D();
     void init();
     void run();
-    
+
 private:
     void processInput();
     void mouse_callback(double xpos, double ypos);
@@ -49,6 +50,8 @@ private:
     float reflectionIntensity = 0.3f;  // Default to match Renderer3D default
     bool showReflectionControls = false;
 
+    // Reflection properties
+    bool useReflection = false;  // Whether to enable reflections for models (disabled by default)
     // Refraction properties
     bool useRefraction = false;  // Whether to enable refractions for models
     float refractionRatio = 0.66f;  // Default refraction ratio (glass-like)

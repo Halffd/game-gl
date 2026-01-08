@@ -48,6 +48,11 @@ Game3D::Game3D()
       skybox(nullptr),
       skyboxCubemap(nullptr)
 {
+    // Load reflection and refraction settings from config
+    useReflection = game::cfg().GetUseReflection();
+    useRefraction = game::cfg().GetUseRefraction();
+    reflectionIntensity = game::cfg().GetReflectionIntensity();
+    refractionRatio = game::cfg().GetRefractionRatio();
 }
 
 Game3D::~Game3D() {
@@ -219,7 +224,9 @@ void Game3D::init() {
     glBindTexture(GL_TEXTURE_2D, 0);
 
     m_showMirror = false;
-    maxAsteroids = 25;
+    maxAsteroids = 10; // Reduced from 25 to 10
+    maxKuiperBeltObjects = 50; // Reduced from 200 to 50
+    maxDistantStars = 100; // Reduced from 1000 to 100
     if (m_showMirror) {
         std::cout << "Creating rear-view mirror" << std::endl;
         m_rearViewMirror = std::make_unique<Mirror>();
@@ -286,10 +293,10 @@ void Game3D::initSolarSystemScene() {
         5778.0f,                // Surface temperature (K) - G-type star
         sphereMesh
     );
-    
+
     sun->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
     sun->SetColor(glm::vec3(1.0f, 0.9f, 0.7f));
-    
+
     // Store sun reference for lighting
     celestialBodies.push_back(sun);
     
@@ -653,19 +660,19 @@ void Game3D::initSolarSystemScene() {
     for (int i = 0; i < maxDistantStars; ++i) {
         // Random position on celestial sphere
         glm::vec3 starDirection = glm::normalize(glm::vec3(
-            starPosDist(gen), 
-            starPosDist(gen), 
+            starPosDist(gen),
+            starPosDist(gen),
             starPosDist(gen)
         ));
         glm::vec3 starPosition = starDirection * starFieldRadius;
-        
+
         float temp = starTempDist(gen);
         float mass = starMassDist(gen);
         float radius = starRadiusDist(gen);
-        
+
         // Calculate luminosity based on mass-luminosity relation: L ∝ M^3.5
         float luminosity = powf(mass / SOLAR_MASS, 3.5f);
-        
+
         Star* backgroundStar = new Star(
             mass,
             radius,
@@ -675,12 +682,12 @@ void Game3D::initSolarSystemScene() {
             temp,
             sphereMesh
         );
-        
+
         backgroundStar->SetPosition(starPosition);
-        
+
         // Disable expensive effects for distant stars would go here
         // Currently not implemented in Star class
-        
+
         celestialBodies.push_back(backgroundStar);
     }
     
@@ -691,17 +698,23 @@ void Game3D::updateSolarSystem(float deltaTime) {
     // Apply time scale
     float scaledDeltaTime = deltaTime * timeScale;
 
-// Update all celestial bodies
-for (auto* body : celestialBodies) {
-    body->Update(scaledDeltaTime);
-}
+    // Update celestial bodies with a reasonable limit to prevent CPU overload
+    int updateCount = 0;
+    const int maxUpdatedBodies = 50; // Limit to prevent CPU overload
 
-// Update sun position for lighting (if sun moved)
-if (!celestialBodies.empty()) {
-    CelestialBody* sun = celestialBodies[0]; // First body is the Sun
-    renderer.pointLight.position = sun->GetPosition();
-}
+    for (auto* body : celestialBodies) {
+        if (updateCount >= maxUpdatedBodies) {
+            break; // Stop updating if we've reached the limit
+        }
+        body->Update(scaledDeltaTime);
+        updateCount++;
+    }
 
+    // Update sun position for lighting (if sun moved)
+    if (!celestialBodies.empty()) {
+        CelestialBody* sun = celestialBodies[0]; // First body is the Sun
+        renderer.pointLight.position = sun->GetPosition();
+    }
 }
 
 void Game3D::renderSolarSystem(Shader& shader) {
@@ -718,15 +731,25 @@ shader.SetMatrix4("projection", projection);
 shader.SetMatrix4("view", view);
 shader.SetVector3f("viewPos", camera.Position);
 
-// Render all celestial bodies
+// Render all celestial bodies with a reasonable limit to prevent GPU overload
+int renderCount = 0;
+const int maxRenderedBodies = 50; // Limit to prevent GPU overload
+
 for (auto* body : celestialBodies) {
+    if (renderCount >= maxRenderedBodies) {
+        break; // Stop rendering if we've reached the limit
+    }
+
     // Check if it's a Star or Planet for specialized rendering
     if (Star* star = dynamic_cast<Star*>(body)) {
         star->Draw(shader);
+        renderCount++;
     } else if (Planet* planet = dynamic_cast<Planet*>(body)) {
         planet->Draw(shader);
+        renderCount++;
     } else {
         body->Draw(shader);
+        renderCount++;
     }
 }
 
@@ -807,8 +830,8 @@ void Game3D::run() {
 
         // Configure reflection for models scene
         if (!useSolarSystemScene && skyboxCubemap) {
-            renderer.useModelReflection = true;
-            renderer.modelReflectivity = reflectionIntensity;  // Use reflection intensity from UI
+            renderer.useModelReflection = useReflection;  // Use config value
+            renderer.modelReflectivity = reflectionIntensity;  // Use reflection intensity from UI/config
             renderer.skyboxTexture = skyboxCubemap->ID;  // Use the skybox texture for reflections
         } else {
             renderer.useModelReflection = false;  // Disable reflection for solar system scene
@@ -901,14 +924,22 @@ void Game3D::run() {
             // Reflection map controls
             ImGui::Text("Reflection Settings:");
             ImGui::Checkbox("Use Reflection Map", &useReflectionMap);
-            ImGui::Checkbox("Use Model Reflections", &renderer.useModelReflection);  // Toggle general model reflections
-            ImGui::SliderFloat("Reflection Intensity", &reflectionIntensity, 0.0f, 2.0f, "%.2f");
+            if (ImGui::Checkbox("Use Model Reflections", &useReflection)) {  // Toggle general model reflections
+                game::cfg().SetUseReflection(useReflection);
+            }
+            if (ImGui::SliderFloat("Reflection Intensity", &reflectionIntensity, 0.0f, 2.0f, "%.2f")) {
+                game::cfg().SetReflectionIntensity(reflectionIntensity);
+            }
 
             // Refraction controls
             ImGui::Separator();
             ImGui::Text("Refraction Settings:");
-            ImGui::Checkbox("Use Model Refraction", &useRefraction);  // Toggle refractions
-            ImGui::SliderFloat("Refraction Ratio", &refractionRatio, 0.0f, 1.0f, "%.2f");
+            if (ImGui::Checkbox("Use Model Refraction", &useRefraction)) {  // Toggle refractions
+                game::cfg().SetUseRefraction(useRefraction);
+            }
+            if (ImGui::SliderFloat("Refraction Ratio", &refractionRatio, 0.0f, 1.0f, "%.2f")) {
+                game::cfg().SetRefractionRatio(refractionRatio);
+            }
 
             ImGui::End();
         }
@@ -929,7 +960,9 @@ void Game3D::run() {
             ImGui::Begin("Reflection Controls", &showReflectionControls);
 
             ImGui::Checkbox("Use Reflection Map", &useReflectionMap);
-            ImGui::SliderFloat("Reflection Intensity", &reflectionIntensity, 0.0f, 2.0f, "%.2f");
+            if (ImGui::SliderFloat("Reflection Intensity", &reflectionIntensity, 0.0f, 2.0f, "%.2f")) {
+                game::cfg().SetReflectionIntensity(reflectionIntensity);
+            }
 
             if (ImGui::Button("Toggle Reflection Window")) {
                 showReflectionWindow = !showReflectionWindow;

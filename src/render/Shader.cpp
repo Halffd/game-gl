@@ -4,7 +4,9 @@
 
 Shader &Shader::Use()
 {
-    glUseProgram(this->ID);
+    if (this->ID != 0) {
+        glUseProgram(this->ID);
+    }
     return *this;
 }
 void Shader::Compile(const char* vertexSource, const char* fragmentSource, const char* geometrySource)
@@ -52,6 +54,10 @@ void Shader::Compile(const char* vertexSource, const char* fragmentSource, const
 
 void Shader::SetFloat(const char *name, float value, bool useShader)
 {
+    if (this->ID == 0) {
+        std::cout << "Warning: Attempting to use uninitialized shader program" << std::endl;
+        return;
+    }
     if (useShader)
         this->Use();
     GLint location = glGetUniformLocation(this->ID, name);
@@ -62,8 +68,12 @@ void Shader::SetFloat(const char *name, float value, bool useShader)
 }
 void Shader::SetInteger(const char *name, int value, bool useShader)
 {
+    if (this->ID == 0) {
+        std::cout << "Warning: Attempting to use uninitialized shader program" << std::endl;
+        return;
+    }
     if (useShader)
-        this->Use ();
+        this->Use();
     GLint location = glGetUniformLocation(this->ID, name);
     if (location != -1) {
         glUniform1i(location, value);
@@ -72,6 +82,10 @@ void Shader::SetInteger(const char *name, int value, bool useShader)
 }
 void Shader::SetVector2f(const char *name, float x, float y, bool useShader)
 {
+    if (this->ID == 0) {
+        std::cout << "Warning: Attempting to use uninitialized shader program" << std::endl;
+        return;
+    }
     if (useShader)
         this->Use();
     GLint location = glGetUniformLocation(this->ID, name);
@@ -82,6 +96,10 @@ void Shader::SetVector2f(const char *name, float x, float y, bool useShader)
 }
 void Shader::SetVector2f(const char *name, const glm::vec2 &value, bool useShader)
 {
+    if (this->ID == 0) {
+        std::cout << "Warning: Attempting to use uninitialized shader program" << std::endl;
+        return;
+    }
     if (useShader)
         this->Use();
     GLint location = glGetUniformLocation(this->ID, name);
@@ -92,6 +110,10 @@ void Shader::SetVector2f(const char *name, const glm::vec2 &value, bool useShade
 }
 void Shader::SetVector3f(const char *name, float x, float y, float z, bool useShader)
 {
+    if (this->ID == 0) {
+        std::cout << "Warning: Attempting to use uninitialized shader program" << std::endl;
+        return;
+    }
     if (useShader)
         this->Use();
     GLint location = glGetUniformLocation(this->ID, name);
@@ -102,6 +124,10 @@ void Shader::SetVector3f(const char *name, float x, float y, float z, bool useSh
 }
 void Shader::SetVector3f(const char *name, const glm::vec3 &value, bool useShader)
 {
+    if (this->ID == 0) {
+        std::cout << "Warning: Attempting to use uninitialized shader program" << std::endl;
+        return;
+    }
     if (useShader)
         this->Use();
     GLint location = glGetUniformLocation(this->ID, name);
@@ -112,6 +138,10 @@ void Shader::SetVector3f(const char *name, const glm::vec3 &value, bool useShade
 }
 void Shader::SetVector4f(const char *name, float x, float y, float z, float w, bool useShader)
 {
+    if (this->ID == 0) {
+        std::cout << "Warning: Attempting to use uninitialized shader program" << std::endl;
+        return;
+    }
     if (useShader)
         this->Use();
     GLint location = glGetUniformLocation(this->ID, name);
@@ -122,6 +152,10 @@ void Shader::SetVector4f(const char *name, float x, float y, float z, float w, b
 }
 void Shader::SetVector4f(const char *name, const glm::vec4 &value, bool useShader)
 {
+    if (this->ID == 0) {
+        std::cout << "Warning: Attempting to use uninitialized shader program" << std::endl;
+        return;
+    }
     if (useShader)
         this->Use();
     GLint location = glGetUniformLocation(this->ID, name);
@@ -132,6 +166,10 @@ void Shader::SetVector4f(const char *name, const glm::vec4 &value, bool useShade
 }
 void Shader::SetMatrix4(const char *name, const glm::mat4 &matrix, bool useShader)
 {
+    if (this->ID == 0) {
+        std::cout << "Warning: Attempting to use uninitialized shader program" << std::endl;
+        return;
+    }
     if (useShader)
         this->Use();
     GLint location = glGetUniformLocation(this->ID, name);

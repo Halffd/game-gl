@@ -434,25 +434,24 @@ void Star::SetupMaterial(Shader &shader) {
 }
 
 void Star::Draw(Shader &shader) {
-    // Render with HDR
-    RenderWithHDR(shader);
-    
+    // Simplified rendering to prevent GPU overload
     // Draw the star with limb darkening
     RenderLimbDarkening(shader);
-    
-    // Draw corona
-    RenderCorona(shader);
-    
+
     // Draw glow effect
     if (glowShader && glowVAO != 0) {
         RenderGlowEffect(shader);
     }
-    
-    // Draw solar wind particles
+
+    // Draw corona (simplified)
+    RenderCorona(shader);
+
+    // Draw solar wind particles (simplified)
     RenderSolarWind(shader);
-    
-    // Apply bloom post-processing
-    ApplyBloom();
+
+    // Skip HDR and bloom effects which are too expensive for multiple stars
+    // RenderWithHDR(shader);
+    // ApplyBloom();
 }
 
 void Star::RenderWithHDR(Shader &shader) {
