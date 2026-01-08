@@ -3,6 +3,7 @@
 #include "asset/ResourceManager.h"
 #include <glad/glad.h>
 #include "../ConfigManager.hpp"
+#include <memory>
 
 const unsigned int SCREEN_WIDTH = 1280;
 const unsigned int SCREEN_HEIGHT = 720;
@@ -58,10 +59,21 @@ Renderer3D::Renderer3D()
     useModelRefraction = game::cfg().GetUseRefraction();
     modelReflectivity = game::cfg().GetReflectionIntensity();
     modelRefractionRatio = game::cfg().GetRefractionRatio();
+
+    // Initialize dynamic environment mapping
+    dynamicEnvMapping = std::make_unique<DynamicEnvironmentMapping>();
+    dynamicEnvMapping->initialize();
 }
 
 void Renderer3D::init() {
     setupGround();
+}
+
+Renderer3D::~Renderer3D() {
+    // Clean up dynamic environment mapping
+    if (dynamicEnvMapping) {
+        dynamicEnvMapping->cleanup();
+    }
 }
 void Renderer3D::renderWithCustomView(Scene& scene, Camera& camera, 
     const glm::mat4& customView, 
@@ -105,6 +117,64 @@ void Renderer3D::renderWithCustomView(Scene& scene, Camera& camera,
     glStencilFunc(GL_ALWAYS, 0, 0xFF);
     }
 void Renderer3D::render(Scene& scene, Camera& camera) {
+    // Handle dynamic environment mapping - render scene from each probe's perspective
+    if (useDynamicEnvironmentMapping && dynamicEnvMapping) {
+        // Update probes that need updating
+        dynamicEnvMapping->updateProbes();
+
+        // Render the scene from each probe's perspective
+        dynamicEnvMapping->renderAllProbes([&](const glm::mat4& projection, const glm::mat4& view) {
+            // Configure shader for rendering
+            Shader &defaultShader = ResourceManager::GetShader("model");
+
+            // Set camera uniforms
+            defaultShader.Use();
+            defaultShader.SetMatrix4("projection", projection);
+            defaultShader.SetMatrix4("view", view);
+
+            // Set lighting uniforms without dynamic environment mapping to avoid recursion
+            bool tempUseDynamic = useDynamicEnvironmentMapping;
+            useDynamicEnvironmentMapping = false;
+            setLightingUniforms(defaultShader, camera);
+            useDynamicEnvironmentMapping = tempUseDynamic;
+
+            // Render the ground
+            renderGround(defaultShader);
+
+            // Render all objects in the scene
+            for (auto& object : scene.getObjects()) {
+                Shader* customShader = object->getShader();
+                Shader& activeShader = customShader ? *customShader : defaultShader;
+
+                activeShader.Use();
+                activeShader.SetMatrix4("projection", projection);
+                activeShader.SetMatrix4("view", view);
+
+                // Temporarily disable dynamic environment mapping to avoid recursion
+                useDynamicEnvironmentMapping = false;
+                setLightingUniforms(activeShader, camera);
+                useDynamicEnvironmentMapping = tempUseDynamic;
+
+                object->Draw(activeShader);
+            }
+
+            for (auto& entity : scene.getEntities()) {
+                for (auto& component : entity->getComponents()) {
+                    defaultShader.Use();
+                    defaultShader.SetMatrix4("projection", projection);
+                    defaultShader.SetMatrix4("view", view);
+
+                    // Temporarily disable dynamic environment mapping to avoid recursion
+                    useDynamicEnvironmentMapping = false;
+                    setLightingUniforms(defaultShader, camera);
+                    useDynamicEnvironmentMapping = tempUseDynamic;
+
+                    component->draw(defaultShader);
+                }
+            }
+        });
+    }
+
     // Configure shader for rendering
     Shader &defaultShader = ResourceManager::GetShader("model");
 
@@ -126,16 +196,16 @@ void Renderer3D::render(Scene& scene, Camera& camera) {
     // --------------------------------------------------------------------
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
     glStencilMask(0xFF);
-    
+
     for (auto& object : scene.getObjects()) {
         Shader* customShader = object->getShader();
         Shader& activeShader = customShader ? *customShader : defaultShader;
-        
+
         activeShader.Use();
         activeShader.SetMatrix4("projection", projection);
         activeShader.SetMatrix4("view", view);
         setLightingUniforms(activeShader, camera);
-        
+
         object->Draw(activeShader);
     }
 
@@ -296,6 +366,37 @@ void Renderer3D::setLightingUniforms(Shader &shader, Camera& camera) {
     if (refractionRatioLoc != -1) {
         glUniform1f(refractionRatioLoc, modelRefractionRatio);
     }
+
+    // Dynamic environment mapping
+    if (useDynamicEnvironmentMapping) {
+        // Find the closest reflection probe to this object
+        int closestProbe = dynamicEnvMapping->getClosestProbe(camera.Position);
+        if (closestProbe != -1) {
+            unsigned int probeCubemap = dynamicEnvMapping->getProbeCubemap(closestProbe);
+
+            // Bind the dynamic cubemap to texture unit 6
+            glActiveTexture(GL_TEXTURE6);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, probeCubemap);
+
+            // Set the dynamic environment map uniform if it exists
+            GLint dynamicEnvMapLoc = glGetUniformLocation(shader.ID, "dynamicEnvironmentMap");
+            if (dynamicEnvMapLoc != -1) {
+                glUniform1i(dynamicEnvMapLoc, 6); // Texture unit 6
+            }
+
+            // Set the dynamic environment mapping flag
+            GLint useDynamicEnvMapLoc = glGetUniformLocation(shader.ID, "useDynamicEnvironmentMap");
+            if (useDynamicEnvMapLoc != -1) {
+                glUniform1i(useDynamicEnvMapLoc, 1);
+            }
+        }
+    } else {
+        // Disable dynamic environment mapping
+        GLint useDynamicEnvMapLoc = glGetUniformLocation(shader.ID, "useDynamicEnvironmentMap");
+        if (useDynamicEnvMapLoc != -1) {
+            glUniform1i(useDynamicEnvMapLoc, 0);
+        }
+    }
 }
 
 void Renderer3D::setupGround() {
@@ -429,3 +530,5 @@ void Renderer3D::renderGround(Shader &shader) {
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 }
+
+// Add the missing closing brace for the render function

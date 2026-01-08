@@ -18,6 +18,7 @@
 #include "render/space/Planet.h"
 #include "render/Skybox.h"
 #include "render/ReflectionRenderer.h"
+#include "render/DynamicEnvironmentMapping.h"
 #include "../ConfigManager.hpp"
 struct GLFWwindow;
 
@@ -115,11 +116,15 @@ public:
     bool showTriangleContours;
     bool runMode;
     float baseMovementSpeed;
-    int maxAsteroids = 100;
-    int maxKuiperBeltObjects = 200;
-    int maxDistantStars = 1000;
+    int maxAsteroids = 10; // Reduced from 100 to 10
+    int maxKuiperBeltObjects = 50; // Reduced from 200 to 50
+    int maxDistantStars = 100; // Reduced from 1000 to 100
     bool useFramebuffer;
     bool showPerformanceOverlay = true; // Toggle for FPS and performance counter
+
+    // Dynamic environment mapping
+    bool useDynamicEnvironmentMapping = false; // Whether to enable dynamic environment mapping
+    std::unique_ptr<DynamicEnvironmentMapping> dynamicEnvMapping;
 
 private:
     Scene scene;

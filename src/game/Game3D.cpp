@@ -12,6 +12,7 @@
 #include "../scene/TransformComponent.h"
 #include "../render/primitives/curved/Sphere.h"
 #include "render/primitives/basic/Cube.h"
+#include "render/DynamicEnvironmentMapping.h"
 
 #include <random>
 #include "../render/ReflectionRenderer.h"
@@ -53,6 +54,10 @@ Game3D::Game3D()
     useRefraction = game::cfg().GetUseRefraction();
     reflectionIntensity = game::cfg().GetReflectionIntensity();
     refractionRatio = game::cfg().GetRefractionRatio();
+
+    // Initialize dynamic environment mapping
+    dynamicEnvMapping = std::make_unique<DynamicEnvironmentMapping>();
+    dynamicEnvMapping->initialize();
 }
 
 Game3D::~Game3D() {
@@ -69,6 +74,11 @@ Game3D::~Game3D() {
         delete body;
     }
     celestialBodies.clear();
+
+    // Clean up dynamic environment mapping
+    if (dynamicEnvMapping) {
+        dynamicEnvMapping->cleanup();
+    }
 }
 
 void Game3D::init() {
@@ -726,33 +736,59 @@ void Game3D::renderSolarSystem(Shader& shader) {
     );
     glm::mat4 view = camera.GetViewMatrix();
 
-shader.Use();
-shader.SetMatrix4("projection", projection);
-shader.SetMatrix4("view", view);
-shader.SetVector3f("viewPos", camera.Position);
+    shader.Use();
+    shader.SetMatrix4("projection", projection);
+    shader.SetMatrix4("view", view);
+    shader.SetVector3f("viewPos", camera.Position);
 
-// Render all celestial bodies with a reasonable limit to prevent GPU overload
-int renderCount = 0;
-const int maxRenderedBodies = 50; // Limit to prevent GPU overload
+    // Handle dynamic environment mapping
+    if (useDynamicEnvironmentMapping && dynamicEnvMapping) {
+        // Add reflection probes for reflective celestial bodies
+        for (auto* body : celestialBodies) {
+            // For now, just add a probe at the camera position for demonstration
+            // In a real implementation, you'd add probes near reflective objects
+            if (dynamicEnvMapping->getProbeCount() == 0) {
+                dynamicEnvMapping->addReflectionProbe(camera.Position);
+            }
+        }
 
-for (auto* body : celestialBodies) {
-    if (renderCount >= maxRenderedBodies) {
-        break; // Stop rendering if we've reached the limit
-    }
+        // Update and render dynamic environment mapping
+        dynamicEnvMapping->updateProbes();
+        dynamicEnvMapping->renderAllProbes([&](const glm::mat4& proj, const glm::mat4& viewMat) {
+            // Render the scene from the probe's perspective
+            // This is a simplified callback - in practice, you'd render the scene differently
+        });
 
-    // Check if it's a Star or Planet for specialized rendering
-    if (Star* star = dynamic_cast<Star*>(body)) {
-        star->Draw(shader);
-        renderCount++;
-    } else if (Planet* planet = dynamic_cast<Planet*>(body)) {
-        planet->Draw(shader);
-        renderCount++;
+        // Enable dynamic environment mapping in the renderer
+        renderer.useDynamicEnvironmentMapping = true;
+        renderer.dynamicEnvMapping = std::move(dynamicEnvMapping);
+        dynamicEnvMapping = std::make_unique<DynamicEnvironmentMapping>();
+        dynamicEnvMapping->initialize();
     } else {
-        body->Draw(shader);
-        renderCount++;
+        renderer.useDynamicEnvironmentMapping = false;
     }
-}
 
+    // Render all celestial bodies with a reasonable limit to prevent GPU overload
+    int renderCount = 0;
+    const int maxRenderedBodies = 50; // Limit to prevent GPU overload
+
+    for (auto* body : celestialBodies) {
+        if (renderCount >= maxRenderedBodies) {
+            break; // Stop rendering if we've reached the limit
+        }
+
+        // Check if it's a Star or Planet for specialized rendering
+        if (Star* star = dynamic_cast<Star*>(body)) {
+            star->Draw(shader);
+            renderCount++;
+        } else if (Planet* planet = dynamic_cast<Planet*>(body)) {
+            planet->Draw(shader);
+            renderCount++;
+        } else {
+            body->Draw(shader);
+            renderCount++;
+        }
+    }
 }
 void Game3D::run() {
     lastFrame = static_cast<float>(glfwGetTime());
@@ -842,6 +878,18 @@ void Game3D::run() {
         // Configure refraction settings
         renderer.useModelRefraction = useRefraction;
         renderer.modelRefractionRatio = refractionRatio;
+
+        // Configure dynamic environment mapping
+        renderer.useDynamicEnvironmentMapping = useDynamicEnvironmentMapping;
+        if (useDynamicEnvironmentMapping && dynamicEnvMapping) {
+            // Add a reflection probe at the camera position for dynamic environment mapping
+            if (dynamicEnvMapping->getProbeCount() == 0) {
+                dynamicEnvMapping->addReflectionProbe(camera.Position);
+            } else {
+                // Update the existing probe position
+                dynamicEnvMapping->updateProbePosition(0, camera.Position);
+            }
+        }
 
         renderer.render(scene, camera);
 
@@ -1022,6 +1070,16 @@ void Game3D::processInput()
         } else {
             glDisable(GL_FRAMEBUFFER_SRGB);
         }
+    }
+
+    // Toggle dynamic environment mapping with F3
+    static bool dynamicEnvMappingToggle = false;
+    static bool lastDynamicEnvMappingToggle = false;
+    toggleKey(GLFW_KEY_F3, dynamicEnvMappingToggle);
+    if (dynamicEnvMappingToggle != lastDynamicEnvMappingToggle) {
+        lastDynamicEnvMappingToggle = dynamicEnvMappingToggle;
+        useDynamicEnvironmentMapping = !useDynamicEnvironmentMapping;
+        std::cout << "Dynamic Environment Mapping: " << (useDynamicEnvironmentMapping ? "ON" : "OFF") << std::endl;
     }
 
     // Toggle reflection window with F2

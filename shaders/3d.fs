@@ -92,6 +92,10 @@ uniform float reflectivity = 0.3;    // Default reflection intensity
 uniform bool useRefraction = false;  // Disabled by default
 uniform float refractionRatio = 0.66; // Default refraction ratio (glass-like)
 
+// Dynamic environment mapping uniforms
+uniform samplerCube dynamicEnvironmentMap;
+uniform bool useDynamicEnvironmentMap = false;  // Whether to use dynamic environment mapping
+
 // Function prototypes
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffuseColor, vec3 specularColor);
@@ -295,7 +299,14 @@ void main()
     if (useReflection && reflectivity > 0.0) {
         vec3 I = normalize(FragPos - viewPos); // viewPos should be camera position
         vec3 R = reflect(I, normalize(Normal));
-        vec3 reflectionColor = texture(skybox, R).rgb;
+        vec3 reflectionColor;
+
+        // Use dynamic environment map if available and enabled, otherwise use static skybox
+        if (useDynamicEnvironmentMap) {
+            reflectionColor = texture(dynamicEnvironmentMap, R).rgb;
+        } else {
+            reflectionColor = texture(skybox, R).rgb;
+        }
 
         // Blend reflection with the lit result using the reflectivity factor
         result = mix(result, reflectionColor, reflectivity);
@@ -306,7 +317,14 @@ void main()
     if (useRefraction && refractionRatio > 0.0) {
         vec3 I = normalize(FragPos - viewPos); // viewPos should be camera position
         vec3 R = refract(I, normalize(Normal), refractionRatio);
-        vec3 refractionColor = texture(skybox, R).rgb;
+        vec3 refractionColor;
+
+        // Use dynamic environment map if available and enabled, otherwise use static skybox
+        if (useDynamicEnvironmentMap) {
+            refractionColor = texture(dynamicEnvironmentMap, R).rgb;
+        } else {
+            refractionColor = texture(skybox, R).rgb;
+        }
 
         // For refraction, replace the result entirely for transparent materials
         // Only do this if refraction is explicitly enabled (to avoid overwriting reflection)

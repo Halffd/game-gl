@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include "../include/Camera.hpp"
+#include "DynamicEnvironmentMapping.h"
 
 // Directional light
 struct DirLight {
@@ -79,6 +80,12 @@ public:
     // Refraction properties
     bool useModelRefraction = false;  // Whether to enable refractions for models (default off)
     float modelRefractionRatio = 0.66f;  // Ratio of air to material (1.00 / 1.52 for glass ≈ 0.66)
+
+    // Dynamic environment mapping properties
+    std::unique_ptr<DynamicEnvironmentMapping> dynamicEnvMapping;
+    bool useDynamicEnvironmentMapping = false;  // Whether to enable dynamic environment mapping (default off)
+    int maxReflectionProbes = 10;  // Maximum number of reflection probes to use
+    float reflectionUpdateInterval = 0.5f;  // Time interval (in seconds) between reflection updates
 
     void renderWithCustomView(Scene& scene, Camera& camera,
         const glm::mat4& customView,
