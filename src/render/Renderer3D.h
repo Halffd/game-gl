@@ -76,6 +76,10 @@ public:
     float modelReflectivity = 0.3f;  // Default to 0.3 (partial reflection)
     bool useModelReflection = true;  // Whether to enable reflections for models (default on)
 
+    // Refraction properties
+    bool useModelRefraction = false;  // Whether to enable refractions for models (default off)
+    float modelRefractionRatio = 0.66f;  // Ratio of air to material (1.00 / 1.52 for glass ≈ 0.66)
+
     void renderWithCustomView(Scene& scene, Camera& camera,
         const glm::mat4& customView,
         const glm::mat4& projection);

@@ -260,24 +260,34 @@ void Renderer3D::setLightingUniforms(Shader &shader, Camera& camera) {
         GLint useReflectionLoc = glGetUniformLocation(shader.ID, "useReflection");
 
         if (skyboxLoc != -1 && reflectivityLoc != -1 && useReflectionLoc != -1) {
-            shader.SetInteger("useReflection", 1);
-            shader.SetFloat("reflectivity", modelReflectivity);
+            glUniform1i(useReflectionLoc, 1);
+            glUniform1f(reflectivityLoc, modelReflectivity);
 
             // Bind skybox to a texture unit (e.g., unit 5 to avoid conflicts)
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
-            shader.SetInteger("skybox", 5);
+            glUniform1i(skyboxLoc, 5);
         }
     } else {
         // Only set reflection uniforms if they exist in this shader
-        GLint skyboxLoc = glGetUniformLocation(shader.ID, "skybox");
-        GLint reflectivityLoc = glGetUniformLocation(shader.ID, "reflectivity");
         GLint useReflectionLoc = glGetUniformLocation(shader.ID, "useReflection");
+        GLint reflectivityLoc = glGetUniformLocation(shader.ID, "reflectivity");
 
-        if (skyboxLoc != -1 && reflectivityLoc != -1 && useReflectionLoc != -1) {
-            shader.SetInteger("useReflection", 0);
-            shader.SetFloat("reflectivity", 0.0f);
+        if (useReflectionLoc != -1 && reflectivityLoc != -1) {
+            glUniform1i(useReflectionLoc, 0);
+            glUniform1f(reflectivityLoc, 0.0f);
         }
+    }
+
+    // Set refraction uniforms if they exist in this shader
+    GLint useRefractionLoc = glGetUniformLocation(shader.ID, "useRefraction");
+    GLint refractionRatioLoc = glGetUniformLocation(shader.ID, "refractionRatio");
+
+    if (useRefractionLoc != -1) {
+        glUniform1i(useRefractionLoc, useModelRefraction ? 1 : 0);
+    }
+    if (refractionRatioLoc != -1) {
+        glUniform1f(refractionRatioLoc, modelRefractionRatio);
     }
 }
 

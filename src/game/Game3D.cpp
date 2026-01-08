@@ -816,6 +816,10 @@ void Game3D::run() {
             renderer.skyboxTexture = 0;
         }
 
+        // Configure refraction settings
+        renderer.useModelRefraction = useRefraction;
+        renderer.modelRefractionRatio = refractionRatio;
+
         renderer.render(scene, camera);
 
         // Render reflective objects
@@ -899,6 +903,12 @@ void Game3D::run() {
             ImGui::Checkbox("Use Reflection Map", &useReflectionMap);
             ImGui::Checkbox("Use Model Reflections", &renderer.useModelReflection);  // Toggle general model reflections
             ImGui::SliderFloat("Reflection Intensity", &reflectionIntensity, 0.0f, 2.0f, "%.2f");
+
+            // Refraction controls
+            ImGui::Separator();
+            ImGui::Text("Refraction Settings:");
+            ImGui::Checkbox("Use Model Refraction", &useRefraction);  // Toggle refractions
+            ImGui::SliderFloat("Refraction Ratio", &refractionRatio, 0.0f, 1.0f, "%.2f");
 
             ImGui::End();
         }
