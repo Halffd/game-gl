@@ -6,6 +6,7 @@
 #include <vector>
 #include "../include/Camera.hpp"
 #include "DynamicEnvironmentMapping.h"
+#include "EnhancedVertexBuffer.h"
 
 // Directional light
 struct DirLight {
@@ -91,8 +92,9 @@ public:
         const glm::mat4& customView,
         const glm::mat4& projection);
 private:
-    unsigned int groundVAO;
-    unsigned int groundVBO;
+    std::unique_ptr<VO::EnhancedVertexBuffer> groundBuffer;  // Enhanced buffer for ground
+    unsigned int groundVAO;  // Legacy - kept for compatibility
+    unsigned int groundVBO;  // Legacy - kept for compatibility
     unsigned int groundTexture;
     unsigned int groundNormalTexture;
 };

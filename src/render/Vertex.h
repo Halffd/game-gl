@@ -70,8 +70,14 @@ namespace VO {
         void setupSubData(const T *vertices, GLsizeiptr size, GLintptr offset = 0);
         template <typename T>
         void setupSubData(const std::vector<T> &vertices, GLintptr offset = 0);
+
+        // Advanced buffer techniques
+        void* mapBuffer(GLenum access = GL_WRITE_ONLY);  // Maps buffer to memory for direct access
+        bool unmapBuffer();  // Unmaps buffer from memory
+        void copyFrom(const VBO& source, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size);  // Copies data from another buffer
+
         void unbind() const;
-        
+
     private:
         unsigned int id;
     };

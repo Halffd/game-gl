@@ -80,9 +80,45 @@ namespace VO {
         glCheckError(__FILE__, __LINE__);
     }
 
+    void* VBO::mapBuffer(GLenum access) {
+        glBindBuffer(GL_ARRAY_BUFFER, id);
+        void* ptr = glMapBuffer(GL_ARRAY_BUFFER, access);
+        glCheckError(__FILE__, __LINE__);
+        return ptr;
+    }
+
+    bool VBO::unmapBuffer() {
+        glBindBuffer(GL_ARRAY_BUFFER, id);
+        bool success = glUnmapBuffer(GL_ARRAY_BUFFER) == GL_TRUE;
+        glCheckError(__FILE__, __LINE__);
+        return success;
+    }
+
+    void VBO::copyFrom(const VBO& source, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size) {
+        // Bind source and destination buffers to copy targets
+        glBindBuffer(GL_COPY_READ_BUFFER, source.id);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, id);
+
+        // Copy data from source to destination
+        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER,
+                           readOffset, writeOffset, size);
+
+        // Unbind
+        glBindBuffer(GL_COPY_READ_BUFFER, 0);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+
+        glCheckError(__FILE__, __LINE__);
+    }
+
     void VBO::unbind() const {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
+
+    // Template instantiations
+    template void VBO::setup<GLfloat>(const GLfloat*, GLsizeiptr, GLenum);
+    template void VBO::setup<std::vector<glm::vec3>>(const std::vector<glm::vec3>&, GLenum);
+    template void VBO::setupSubData<GLfloat>(const GLfloat*, GLsizeiptr, GLintptr);
+    template void VBO::setupSubData<std::vector<glm::vec3>>(const std::vector<glm::vec3>&, GLintptr);
 
     VAO::~VAO() {
         if (id) {

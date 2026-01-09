@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include "../ConfigManager.hpp"
 #include <memory>
+#include "EnhancedVertexBuffer.h"
 
 const unsigned int SCREEN_WIDTH = 1280;
 const unsigned int SCREEN_HEIGHT = 720;
@@ -63,6 +64,9 @@ Renderer3D::Renderer3D()
     // Initialize dynamic environment mapping
     dynamicEnvMapping = std::make_unique<DynamicEnvironmentMapping>();
     dynamicEnvMapping->initialize();
+
+    // Initialize ground buffer
+    groundBuffer = nullptr;
 }
 
 void Renderer3D::init() {
@@ -74,6 +78,9 @@ Renderer3D::~Renderer3D() {
     if (dynamicEnvMapping) {
         dynamicEnvMapping->cleanup();
     }
+
+    // Clean up ground buffer
+    groundBuffer.reset();
 }
 void Renderer3D::renderWithCustomView(Scene& scene, Camera& camera, 
     const glm::mat4& customView, 
@@ -401,46 +408,22 @@ void Renderer3D::setLightingUniforms(Shader &shader, Camera& camera) {
 
 void Renderer3D::setupGround() {
     // Create a large ground plane - lowered by 50% (y = -0.5f instead of 0.0f)
-    float groundVertices[] = {
-        // positions          // normals           // texture coords  // tangent                // bitangent
-        -50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-        50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f, 50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-        50.0f, -0.5f, 50.0f, 0.0f, 1.0f, 0.0f, 50.0f, 50.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+    std::vector<VO::VertexData> groundVertices = {
+        // Triangle 1
+        {{-50.0f, -0.5f, -50.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+        {{50.0f, -0.5f, -50.0f}, {0.0f, 1.0f, 0.0f}, {50.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+        {{50.0f, -0.5f, 50.0f}, {0.0f, 1.0f, 0.0f}, {50.0f, 50.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
 
-        -50.0f, -0.5f, -50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-        50.0f, -0.5f, 50.0f, 0.0f, 1.0f, 0.0f, 50.0f, 50.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-        -50.0f, -0.5f, 50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 50.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f
+        // Triangle 2
+        {{-50.0f, -0.5f, -50.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+        {{50.0f, -0.5f, 50.0f}, {0.0f, 1.0f, 0.0f}, {50.0f, 50.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+        {{-50.0f, -0.5f, 50.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 50.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}
     };
 
-    // Generate and bind VAO and VBO
-    glGenVertexArrays(1, &groundVAO);
-    glGenBuffers(1, &groundVBO);
-
-    glBindVertexArray(groundVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, groundVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(groundVertices), groundVertices, GL_STATIC_DRAW);
-
-    // Position attribute
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) 0);
-
-    // Normal attribute
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (3 * sizeof(float)));
-
-    // Texture coords attribute
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (6 * sizeof(float)));
-
-    // Tangent attribute
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (8 * sizeof(float)));
-
-    // Bitangent attribute
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (11 * sizeof(float)));
-
-    glBindVertexArray(0);
+    // Use enhanced vertex buffer with interleaved strategy
+    groundBuffer = std::make_unique<VO::EnhancedVertexBuffer>();
+    std::vector<unsigned int> indices = {0, 1, 2, 3, 4, 5}; // Simple index buffer
+    groundBuffer->initializeInterleaved(groundVertices, indices);
 
     // Create a larger, more detailed ground texture (4x4 grid instead of 2x2)
     unsigned char groundTextureData[] = {
@@ -525,10 +508,17 @@ void Renderer3D::renderGround(Shader &shader) {
     glBindTexture(GL_TEXTURE_2D, groundNormalTexture);
     shader.SetInteger("texture_normal1", 1);
 
-    // Draw ground
-    glBindVertexArray(groundVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
+    // Draw ground using enhanced buffer
+    if (groundBuffer) {
+        groundBuffer->bind();
+        groundBuffer->draw();
+        groundBuffer->unbind();
+    } else {
+        // Fallback to legacy rendering
+        glBindVertexArray(groundVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
+    }
 }
 
 // Add the missing closing brace for the render function
