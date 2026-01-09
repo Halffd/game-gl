@@ -754,10 +754,8 @@ void Game3D::renderSolarSystem(Shader& shader) {
 
         // Update and render dynamic environment mapping
         dynamicEnvMapping->updateProbes();
-        dynamicEnvMapping->renderAllProbes([&](const glm::mat4& proj, const glm::mat4& viewMat) {
-            // Render the scene from the probe's perspective
-            // This is a simplified callback - in practice, you'd render the scene differently
-        });
+        // For now, just update the probes without rendering since we can't pass a lambda to the function pointer
+        // In a real implementation, you'd need to implement the rendering callback differently
 
         // Enable dynamic environment mapping in the renderer
         renderer.useDynamicEnvironmentMapping = true;
@@ -879,17 +877,18 @@ void Game3D::run() {
         renderer.useModelRefraction = useRefraction;
         renderer.modelRefractionRatio = refractionRatio;
 
-        // Configure dynamic environment mapping
-        renderer.useDynamicEnvironmentMapping = useDynamicEnvironmentMapping;
-        if (useDynamicEnvironmentMapping && dynamicEnvMapping) {
-            // Add a reflection probe at the camera position for dynamic environment mapping
-            if (dynamicEnvMapping->getProbeCount() == 0) {
-                dynamicEnvMapping->addReflectionProbe(camera.Position);
-            } else {
-                // Update the existing probe position
-                dynamicEnvMapping->updateProbePosition(0, camera.Position);
-            }
-        }
+        // Temporarily disable dynamic environment mapping to troubleshoot crashes
+        // renderer.useDynamicEnvironmentMapping = useDynamicEnvironmentMapping;
+        // if (useDynamicEnvironmentMapping && dynamicEnvMapping) {
+        //     // Add a reflection probe at the camera position for dynamic environment mapping
+        //     if (dynamicEnvMapping->getProbeCount() == 0) {
+        //         dynamicEnvMapping->addReflectionProbe(camera.Position);
+        //     } else {
+        //         // Update the existing probe position
+        //         dynamicEnvMapping->updateProbePosition(0, camera.Position);
+        //     }
+        // }
+        renderer.useDynamicEnvironmentMapping = false;  // Disable for now
 
         renderer.render(scene, camera);
 

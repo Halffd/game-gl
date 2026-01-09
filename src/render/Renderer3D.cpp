@@ -5,6 +5,7 @@
 #include "../ConfigManager.hpp"
 #include <memory>
 #include "EnhancedVertexBuffer.h"
+#include <cstddef> // for offsetof
 
 const unsigned int SCREEN_WIDTH = 1280;
 const unsigned int SCREEN_HEIGHT = 720;
@@ -65,8 +66,8 @@ Renderer3D::Renderer3D()
     dynamicEnvMapping = std::make_unique<DynamicEnvironmentMapping>();
     dynamicEnvMapping->initialize();
 
-    // Initialize ground buffer
-    groundBuffer = nullptr;
+    // Initialize ground buffer (now commented out since we're not using EnhancedVertexBuffer)
+    // groundBuffer = nullptr;
 }
 
 void Renderer3D::init() {
@@ -79,8 +80,13 @@ Renderer3D::~Renderer3D() {
         dynamicEnvMapping->cleanup();
     }
 
-    // Clean up ground buffer
-    groundBuffer.reset();
+    // Clean up legacy buffers
+    if (groundVAO) {
+        glDeleteVertexArrays(1, &groundVAO);
+    }
+    if (groundVBO) {
+        glDeleteBuffers(1, &groundVBO);
+    }
 }
 void Renderer3D::renderWithCustomView(Scene& scene, Camera& camera, 
     const glm::mat4& customView, 
@@ -124,63 +130,14 @@ void Renderer3D::renderWithCustomView(Scene& scene, Camera& camera,
     glStencilFunc(GL_ALWAYS, 0, 0xFF);
     }
 void Renderer3D::render(Scene& scene, Camera& camera) {
-    // Handle dynamic environment mapping - render scene from each probe's perspective
-    if (useDynamicEnvironmentMapping && dynamicEnvMapping) {
-        // Update probes that need updating
-        dynamicEnvMapping->updateProbes();
-
-        // Render the scene from each probe's perspective
-        dynamicEnvMapping->renderAllProbes([&](const glm::mat4& projection, const glm::mat4& view) {
-            // Configure shader for rendering
-            Shader &defaultShader = ResourceManager::GetShader("model");
-
-            // Set camera uniforms
-            defaultShader.Use();
-            defaultShader.SetMatrix4("projection", projection);
-            defaultShader.SetMatrix4("view", view);
-
-            // Set lighting uniforms without dynamic environment mapping to avoid recursion
-            bool tempUseDynamic = useDynamicEnvironmentMapping;
-            useDynamicEnvironmentMapping = false;
-            setLightingUniforms(defaultShader, camera);
-            useDynamicEnvironmentMapping = tempUseDynamic;
-
-            // Render the ground
-            renderGround(defaultShader);
-
-            // Render all objects in the scene
-            for (auto& object : scene.getObjects()) {
-                Shader* customShader = object->getShader();
-                Shader& activeShader = customShader ? *customShader : defaultShader;
-
-                activeShader.Use();
-                activeShader.SetMatrix4("projection", projection);
-                activeShader.SetMatrix4("view", view);
-
-                // Temporarily disable dynamic environment mapping to avoid recursion
-                useDynamicEnvironmentMapping = false;
-                setLightingUniforms(activeShader, camera);
-                useDynamicEnvironmentMapping = tempUseDynamic;
-
-                object->Draw(activeShader);
-            }
-
-            for (auto& entity : scene.getEntities()) {
-                for (auto& component : entity->getComponents()) {
-                    defaultShader.Use();
-                    defaultShader.SetMatrix4("projection", projection);
-                    defaultShader.SetMatrix4("view", view);
-
-                    // Temporarily disable dynamic environment mapping to avoid recursion
-                    useDynamicEnvironmentMapping = false;
-                    setLightingUniforms(defaultShader, camera);
-                    useDynamicEnvironmentMapping = tempUseDynamic;
-
-                    component->draw(defaultShader);
-                }
-            }
-        });
-    }
+    // Temporarily disable dynamic environment mapping to troubleshoot crashes
+    // if (useDynamicEnvironmentMapping && dynamicEnvMapping) {
+    //     // Update probes that need updating
+    //     dynamicEnvMapping->updateProbes();
+    //
+    //     // For now, skip dynamic environment mapping rendering since we can't pass a lambda to the function pointer
+    //     // In a real implementation, you'd need to implement the rendering callback differently
+    // }
 
     // Configure shader for rendering
     Shader &defaultShader = ResourceManager::GetShader("model");
@@ -420,10 +377,65 @@ void Renderer3D::setupGround() {
         {{-50.0f, -0.5f, 50.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 50.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}
     };
 
-    // Use enhanced vertex buffer with interleaved strategy
-    groundBuffer = std::make_unique<VO::EnhancedVertexBuffer>();
-    std::vector<unsigned int> indices = {0, 1, 2, 3, 4, 5}; // Simple index buffer
-    groundBuffer->initializeInterleaved(groundVertices, indices);
+    // Generate and bind VAO and VBO
+    glGenVertexArrays(1, &groundVAO);
+    glGenBuffers(1, &groundVBO);
+
+    glBindVertexArray(groundVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, groundVBO);
+
+    // Convert to the format expected by the legacy system
+    std::vector<float> legacyVertices;
+    for (const auto& vertex : groundVertices) {
+        // Position
+        legacyVertices.push_back(vertex.Position.x);
+        legacyVertices.push_back(vertex.Position.y);
+        legacyVertices.push_back(vertex.Position.z);
+
+        // Normal
+        legacyVertices.push_back(vertex.Normal.x);
+        legacyVertices.push_back(vertex.Normal.y);
+        legacyVertices.push_back(vertex.Normal.z);
+
+        // TexCoords
+        legacyVertices.push_back(vertex.TexCoords.x);
+        legacyVertices.push_back(vertex.TexCoords.y);
+
+        // Tangent (skip for now)
+        legacyVertices.push_back(vertex.Tangent.x);
+        legacyVertices.push_back(vertex.Tangent.y);
+        legacyVertices.push_back(vertex.Tangent.z);
+
+        // Bitangent (skip for now)
+        legacyVertices.push_back(vertex.Bitangent.x);
+        legacyVertices.push_back(vertex.Bitangent.y);
+        legacyVertices.push_back(vertex.Bitangent.z);
+    }
+
+    glBufferData(GL_ARRAY_BUFFER, legacyVertices.size() * sizeof(float),
+                 legacyVertices.data(), GL_STATIC_DRAW);
+
+    // Position attribute (location = 0)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) 0);
+
+    // Normal attribute (location = 1)
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (3 * sizeof(float)));
+
+    // Texture coords attribute (location = 2)
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (6 * sizeof(float)));
+
+    // Tangent attribute (location = 3)
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (8 * sizeof(float)));
+
+    // Bitangent attribute (location = 4)
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *) (11 * sizeof(float)));
+
+    glBindVertexArray(0);
 
     // Create a larger, more detailed ground texture (4x4 grid instead of 2x2)
     unsigned char groundTextureData[] = {
@@ -508,17 +520,10 @@ void Renderer3D::renderGround(Shader &shader) {
     glBindTexture(GL_TEXTURE_2D, groundNormalTexture);
     shader.SetInteger("texture_normal1", 1);
 
-    // Draw ground using enhanced buffer
-    if (groundBuffer) {
-        groundBuffer->bind();
-        groundBuffer->draw();
-        groundBuffer->unbind();
-    } else {
-        // Fallback to legacy rendering
-        glBindVertexArray(groundVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);
-    }
+    // Use legacy rendering for now to avoid potential issues with EnhancedVertexBuffer
+    glBindVertexArray(groundVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);  // Changed to use indices
+    glBindVertexArray(0);
 }
 
 // Add the missing closing brace for the render function

@@ -6,7 +6,7 @@
 #include <vector>
 #include "../include/Camera.hpp"
 #include "DynamicEnvironmentMapping.h"
-#include "EnhancedVertexBuffer.h"
+// #include "EnhancedVertexBuffer.h"  // Commented out to troubleshoot crashes
 
 // Directional light
 struct DirLight {
@@ -91,8 +91,9 @@ public:
     void renderWithCustomView(Scene& scene, Camera& camera,
         const glm::mat4& customView,
         const glm::mat4& projection);
+    ~Renderer3D();  // Explicit destructor to ensure proper cleanup
 private:
-    std::unique_ptr<VO::EnhancedVertexBuffer> groundBuffer;  // Enhanced buffer for ground
+    // std::unique_ptr<VO::EnhancedVertexBuffer> groundBuffer;  // Enhanced buffer for ground - commented out to avoid crashes
     unsigned int groundVAO;  // Legacy - kept for compatibility
     unsigned int groundVBO;  // Legacy - kept for compatibility
     unsigned int groundTexture;
