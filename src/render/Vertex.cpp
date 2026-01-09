@@ -114,11 +114,8 @@ namespace VO {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    // Template instantiations
-    template void VBO::setup<GLfloat>(const GLfloat*, GLsizeiptr, GLenum);
-    template void VBO::setup<std::vector<glm::vec3>>(const std::vector<glm::vec3>&, GLenum);
-    template void VBO::setupSubData<GLfloat>(const GLfloat*, GLsizeiptr, GLintptr);
-    template void VBO::setupSubData<std::vector<glm::vec3>>(const std::vector<glm::vec3>&, GLintptr);
+    // Template instantiations are not needed since they're defined inline
+    // The templates are already instantiated when used
 
     VAO::~VAO() {
         if (id) {
