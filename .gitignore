@@ -4,6 +4,7 @@ src/file
 lib
 libs
 b
+config
 .vscode
 .history
 .cache
