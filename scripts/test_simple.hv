@@ -1,0 +1,4 @@
+print("Direct call test:")
+print(get_level())
+print(get_fps())
+print("Done")

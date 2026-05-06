@@ -1,0 +1,35 @@
+print("=== Havel Script Test ===");
+print("");
+
+print("Test 1: Basic print");
+print("Hello World");
+
+print("");
+print("Test 2: Bindings without game context");
+
+fps = get_fps();
+print("get_fps() returned:");
+print(fps);
+
+level = get_level();
+print("get_level() returned:");
+print(level);
+
+size = get_window_size();
+print("get_window_size() returned:");
+print(size);
+
+print("");
+print("Test 3: Set level (should fail gracefully)");
+result = set_level("5");
+print("set_level(5) returned:");
+print(result);
+
+print("");
+print("Test 4: Reset game (should fail gracefully)");
+result = reset_game();
+print("reset_game() returned:");
+print(result);
+
+print("");
+print("=== Test Complete ===");
