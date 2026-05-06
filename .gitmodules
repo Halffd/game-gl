@@ -1,0 +1,3 @@
+[submodule "havel"]
+	path = havel
+	url = https://github.com/Halffd/Havel
