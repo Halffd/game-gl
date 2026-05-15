@@ -1,0 +1,38 @@
+print("Snake AI script loaded")
+
+// Auto-play snake: simple greedy algorithm
+// Hook functions set by the game loop:
+//   get_snake_head_x() / get_snake_head_y() - head position
+//   get_food_x() / get_food_y() - food position
+//   get_snake_dir() - current direction string
+//   set_snake_dir(dir) - set direction: up/down/left/right
+//   get_score() - current score
+//   is_game_over() - check if game is over
+
+fn clamp(v, min, max) {
+    if v < min { return min }
+    if v > max { return max }
+    v
+}
+
+fn run_snake_ai() {
+    if is_game_over() { return }
+
+    head_x = get_snake_head_x()
+    head_y = get_snake_head_y()
+    food_x = get_food_x()
+    food_y = get_food_y()
+    dir = get_snake_dir()
+
+    dx = food_x - head_x
+    dy = food_y - head_y
+
+    // Simple chase: prioritize horizontal then vertical
+    if abs(dx) > abs(dy) {
+        if dx > 0 { set_snake_dir("right") }
+        else { set_snake_dir("left") }
+    } else {
+        if dy > 0 { set_snake_dir("down") }
+        else { set_snake_dir("up") }
+    }
+}

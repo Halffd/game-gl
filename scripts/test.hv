@@ -1,34 +1,5 @@
-print("=== Testing Havel Bindings ===")
-
-// Test print binding
-print("1. Testing print...")
-print("Hello from Havel!")
-
-// Test get_fps binding  
-print("2. Testing get_fps...")
-fps = get_fps()
-print("get_fps returned: " + fps)
-
-// Test get_level binding
-print("3. Testing get_level...")
-level = get_level()
-print("get_level returned: " + level)
-
-// Test set_level binding
-print("4. Testing set_level...")
-result = set_level("2")
-print("set_level returned: " + result)
-level = get_level()
-print("After set_level, get_level: " + level)
-
-// Test reset_game binding
-print("5. Testing reset_game...")
-result = reset_game()
-print("reset_game returned: " + result)
-
-// Test get_window_size binding
-print("6. Testing get_window_size...")
-size = get_window_size()
-print("get_window_size returned: " + size)
-
-print("=== All tests complete ===")
+fn add(a, b) {
+    a + b
+}
+result = add(3, 4)
+print(result)

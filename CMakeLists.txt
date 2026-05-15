@@ -50,6 +50,16 @@ file(GLOB_RECURSE SOURCE_FILES
 
 # ==============================================================================
 # HAVEL LANGUAGE INTEGRATION (Link against pre-built libraries)
+option(ENABLE_HAVEL_LANG "Enable Havel language scripting support" ON)
+set(HAVEL_ROOT "${CMAKE_SOURCE_DIR}/havel")
+
+# Find Qt6 for Havel's core dependencies
+find_package(Qt6 COMPONENTS Core Widgets Gui QUIET)
+if(Qt6_FOUND)
+    message(STATUS "Qt6 found for Havel: ${Qt6_VERSION}")
+endif()
+
+set(HAVEL_SOURCES "")
 # ==============================================================================
 set(HAVEL_SOURCES "")
 if(ENABLE_HAVEL_LANG)
@@ -77,8 +87,8 @@ if(ENABLE_HAVEL_LANG)
         "${HAVEL_EXT_RUNTIME_LIB}"
     )
     
-    # Additional required system libraries for Havel
-    set(HAVEL_SYSTEM_LIBS dl pthread stdc++fs Xfixes Xrandr Xinerama Xcomposite Xtst Xi ncurses dbus-1 pcre2-8 pcre2-16 tesseract leptonica crypto ssl m ffi)
+    # Additional required system libraries for Havel (Havel core has Qt dependencies)
+    set(HAVEL_SYSTEM_LIBS dl pthread stdc++fs Xfixes Xrandr Xinerama Xcomposite Xtst Xi ncurses dbus-1 pcre2-8 pcre2-16 tesseract leptonica crypto ssl m ffi Qt6::Core Qt6::Widgets Qt6::Gui)
     
     message(STATUS "Havel Language: ENABLED")
     message(STATUS "  Core lib: ${HAVEL_CORE_LIB}")

@@ -1,0 +1,93 @@
+w = int(get_width())
+h = int(get_height())
+
+left = obj_rect(40, h/2 - 40, 15, 80)
+obj_set_color(left, 1, 1, 1)
+right = obj_rect(w - 55, h/2 - 40, 15, 80)
+obj_set_color(right, 1, 0, 0)
+ball = obj_rect(w/2 - 6, h/2 - 6, 12, 12)
+obj_set_color(ball, 1, 1, 1)
+
+vx = obj_rect(250, 0, 0, 0)
+obj_hide(vx)
+vy = obj_rect(120, 0, 0, 0)
+obj_hide(vy)
+
+fn init() { x = 0 }
+fn render() { x = 0 }
+
+fn input() {
+    s = delta()
+    if key_down("w") {
+        y = obj_get_y(left)
+        if y > 0 { obj_set_y(left, y - 400 * s) }
+    }
+    if key_down("s") {
+        y = obj_get_y(left)
+        if y < h - 80 { obj_set_y(left, y + 400 * s) }
+    }
+}
+
+fn update(s) {
+    v = obj_get_x(vx)
+    u = obj_get_x(vy)
+    bx = obj_get_x(ball)
+    by = obj_get_y(ball)
+    bx = bx + v * s; by = by + u * s
+    if by < 0 { by = 0; u = -u }
+    if by > h - 12 { by = h - 12; u = -u }
+    lx = obj_get_x(left); ly = obj_get_y(left)
+    if bx < lx + 15 and bx + 12 > lx and by + 12 > ly and by < ly + 80 {
+        v = -v * 1.05; bx = lx + 15
+    }
+    rx = obj_get_x(right); ry = obj_get_y(right)
+    if bx + 12 > rx and bx < rx + 15 and by + 12 > ry and by < ry + 80 {
+        v = -v * 1.05; bx = rx - 12
+    }
+    target = by - 40
+    if target < 0 { target = 0 }
+    if target > h - 80 { target = h - 80 }
+    if ry < target { obj_set_y(right, ry + 300 * s) }
+    if ry > target { obj_set_y(right, ry - 300 * s) }
+    if bx < -20 { bx = w/2; by = h/2; v = 250; u = 120 }
+    if bx > w + 20 { bx = w/2; by = h/2; v = -250; u = 120 }
+    obj_set_x(ball, bx); obj_set_y(ball, by)
+    obj_set_x(vx, v); obj_set_x(vy, u)
+}
+
+runtime_run()
+
+    if key_down("s") {
+        y = obj_get_y(left)
+        if y < h - 80 { obj_set_y(left, y + 400 * s) }
+    }
+}
+
+fn update(s) {
+    v = obj_get_x(vx)
+    u = obj_get_x(vy)
+    bx = obj_get_x(ball)
+    by = obj_get_y(ball)
+    bx = bx + v * s; by = by + u * s
+    if by < 0 { by = 0; u = -u }
+    if by > h - 12 { by = h - 12; u = -u }
+    lx = obj_get_x(left)
+    ly = obj_get_y(left)
+    if bx < lx + 15 and bx + 12 > lx and by + 12 > ly and by < ly + 80 {
+        v = -v * 1.05; bx = lx + 15
+    }
+    rx = obj_get_x(right)
+    ry = obj_get_y(right)
+    if bx + 12 > rx and bx < rx + 15 and by + 12 > ry and by < ry + 80 {
+        v = -v * 1.05; bx = rx - 12
+    }
+    target = by - 40
+    if target < 0 { target = 0 }
+    if target > h - 80 { target = h - 80 }
+    if ry < target { obj_set_y(right, ry + 300 * s) }
+    if ry > target { obj_set_y(right, ry - 300 * s) }
+    if bx < -20 { bx = w/2; by = h/2; v = 250; u = 120 }
+    if bx > w + 20 { bx = w/2; by = h/2; v = -250; u = 120 }
+    obj_set_x(ball, bx); obj_set_y(ball, by)
+    obj_set_x(vx, v); obj_set_x(vy, u)
+}

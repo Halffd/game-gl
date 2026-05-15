@@ -1,0 +1,27 @@
+print("Pong AI script loaded")
+
+// Track ball and predict where it will land
+// Simple AI: follow the ball's Y position
+// Hook functions set by the game loop:
+//   get_ball_y() - returns ball Y position  
+//   get_ball_vx() - returns ball X velocity
+//   get_paddle_height() - returns paddle height
+//   get_screen_height() - returns screen height
+//   move_right_paddle(y) - sets right paddle Y target
+//   get_score_left() / get_score_right() - score display
+
+// Main AI loop - runs every frame via update hook
+fn run_ai() {
+    ball_y = get_ball_y()
+    ball_vx = get_ball_vx()
+    paddle_h = get_paddle_height()
+    screen_h = get_screen_height()
+
+    // Only chase ball when it's moving toward the AI paddle
+    if ball_vx > 0 {
+        // Predict intercept with some error for fun
+        target = ball_y + paddle_h / 2 - 20
+        target = clamp(target, 0, screen_h - paddle_h)
+        move_right_paddle(str(target))
+    }
+}
