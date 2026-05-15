@@ -14,6 +14,8 @@
  * - Calling script functions from C++
  * - Managing the Havel lifecycle
  */
+class GameRuntime; // Forward declare
+
 class HavelScriptIntegration {
 public:
     HavelScriptIntegration();
@@ -37,6 +39,7 @@ public:
     void setGameEngineContext(void* gameEngine);
     void shutdown();
     void registerDefaultBindings();
+    void registerRuntimeBindings(GameRuntime* rt);
     bool reload(const std::string& filepath);
 
     class Impl;
