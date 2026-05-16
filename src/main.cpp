@@ -1,18 +1,29 @@
 #include <iostream>
 #include "game/HavelIntegration.h"
 #include "game/GameRuntime.h"
+#include "game/GameRuntime3D.h"
 #include "game/Game3D.h"
 #include "graph/GraphApp.h"
 
 static void runScriptGame(HavelScriptIntegration& havel, GameRuntime* rt, const std::string& scriptPath) {
     havel.registerRuntimeBindings(rt);
     if (havel.isInitialized()) {
-        std::cerr << "[DEBUG] Loading script: " << scriptPath << std::endl;
         if (!havel.executeFile(scriptPath)) {
             std::cerr << "[Game] Script failed: " << havel.getLastError() << std::endl;
             return;
         }
-        std::cerr << "[DEBUG] Script loaded, game loop runs inside runtime_run()" << std::endl;
+        havel.callFunction("runtime_run");
+    }
+}
+
+static void runScriptGame3D(HavelScriptIntegration& havel, GameRuntime3D* rt3d, const std::string& scriptPath) {
+    havel.registerRuntime3DBindings(rt3d);
+    if (havel.isInitialized()) {
+        if (!havel.executeFile(scriptPath)) {
+            std::cerr << "[Game] Script failed: " << havel.getLastError() << std::endl;
+            return;
+        }
+        havel.callFunction("runtime_run3d");
     }
 }
 
@@ -47,6 +58,13 @@ int main(int argc, char *argv[])
         GameRuntime rt;
         if (rt.initWindow("Snake", 600, 600))
             runScriptGame(havel, &rt, "scripts/snake.hv");
+        return 0;
+    }
+
+    if (mode == "fps") {
+        GameRuntime3D rt3d;
+        if (rt3d.initWindow("FPS", 1024, 768))
+            runScriptGame3D(havel, &rt3d, "scripts/fps.hv");
         return 0;
     }
 
