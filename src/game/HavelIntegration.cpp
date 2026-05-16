@@ -12,6 +12,8 @@
 #include <havel.h>
 #include "Game.h"
 #include "GameRuntime.h"
+#include "GameRuntime3D.h"
+#include "../ui/Gui.h"
 #include <GLFW/glfw3.h>
 
 class HavelScriptIntegration::Impl {
@@ -135,8 +137,7 @@ bool HavelScriptIntegration::callFunction(const std::string& functionName,
     }
 
     try {
-        bool hasGlobal = havel_hasglobal(impl->H, functionName.c_str());
-        if (!hasGlobal) {
+        if (!havel_hasglobal(impl->H, functionName.c_str())) {
             std::cerr << "[DEBUG] Function '" << functionName << "' not defined in script, skipping" << std::endl;
             return false;
         }
@@ -183,6 +184,7 @@ void HavelScriptIntegration::registerFunction(const std::string& name,
     Impl::FunctionCtx* rawCtx = fnCtx.get();
     impl->functionContexts.push_back(std::move(fnCtx));
 
+    // havel_pushcfunction_with_ctx now pushes the HostFuncId Value to H->stack
     havel_pushcfunction_with_ctx(impl->H, function_wrapper, rawCtx, name.c_str());
     havel_setglobal(impl->H, name.c_str());
 }
@@ -372,12 +374,159 @@ void HavelScriptIntegration::registerRuntimeBindings(GameRuntime* rt) {
         while (!rt->shouldClose()) {
             rt->beginFrame();
             havel_call_named_function(impl->H, inputFn.c_str());
-            float dt = rt->delta();
             havel_call_named_function(impl->H, updateFn.c_str());
             for (int i = 0; i < rt->gameObjectCount(); i++)
                 rt->draw(i);
             havel_call_named_function(impl->H, renderFn.c_str());
             rt->endFrame();
+        }
+        return std::string("done");
+    });
+}
+
+void HavelScriptIntegration::registerRuntime3DBindings(GameRuntime3D* rt3d) {
+    registerFunction("obj3d_cube", [rt3d](const std::vector<std::string>& a) {
+        if (a.size() < 7) return std::string("-1");
+        float x = std::stof(a[0]), y = std::stof(a[1]), z = std::stof(a[2]);
+        float sx = std::stof(a[3]), sy = std::stof(a[4]), sz = std::stof(a[5]);
+        float r = std::stof(a[6]), g = a.size() > 7 ? std::stof(a[7]) : 0.8f, b = a.size() > 8 ? std::stof(a[8]) : 0.8f;
+        int id = rt3d->createObject("cube", glm::vec3(x, y, z), glm::vec3(sx, sy, sz), glm::vec3(r, g, b));
+        return std::to_string(id);
+    });
+
+    registerFunction("obj3d_sphere", [rt3d](const std::vector<std::string>& a) {
+        if (a.size() < 4) return std::string("-1");
+        float x = std::stof(a[0]), y = std::stof(a[1]), z = std::stof(a[2]);
+        float rad = std::stof(a[3]);
+        float r = a.size() > 4 ? std::stof(a[4]) : 1.0f, g = a.size() > 5 ? std::stof(a[5]) : 0.2f, b = a.size() > 6 ? std::stof(a[6]) : 0.2f;
+        return std::to_string(rt3d->createObject("sphere", glm::vec3(x, y, z), glm::vec3(rad), glm::vec3(r, g, b)));
+    });
+
+    registerFunction("cam_get_pos", [rt3d](const std::vector<std::string>&) {
+        auto p = rt3d->camPos();
+        return std::to_string(p.x) + " " + std::to_string(p.y) + " " + std::to_string(p.z);
+    });
+
+    registerFunction("cam_get_front", [rt3d](const std::vector<std::string>&) {
+        auto f = rt3d->camFront();
+        return std::to_string(f.x) + " " + std::to_string(f.y) + " " + std::to_string(f.z);
+    });
+
+    registerFunction("cam_move", [rt3d](const std::vector<std::string>& a) {
+        if (a.size() < 2) return std::string("0");
+        int dir = std::stoi(a[0]);
+        rt3d->moveCamera(dir, rt3d->delta());
+        return std::string("1");
+    });
+
+    registerFunction("key_down", [rt3d](const std::vector<std::string>& a) {
+        if (a.empty()) return std::string("0");
+        int key = 0;
+        auto& k = a[0];
+        if (k == "w" || k == "W") key = GLFW_KEY_W; else if (k == "s" || k == "S") key = GLFW_KEY_S;
+        else if (k == "a" || k == "A") key = GLFW_KEY_A; else if (k == "d" || k == "D") key = GLFW_KEY_D;
+        else if (k == "space") key = GLFW_KEY_SPACE; else if (k == "enter") key = GLFW_KEY_ENTER;
+        else if (k == "up") key = GLFW_KEY_UP; else if (k == "down") key = GLFW_KEY_DOWN;
+        return rt3d->keyDown(key) ? std::string("1") : std::string("0");
+    });
+
+    registerFunction("mouse_btn", [rt3d](const std::vector<std::string>& a) {
+        int btn = a.empty() ? 0 : std::stoi(a[0]);
+        return rt3d->mouseButton(btn) ? std::string("1") : std::string("0");
+    });
+
+    registerFunction("delta", [rt3d](const std::vector<std::string>&) {
+        return std::to_string(rt3d->delta());
+    });
+
+    registerFunction("get_time", [rt3d](const std::vector<std::string>&) {
+        return std::to_string(rt3d->getTime());
+    });
+
+    // Model loading
+    registerFunction("load_model", [rt3d](const std::vector<std::string>& a) {
+        if (a.size() < 2) return std::string("-1");
+        std::string name = a[0], path = a[1];
+        float x = a.size() > 2 ? std::stof(a[2]) : 0;
+        float y = a.size() > 3 ? std::stof(a[3]) : 0;
+        float z = a.size() > 4 ? std::stof(a[4]) : 0;
+        return std::to_string(rt3d->loadModel(name, path, glm::vec3(x,y,z), glm::vec3(0), glm::vec3(1)));
+    });
+
+    // Shaders
+    registerFunction("load_shader", [rt3d](const std::vector<std::string>& a) {
+        if (a.size() < 3) return std::string("0");
+        return std::to_string(rt3d->loadShader(a[0], a[1], a[2]));
+    });
+    registerFunction("shader_vec3", [rt3d](const std::vector<std::string>& a) {
+        if (a.size() >= 5) rt3d->setShaderVec3(a[0], a[1], std::stof(a[2]), std::stof(a[3]), std::stof(a[4]));
+        return std::string("1");
+    });
+    registerFunction("shader_float", [rt3d](const std::vector<std::string>& a) {
+        if (a.size() >= 3) rt3d->setShaderFloat(a[0], a[1], std::stof(a[2]));
+        return std::string("1");
+    });
+
+    // Framebuffers
+    registerFunction("fb_create", [rt3d](const std::vector<std::string>& a) {
+        int w = a.size() > 0 ? std::stoi(a[0]) : rt3d->getWidth();
+        int h = a.size() > 1 ? std::stoi(a[1]) : rt3d->getHeight();
+        return std::to_string(rt3d->createFramebuffer(w, h));
+    });
+    registerFunction("fb_bind", [rt3d](const std::vector<std::string>& a) {
+        if (!a.empty()) rt3d->bindFramebuffer(std::stoi(a[0]));
+        return std::string("1");
+    });
+    registerFunction("fb_unbind", [rt3d](const std::vector<std::string>&) {
+        rt3d->unbindFramebuffer(); return std::string("1");
+    });
+    registerFunction("fb_color_tex", [rt3d](const std::vector<std::string>& a) {
+        if (a.empty()) return std::string("0");
+        return std::to_string(rt3d->fbColorTexture(std::stoi(a[0])));
+    });
+
+    // Audio (stub)
+    registerFunction("play_sound", [rt3d](const std::vector<std::string>& a) {
+        if (!a.empty()) rt3d->playSound(a[0]);
+        return std::string("1");
+    });
+
+    // ImGui
+    registerFunction("gui_window", [rt3d](const std::vector<std::string>& a) {
+        rt3d->guiBegin(a.empty() ? "Debug" : a[0]);
+        return std::string("1");
+    });
+    registerFunction("gui_end", [rt3d](const std::vector<std::string>&) {
+        rt3d->guiEnd(); return std::string("1");
+    });
+    registerFunction("gui_text", [rt3d](const std::vector<std::string>& a) {
+        std::string t;
+        for (size_t i = 0; i < a.size(); i++) { if (i > 0) t += " "; t += a[i]; }
+        rt3d->guiText(t);
+        return std::string("1");
+    });
+    registerFunction("gui_button", [rt3d](const std::vector<std::string>& a) {
+        return rt3d->guiButton(a.empty() ? "OK" : a[0]) ? std::string("1") : std::string("0");
+    });
+    registerFunction("gui_slider", [rt3d](const std::vector<std::string>& a) {
+        if (a.size() < 4) return std::string("0");
+        return std::to_string(rt3d->guiSlider(a[0], std::stof(a[1]), std::stof(a[2]), std::stof(a[3])));
+    });
+
+    registerFunction("runtime_run3d", [this, rt3d](const std::vector<std::string>& a) {
+        std::string initFn = a.size() > 0 ? a[0] : "init";
+        std::string inputFn = a.size() > 1 ? a[1] : "input";
+        std::string updateFn = a.size() > 2 ? a[2] : "update";
+        std::string renderFn = a.size() > 3 ? a[3] : "render";
+        havel_call_named_function(impl->H, initFn.c_str());
+        while (!rt3d->shouldClose()) {
+            rt3d->beginFrame();
+            havel_call_named_function(impl->H, inputFn.c_str());
+            havel_call_named_function(impl->H, updateFn.c_str());
+            Gui::Start();
+            havel_call_named_function(impl->H, renderFn.c_str());
+            Gui::Render();
+            rt3d->endFrame();
         }
         return std::string("done");
     });

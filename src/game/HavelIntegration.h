@@ -15,6 +15,7 @@
  * - Managing the Havel lifecycle
  */
 class GameRuntime; // Forward declare
+class GameRuntime3D;
 
 class HavelScriptIntegration {
 public:
@@ -40,6 +41,7 @@ public:
     void shutdown();
     void registerDefaultBindings();
     void registerRuntimeBindings(GameRuntime* rt);
+    void registerRuntime3DBindings(GameRuntime3D* rt3d);
     bool reload(const std::string& filepath);
 
     class Impl;
