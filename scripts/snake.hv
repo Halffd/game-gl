@@ -4,18 +4,15 @@ cs = 20
 gw = w / cs
 gh = h / cs
 
-fx = 5
-fy = 5
 dx = 1
 dy = 0
 alive = true
 
-food = obj_rect(fx * cs, fy * cs, cs, cs)
+food = obj_rect(cs, cs, cs, cs)
 obj_set_color(food, 1, 0, 0)
 head = obj_rect(gw/2 * cs, gh/2 * cs, cs, cs)
 obj_set_color(head, 0.2, 1, 0.2)
 
-// timer storage
 timer = obj_rect(0, 0, 0, 0)
 obj_hide(timer)
 
@@ -34,22 +31,9 @@ fn update(s) {
     t = obj_get_x(timer) + s
     if t < 0.15 { obj_set_x(timer, t); return }
     obj_set_x(timer, 0)
-
     hx = obj_get_x(head) / cs + dx
     hy = obj_get_y(head) / cs + dy
-
     if hx < 0 or hx >= gw or hy < 0 or hy >= gh { alive = false; return }
-
-    if hx == fx and hy == fy {
-        fx = rand() % gw
-        fy = rand() % gh
-        obj_set_x(food, fx * cs)
-        obj_set_y(food, fy * cs)
-        // grow by leaving old head and creating new one
-    } else {
-        // just move - remove last segment
-    }
-
     obj_set_x(head, hx * cs)
     obj_set_y(head, hy * cs)
 }
