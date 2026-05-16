@@ -1,0 +1,41 @@
+// FPS demo with ImGui HUD
+score = 0
+last_time = 0
+
+fn init() {
+    obj3d_cube(0, -0.5, 0, 20, 1, 20, 0.3, 0.3, 0.3)
+    obj3d_cube(0, 1.5, -10, 20, 3, 1, 0.7, 0.2, 0.2)
+    obj3d_cube(0, 1.5, 10, 20, 3, 1, 0.2, 0.2, 0.7)
+    obj3d_cube(-10, 1.5, 0, 1, 3, 20, 0.7, 0.2, 0.2)
+    obj3d_cube(10, 1.5, 0, 1, 3, 20, 0.2, 0.7, 0.2)
+    obj3d_cube(-3, 0.5, -2, 2, 1, 2, 0.6, 0.6, 0.2)
+    obj3d_cube(4, 0.5, 3, 2, 1, 2, 0.2, 0.6, 0.6)
+    obj3d_cube(-2, 1, 5, 1, 2, 1, 0.6, 0.2, 0.6)
+    obj3d_sphere(-4, 0.5, -4, 0.5, 1, 0.2, 0.2)
+    obj3d_sphere(5, 0.5, -2, 0.5, 1, 0.2, 0.2)
+    obj3d_sphere(0, 0.5, 5, 0.5, 0.2, 1, 0.2)
+}
+
+fn input() {
+    if key_down("w") { cam_move(0) }
+    if key_down("s") { cam_move(1) }
+    if key_down("a") { cam_move(2) }
+    if key_down("d") { cam_move(3) }
+}
+
+fn update(s) {
+    score = score + s * 10
+    last_time = get_time()
+}
+
+fn render() {
+    gui_window("HUD")
+    gui_text("3D Engine + Havel Scripting")
+    gui_text("WASD to move, mouse to look")
+    gui_text("Score: ")
+    gui_text(str(score))
+    if gui_button("Quit") {
+        play_sound("quit")
+    }
+    gui_end()
+}
